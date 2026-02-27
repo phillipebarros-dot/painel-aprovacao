@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard | Painel de Aprovação Grupo OM</title>
+    <meta name="description"
+        content="Dashboard de Aprovação de Checking com KPIs, gráficos e operações de aprovação." />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <script>
+        // Apply saved theme immediately to prevent flash
+        (function () {
+            var t = localStorage.getItem('painel_theme');
+            if (t) document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.0/jspdf.umd.min.js"></script>
+    <style>
+        @keyframes spin {
+            from {
+                transform: rotate(0deg)
+            }
+
+            to {
+                transform: rotate(360deg)
+            }
+        }
+    </style>
+</head>
+
+<body class="dashboard-layout">
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-left">
+                <div class="header-brand">
+                    <div
+                        style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--text-primary); color: var(--bg-primary);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+                            <rect x="3" y="3" width="18" height="18" rx="0" ry="0"></rect>
+                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                        </svg>
+                    </div>
+                    <div class="header-brand-text">
+                        <h1>Grupo OM <span>//</span> <span id="painelEasterEgg" style="cursor:default"
+                                title="Painel">Painel</span></h1>
+                    </div>
+                </div>
+                <div class="header-divider"></div>
+                <nav class="header-nav">
+                    <button class="header-nav-item active" data-nav="dashboard">
+                        <span class="material-symbols-outlined" style="font-size:18px;margin-right:4px">dashboard</span>
+                        Dashboard
+                    </button>
+                    <button class="header-nav-item" data-nav="aprovacoes">
+                        <span class="material-symbols-outlined"
+                            style="font-size:18px;margin-right:4px">fact_check</span> Aprovações
+                    </button>
+                    <button class="header-nav-item" data-nav="usuarios">
+                        <span class="material-symbols-outlined" style="font-size:18px;margin-right:4px">group</span>
+                        Usuários
+                    </button>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="header-status">
+                    <div class="pulse-dot"></div>
+                    <span>Ao vivo</span>
+                </div>
+                <button class="icon-btn" onclick="Dashboard.toggleTheme()" title="Alternar tema">
+                    <span class="material-symbols-outlined" id="dashThemeIcon">dark_mode</span>
+                </button>
+                <button class="icon-btn" onclick="window.location.reload()" title="Atualizar">
+                    <span class="material-symbols-outlined">refresh</span>
+                </button>
+                <button class="btn btn-primary no-print" onclick="generateAuditPDF()">
+                    <span class="material-symbols-outlined">picture_as_pdf</span>
+                    <span>Gerar Relatorio PDF</span>
+                </button>
+                <div style="display:flex;align-items:center;gap:8px;margin-left:8px;cursor:pointer"
+                    onclick="API.logout()" title="Sair">
+                    <div class="user-avatar" id="userAvatar" style="width:34px;height:34px;font-size:13px">U</div>
+                    <div style="display:flex;flex-direction:column">
+                        <span id="userName"
+                            style="font-size:12px;font-weight:700;color:var(--text-primary)">Usuário</span>
+                        <span id="userRole"
+                            style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px">analyst</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- ═══ PAGE: DASHBOARD ═══ -->
+        <section class="page-section active" id="page-dashboard">
+            <div class="section-header">
+                <div>
+                    <h2>Visão Geral de Operações</h2>
+                    <p>Monitoramento em tempo real • KPIs e Gráficos</p>
+                </div>
+            </div>
+
+            <!-- KPI Row 1 — Geral -->
+            <p class="section-label">Resumo Geral</p>
+            <div class="kpi-grid">
+                <div class="kpi-card anim-fade-up">
+                    <div class="kpi-card-icon"><span class="material-symbols-outlined"
+                            style="color:var(--accent-blue)">database</span></div>
+                    <div class="kpi-card-header"><span class="kpi-card-label">Total Registros</span><span
+                            class="kpi-badge kpi-badge-blue">Total</span></div>
+                    <div>
+                        <p class="kpi-card-value" id="kpiTotal">0</p>
+                        <p class="kpi-card-subtitle">Todos os registros</p>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-card--amber anim-fade-up anim-delay-1">
+                    <div class="kpi-card-icon"><span class="material-symbols-outlined"
+                            style="color:var(--accent-amber)">pending</span></div>
+                    <div class="kpi-card-header"><span class="kpi-card-label">Pendentes</span><span
+                            class="kpi-badge kpi-badge-amber">Aguardando</span></div>
+                    <div>
+                        <p class="kpi-card-value" id="kpiPending">0</p>
+                        <p class="kpi-card-subtitle"><span id="kpiNovos">0</span> novos • <span
+                                id="kpiComplementos">0</span> complementos</p>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-card--green anim-fade-up anim-delay-2">
+                    <div class="kpi-card-icon"><span class="material-symbols-outlined"
+                            style="color:var(--accent-green)">check_circle</span></div>
+                    <div class="kpi-card-header"><span class="kpi-card-label">Aprovados</span><span
+                            class="kpi-badge kpi-badge-green" id="kpiTaxaAprov">0%</span></div>
+                    <div>
+                        <p class="kpi-card-value" id="kpiApproved">0</p>
+                        <p class="kpi-card-subtitle">Conteúdo validado</p>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-card--red anim-fade-up anim-delay-3">
+                    <div class="kpi-card-icon"><span class="material-symbols-outlined"
+                            style="color:var(--accent-red)">cancel</span></div>
+                    <div class="kpi-card-header"><span class="kpi-card-label">Reprovados</span><span
+                            class="kpi-badge kpi-badge-red">Atenção</span></div>
+                    <div>
+                        <p class="kpi-card-value" id="kpiRejected">0</p>
+                        <p class="kpi-card-subtitle">Fornecedor notificado</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Row 2 — Métricas Avançadas -->
+            <p class="section-label" style="margin-top:16px">Métricas Avançadas</p>
+            <div class="kpi-grid">
+                <div class="kpi-card anim-fade-up anim-delay-4">
+                    <div class="kpi-card-icon"><span class="material-symbols-outlined"
+                            style="color:var(--accent-green)">speed</span></div>
+                    <div class="kpi-card-header"><span class="kpi-card-label">Taxa de Aprovação</span><span
+                            class="kpi-badge kpi-badge-green">Indice</span></div>
+                    <div style="display:flex;align-items:center;gap:16px">
+                        <div style="position:relative;width:56px;height:56px">
+                            <svg viewBox="0 0 36 36" style="width:56px;height:56px;transform:rotate(-90deg)">
+                                <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border-primary)"
+                                    stroke-width="3" />
+                                <circle id="gaugeCircle" cx="18" cy="18" r="15.5" fill="none"
+                                    stroke="var(--accent-green)" stroke-width="3" stroke-dasharray="0 97.4"
+                                    stroke-linecap="round" style="transition: stroke-dasharray 1.2s ease-out" />
+                            </svg>
+                            <span id="kpiGaugePercent"
+                                style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--font-mono);color:var(--text-primary)">0%</span>
+                        </div>
+                        <div>
+                            <p class="kpi-card-subtitle">aprovados / processados</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="kpi-card anim-fade-up anim-delay-5">
+                    <div class="kpi-card-icon"><span class="material-symbols-outlined"
+                            style="color:var(--accent-blue)">directions_car</span></div>
+                    <div class="kpi-card-header"><span class="kpi-card-label">Veículos</span><span
+                            class="kpi-badge kpi-badge-blue">Ativos</span></div>
+                    <div>
+                        <p class="kpi-card-value" id="kpiVehicles">0</p>
+                        <p class="kpi-card-subtitle">veículos distintos</p>
+                    </div>
+                </div>
+                <div class="kpi-card anim-fade-up anim-delay-6">
+                    <div class="kpi-card-icon"><span class="material-symbols-outlined"
+                            style="color:#8b5cf6">trophy</span></div>
+                    <div class="kpi-card-header"><span class="kpi-card-label">Top Veículo</span><span class="kpi-badge"
+                            style="background:rgba(139,92,246,0.15);color:#8b5cf6">Líder</span></div>
+                    <div>
+                        <p class="kpi-card-value" id="kpiTopVehicle" style="font-size:16px;word-break:break-word">—</p>
+                        <p class="kpi-card-subtitle" id="kpiTopVehicleCount">mais checkings</p>
+                    </div>
+                </div>
+                <div class="kpi-card anim-fade-up anim-delay-7">
+                    <div class="kpi-card-icon"><span class="material-symbols-outlined"
+                            style="color:#ec4899">replay</span></div>
+                    <div class="kpi-card-header"><span class="kpi-card-label">Complementos</span><span class="kpi-badge"
+                            style="background:rgba(236,72,153,0.15);color:#ec4899">Proporcao</span></div>
+                    <div style="display:flex;align-items:baseline;gap:8px">
+                        <p class="kpi-card-value" id="kpiComplementRate">0%</p>
+                        <p class="kpi-card-subtitle">do total são reenvios</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 1: Pie + Area -->
+            <p class="section-label" style="margin-top:16px">KPI de Gráficos</p>
+            <div class="charts-grid" style="margin-bottom:20px">
+                <div class="chart-card anim-fade-up anim-delay-2">
+                    <div class="chart-card-header">
+                        <div>
+                            <h3 class="chart-card-title">Distribuicao de Aprovacoes</h3>
+                            <p class="chart-card-subtitle">Percentual de aprovados, pendentes e reprovados</p>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-container-sm" id="pieChartDiv"></div>
+                </div>
+                <div class="chart-card anim-fade-up anim-delay-3">
+                    <div class="chart-card-header">
+                        <div>
+                            <h3 class="chart-card-title">Evolucao Temporal por Status</h3>
+                            <p class="chart-card-subtitle">Historico de aprovacoes ao longo do tempo</p>
+                        </div>
+                        <div class="period-toggle">
+                            <button class="period-btn active"
+                                onclick="Charts.renderAreaChart();this.parentElement.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">Todos</button>
+                            <button class="period-btn"
+                                onclick="Charts.renderAreaChart(30);this.parentElement.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">30d</button>
+                            <button class="period-btn"
+                                onclick="Charts.renderAreaChart(7);this.parentElement.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">7d</button>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="areaChartDiv"></div>
+                </div>
+            </div>
+
+            <!-- Charts Row 2: Combo + Bar -->
+            <div class="charts-grid" style="margin-bottom:20px">
+                <div class="chart-card anim-fade-up anim-delay-4">
+                    <div class="chart-card-header">
+                        <div>
+                            <h3 class="chart-card-title">Volume de Checkings por Cliente</h3>
+                            <p class="chart-card-subtitle">Quantidade por cliente com linha de media geral</p>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="comboChartDiv"></div>
+                </div>
+                <div class="chart-card anim-fade-up anim-delay-5">
+                    <div class="chart-card-header">
+                        <div>
+                            <h3 class="chart-card-title">Ranking dos Principais Clientes</h3>
+                            <p class="chart-card-subtitle">Clientes com maior volume de checkings enviados</p>
+                        </div>
+                    </div>
+                    <div class="chart-container chart-container-sm" id="barChartDiv"></div>
+                </div>
+            </div>
+
+            <!-- Charts Row 3: Vehicle Donut -->
+            <div class="charts-grid" style="margin-bottom:20px">
+                <div class="chart-card anim-fade-up anim-delay-6">
+                    <div class="chart-card-header">
+                        <div>
+                            <h3 class="chart-card-title">Distribuicao por Veiculo de Midia</h3>
+                            <p class="chart-card-subtitle">Percentual de checkings por tipo de midia</p>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="vehicleChartDiv"></div>
+                </div>
+                <div class="chart-card anim-fade-up anim-delay-7">
+                    <div class="chart-card-header">
+                        <div>
+                            <h3 class="chart-card-title">Situacao por Cliente</h3>
+                            <p class="chart-card-subtitle">Aprovados, pendentes e reprovados por cada cliente</p>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="stackedBarChartDiv"></div>
+                </div>
+            </div>
+
+            <!-- Audit Log -->
+            <p class="section-label" style="margin-top:16px">Log de Operações</p>
+            <div class="chart-card" style="max-height:400px;overflow-y:auto">
+                <div class="chart-card-header" style="flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h3 class="chart-card-title">Registro de Atividades</h3>
+                        <p class="chart-card-subtitle">Cada aprovação e reprovação é registrada aqui</p>
+                    </div>
+                    <div class="search-input-wrapper" style="width: 200px;">
+                        <span class="material-symbols-outlined">search</span>
+                        <input class="search-input" id="auditLogSearch" type="text" placeholder="Buscar no registro..."
+                            oninput="Approvals.renderAuditLog(this.value)" style="padding: 6px 12px 6px 36px;" />
+                    </div>
+                </div>
+                <div id="auditLogList"></div>
+            </div>
+        </section>
+
+        <!-- ═══ PAGE: APROVAÇÕES ═══ -->
+        <section class="page-section" id="page-aprovacoes">
+            <div class="section-header">
+                <div>
+                    <h3
+                        style="font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Gestão de Aprovações</h3>
+                    <p
+                        style="font-size:11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; color:var(--text-secondary);margin-top:4px">
+                        Aprovar, reprovar e monitorar
+                        checkings</p>
+                </div>
+                <div id="pendingBadge"
+                    style="display:none;align-items:center;gap:6px;padding:6px 12px;background:var(--accent-amber-bg);border: 1px solid var(--accent-amber);border-radius:0;color:var(--accent-amber);font-size:10px;font-family: var(--font-mono); text-transform: uppercase; font-weight:700">
+                    <span class="material-symbols-outlined" style="font-size:14px">pending</span>
+                    <span id="pendingBadgeNum">0</span> pendentes
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-toolbar">
+                    <div class="table-toolbar-row">
+                        <div class="search-input-wrapper">
+                            <span class="material-symbols-outlined">search</span>
+                            <input class="search-input" id="tableSearch" type="text" placeholder="Buscar cliente, PI..."
+                                oninput="Approvals.setSearch(this.value)" />
+                        </div>
+                        <div class="filter-tabs">
+                            <button class="filter-tab active"
+                                onclick="setActiveTab(this);Approvals.setFilterStatus('all')">Todos</button>
+                            <button class="filter-tab"
+                                onclick="setActiveTab(this);Approvals.setFilterStatus('pending')">Pendentes <span
+                                    class="count-badge" id="tabPendingCount">0</span></button>
+                            <button class="filter-tab"
+                                onclick="setActiveTab(this);Approvals.setFilterStatus('approved')">Aprovados</button>
+                            <button class="filter-tab"
+                                onclick="setActiveTab(this);Approvals.setFilterStatus('rejected')">Reprovados</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>PI</th>
+                                <th>Veículo</th>
+                                <th>Meio</th>
+                                <th style="text-align:center">Tipo</th>
+                                <th style="text-align:center">Pasta</th>
+                                <th style="text-align:center">Status</th>
+                                <th style="text-align:center">Repr.</th>
+                                <th style="text-align:center">Responsável</th>
+                                <th style="text-align:center" class="no-print">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="checkingsBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="table-footer">
+                    <p class="table-footer-info">Mostrando <strong id="showCount">0</strong> de <strong
+                            id="totalCount">0</strong></p>
+                    <div class="pagination">
+                        <button class="page-btn" id="prevPage" onclick="Approvals.prevPage()" disabled><span
+                                class="material-symbols-outlined">chevron_left</span></button>
+                        <span class="page-current" id="pageInfo">1/1</span>
+                        <button class="page-btn" id="nextPage" onclick="Approvals.nextPage()"><span
+                                class="material-symbols-outlined">chevron_right</span></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ PAGE: USUÁRIOS ═══ -->
+        <section class="page-section" id="page-usuarios">
+            <div class="section-header">
+                <div>
+                    <h3
+                        style="font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Gestão de Usuários</h3>
+                    <p
+                        style="font-size:11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; color:var(--text-secondary);margin-top:4px">
+                        Administrar acessos e
+                        permissões</p>
+                </div>
+                <button class="btn btn-primary" onclick="Users.openRegister()">
+                    <span class="material-symbols-outlined">person_add</span> Novo Usuário
+                </button>
+            </div>
+            <div class="users-grid" id="usersGrid">
+                <div class="empty-state"><span class="material-symbols-outlined">group</span>
+                    <h4>Carregando...</h4>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2026 Grupo om &bull; Painel de Aprovação</p>
+    </footer>
+    <div class="rainbow-bar" style="position:fixed;bottom:0;left:0;right:0;z-index:50;opacity:0.5"></div>
+
+    <!-- Scripts -->
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/charts.js"></script>
+    <script src="assets/js/approvals.js"></script>
+    <script src="assets/js/users.js"></script>
+    <script src="assets/js/pdf-export.js"></script>
+    <script src="assets/js/dashboard.js"></script>
+    <script>
+        function setActiveTab(btn) { btn.parentElement.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+        document.addEventListener('DOMContentLoaded', () => Dashboard.init());
+
+        // ══ SNAKE GAME EASTER EGG ══════════════════════
+        (function () {
+            let clickCount = 0;
+            let clickTimer = null;
+            const trigger = document.getElementById('painelEasterEgg');
+            if (!trigger) return;
+            trigger.addEventListener('click', () => {
+                clickCount++;
+                if (clickTimer) clearTimeout(clickTimer);
+                clickTimer = setTimeout(() => { clickCount = 0; }, 800);
+                if (clickCount >= 3) {
+                    clickCount = 0;
+                    openSnakeGame();
+                }
+            });
+        })();
+
+        function openSnakeGame() {
+            if (document.getElementById('snakeOverlay')) return;
+
+            const overlay = document.createElement('div');
+            overlay.id = 'snakeOverlay';
+            overlay.innerHTML = `
+            <style>
+                #snakeOverlay {
+                    position: fixed; inset: 0; z-index: 9999;
+                    background: rgba(0,0,0,0.92); backdrop-filter: blur(8px);
+                    display: flex; flex-direction: column; align-items: center; justify-content: center;
+                    font-family: 'JetBrains Mono', monospace; color: #e5e5e5;
+                    animation: snakeFadeIn 0.3s ease-out;
+                }
+                @keyframes snakeFadeIn { from { opacity: 0; } to { opacity: 1; } }
+                #snakeOverlay .snake-header {
+                    display: flex; align-items: center; justify-content: space-between;
+                    width: 100%; max-width: 440px; margin-bottom: 12px;
+                }
+                #snakeOverlay .snake-title {
+                    font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+                    color: #a3a3a3;
+                }
+                #snakeOverlay .snake-score {
+                    font-size: 13px; font-weight: 700; color: #22c55e;
+                }
+                #snakeOverlay .snake-close {
+                    background: none; border: 1px solid #333; color: #737373;
+                    width: 28px; height: 28px; display: flex; align-items: center;
+                    justify-content: center; cursor: pointer; transition: all 0.2s;
+                    font-size: 14px;
+                }
+                #snakeOverlay .snake-close:hover { color: #fff; border-color: #fff; }
+                #snakeCanvas {
+                    border: 1px solid #333; display: block;
+                    image-rendering: pixelated;
+                }
+                #snakeOverlay .snake-controls {
+                    margin-top: 12px; font-size: 10px; color: #525252;
+                    text-transform: uppercase; letter-spacing: 1px; text-align: center;
+                }
+                #snakeOverlay .snake-gameover {
+                    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    text-align: center; display: none;
+                }
+                #snakeOverlay .snake-gameover h2 {
+                    font-size: 18px; font-weight: 700; text-transform: uppercase;
+                    letter-spacing: 3px; margin-bottom: 8px;
+                }
+                #snakeOverlay .snake-gameover p {
+                    font-size: 11px; color: #737373; margin-bottom: 16px;
+                }
+                #snakeOverlay .snake-restart {
+                    background: #fff; color: #000; border: none; padding: 8px 20px;
+                    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+                    text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
+                    cursor: pointer; transition: all 0.2s;
+                }
+                #snakeOverlay .snake-restart:hover { background: #e5e5e5; }
+            </style>
+            <div class="snake-header">
+                <span class="snake-title">🐍 Snake // Easter Egg</span>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <span class="snake-score">SCORE: <span id="snakeScore">0</span></span>
+                    <button class="snake-close" onclick="closeSnakeGame()">&times;</button>
+                </div>
+            </div>
+            <div style="position:relative">
+                <canvas id="snakeCanvas" width="420" height="420"></canvas>
+                <div class="snake-gameover" id="snakeGameover">
+                    <h2>Game Over</h2>
+                    <p>Score: <span id="snakeFinalScore">0</span></p>
+                    <button class="snake-restart" onclick="restartSnake()">Jogar Novamente</button>
+                </div>
+            </div>
+            <div class="snake-controls">
+                ← ↑ ↓ → ou WASD para mover &nbsp;•&nbsp; ESC para fechar
+            </div>`;
+            document.body.appendChild(overlay);
+            initSnake();
+        }
+
+        function closeSnakeGame() {
+            const o = document.getElementById('snakeOverlay');
+            if (o) o.remove();
+            if (window._snakeInterval) { clearInterval(window._snakeInterval); window._snakeInterval = null; }
+            if (window._snakeKeyHandler) { document.removeEventListener('keydown', window._snakeKeyHandler); window._snakeKeyHandler = null; }
+        }
+
+        function restartSnake() {
+            if (window._snakeInterval) clearInterval(window._snakeInterval);
+            document.getElementById('snakeGameover').style.display = 'none';
+            initSnake();
+        }
+
+        function initSnake() {
+            const canvas = document.getElementById('snakeCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const gridSize = 20;
+            const tileCount = canvas.width / gridSize;
+
+            let snake = [{ x: 10, y: 10 }];
+            let food = spawnFood();
+            let dx = 0, dy = 0;
+            let score = 0;
+            let gameRunning = true;
+            let speed = 120;
+
+            function spawnFood() {
+                let pos;
+                do {
+                    pos = { x: Math.floor(Math.random() * tileCount), y: Math.floor(Math.random() * tileCount) };
+                } while (snake.some(s => s.x === pos.x && s.y === pos.y));
+                return pos;
+            }
+
+            function draw() {
+                // Background grid
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Grid lines
+                ctx.strokeStyle = '#1a1a1a';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i <= tileCount; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * gridSize, 0);
+                    ctx.lineTo(i * gridSize, canvas.height);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * gridSize);
+                    ctx.lineTo(canvas.width, i * gridSize);
+                    ctx.stroke();
+                }
+
+                // Food
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(food.x * gridSize + 1, food.y * gridSize + 1, gridSize - 2, gridSize - 2);
+
+                // Snake
+                snake.forEach((seg, i) => {
+                    const brightness = Math.max(40, 255 - i * 12);
+                    ctx.fillStyle = i === 0 ? '#ffffff' : `rgb(${brightness},${brightness},${brightness})`;
+                    ctx.fillRect(seg.x * gridSize + 1, seg.y * gridSize + 1, gridSize - 2, gridSize - 2);
+                });
+
+                // Score HUD on canvas
+                ctx.fillStyle = '#333';
+                ctx.font = '10px JetBrains Mono, monospace';
+                ctx.fillText('GRUPO OM // SNAKE', 8, canvas.height - 8);
+            }
+
+            function update() {
+                if (!gameRunning) return;
+                if (dx === 0 && dy === 0) { draw(); return; }
+
+                const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+                // Wall collision
+                if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                    gameOver(); return;
+                }
+
+                // Self collision
+                if (snake.some(s => s.x === head.x && s.y === head.y)) {
+                    gameOver(); return;
+                }
+
+                snake.unshift(head);
+
+                if (head.x === food.x && head.y === food.y) {
+                    score++;
+                    document.getElementById('snakeScore').textContent = score;
+                    food = spawnFood();
+                    if (speed > 60) speed -= 2;
+                    clearInterval(window._snakeInterval);
+                    window._snakeInterval = setInterval(update, speed);
+                } else {
+                    snake.pop();
+                }
+
+                draw();
+            }
+
+            function gameOver() {
+                gameRunning = false;
+                clearInterval(window._snakeInterval);
+                document.getElementById('snakeFinalScore').textContent = score;
+                document.getElementById('snakeGameover').style.display = 'block';
+            }
+
+            // Key handling
+            if (window._snakeKeyHandler) document.removeEventListener('keydown', window._snakeKeyHandler);
+            window._snakeKeyHandler = (e) => {
+                if (e.key === 'Escape') { closeSnakeGame(); return; }
+                if (!gameRunning) return;
+                switch (e.key) {
+                    case 'ArrowUp': case 'w': case 'W': if (dy !== 1) { dx = 0; dy = -1; } break;
+                    case 'ArrowDown': case 's': case 'S': if (dy !== -1) { dx = 0; dy = 1; } break;
+                    case 'ArrowLeft': case 'a': case 'A': if (dx !== 1) { dx = -1; dy = 0; } break;
+                    case 'ArrowRight': case 'd': case 'D': if (dx !== -1) { dx = 1; dy = 0; } break;
+                }
+            };
+            document.addEventListener('keydown', window._snakeKeyHandler);
+
+            document.getElementById('snakeScore').textContent = '0';
+            draw();
+            window._snakeInterval = setInterval(update, speed);
+        }
+    </script>
+</body>
+
+</html>
