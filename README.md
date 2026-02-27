@@ -1,4 +1,4 @@
-# Painel de Aprovacao -- Grupo OM
+# Painel de Aprovacao - Grupo OM
 
 Sistema interno de aprovacao de checkings para o departamento de Midia do Grupo OM. Desenvolvido com frontend HTML/CSS/JS puro e backend n8n conectado ao Google BigQuery, Google Drive e servidor SMTP para notificacoes por email.
 
@@ -434,7 +434,7 @@ Ao usar `IS_TEST_MODE = true`, as requisicoes vao para o webhook de teste do n8n
 
 ---
 
-Grupo OM -- Painel de Aprovacao -- 2026
+Grupo OM -- Painel de Aprovacao - 2026
 
 
 [def]: #processo-de-desenvolvimento
