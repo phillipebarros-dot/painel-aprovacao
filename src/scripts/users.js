@@ -99,55 +99,76 @@ const Users = (() => {
   // Modal de cadastro de novo usuario -- SweetAlert2 customizado
   // Campos: nome, email, senha e papel (role)
   // Ainda bem que a AI me ajudou nisso kkk, o formulario ficou bonito demais
-  async function openRegister() {
-    const dk = document.documentElement.getAttribute('data-theme') === 'dark';
-    const { isConfirmed, value } = await Swal.fire({
-      title: 'Novo Usuario',
-      html: `<div style="text-align:left">
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:${dk ? '#94a3b8' : '#374151'};display:block;margin-bottom:4px">Nome</label>
-        <input id="regName" placeholder="Nome completo" style="width:100%;padding:10px;border:1.5px solid ${dk ? '#333' : '#d1d5db'};border-radius:8px;font-size:13px;background:${dk ? '#111' : '#fff'};color:${dk ? '#f1f5f9' : '#111'};outline:none;margin-bottom:12px;box-sizing:border-box"/>
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:${dk ? '#94a3b8' : '#374151'};display:block;margin-bottom:4px">Email</label>
-        <input id="regEmail" type="email" placeholder="email@empresa.com" style="width:100%;padding:10px;border:1.5px solid ${dk ? '#333' : '#d1d5db'};border-radius:8px;font-size:13px;background:${dk ? '#111' : '#fff'};color:${dk ? '#f1f5f9' : '#111'};outline:none;margin-bottom:12px;box-sizing:border-box"/>
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:${dk ? '#94a3b8' : '#374151'};display:block;margin-bottom:4px">Senha</label>
-        <input id="regPw" type="password" placeholder="••••••••" style="width:100%;padding:10px;border:1.5px solid ${dk ? '#333' : '#d1d5db'};border-radius:8px;font-size:13px;background:${dk ? '#111' : '#fff'};color:${dk ? '#f1f5f9' : '#111'};outline:none;margin-bottom:12px;box-sizing:border-box"/>
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:${dk ? '#94a3b8' : '#374151'};display:block;margin-bottom:4px">Grupo de Usuario</label>
-        <select id="regGrupo" style="width:100%;padding:10px;border:1.5px solid ${dk ? '#333' : '#d1d5db'};border-radius:8px;font-size:13px;background:${dk ? '#111' : '#fff'};color:${dk ? '#f1f5f9' : '#111'};outline:none;margin-bottom:12px;box-sizing:border-box">
-          <option value="Mídia">Mídia</option>
-          <option value="Criação">Criação</option>
-          <option value="Atendimento">Atendimento</option>
-          <option value="Planejamento">Planejamento</option>
-        </select>
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:${dk ? '#94a3b8' : '#374151'};display:block;margin-bottom:4px">Papel</label>
-        <select id="regRole" style="width:100%;padding:10px;border:1.5px solid ${dk ? '#333' : '#d1d5db'};border-radius:8px;font-size:13px;background:${dk ? '#111' : '#fff'};color:${dk ? '#f1f5f9' : '#111'};outline:none;box-sizing:border-box">
-          <option value="analyst">Analyst</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>`,
-      showCancelButton: true,
-      confirmButtonText: 'Cadastrar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#3b82f6',
-      background: dk ? '#0f1629' : '#fff',
-      color: dk ? '#f1f5f9' : '#111',
-      preConfirm: () => {
-        const n = document.getElementById('regName').value.trim();
-        const e = document.getElementById('regEmail').value.trim();
-        const p = document.getElementById('regPw').value;
-        const r = document.getElementById('regRole').value;
-        const g = document.getElementById('regGrupo') ? document.getElementById('regGrupo').value : 'Mídia';
-        if (!n || !e || !p) { Swal.showValidationMessage('Preencha todos os campos'); return false; }
-        return { name: n, email: e, password: p, role: r, grupo: g };
+  // Abre a nova modal nativa desenhada em HTML (substitui o antigo Swal)
+  function openRegister() {
+    // Reseta o form por precaucao
+    const form = document.getElementById('nativeRegisterForm');
+    if (form) form.reset();
+
+    const alertBox = document.getElementById('registerAlert');
+    if (alertBox) alertBox.style.display = 'none';
+
+    // Abre a modal ativando o input hidden do tailwind
+    const toggle = document.getElementById('register-modal-toggle');
+    if (toggle) toggle.checked = true;
+  }
+
+  // Inicializa os listeners do modulo, principalmente o form de registro
+  function init() {
+    const regForm = document.getElementById('nativeRegisterForm');
+    if (!regForm) return;
+
+    regForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('registerSubmitBtn');
+      const alertBox = document.getElementById('registerAlert');
+      const alertMsg = document.getElementById('registerAlertMsg');
+
+      const n = document.getElementById('regName').value.trim();
+      const em = document.getElementById('regEmail').value.trim();
+      const p = document.getElementById('regPassword').value;
+      const g = document.getElementById('regGrupo').value;
+      const r = document.getElementById('regRole').value;
+
+      if (!n || !em || !p) {
+        if (alertBox && alertMsg) {
+          alertMsg.textContent = 'Preencha todos os campos obrigatórios';
+          alertBox.style.display = 'flex';
+          setTimeout(() => alertBox.style.display = 'none', 5000);
+        }
+        return;
+      }
+
+      const ogText = btn.innerHTML;
+      btn.innerHTML = 'Processando...';
+      btn.disabled = true;
+
+      try {
+        await API.registerUser(n, em, p, r, g);
+
+        // Sucesso: fecha a modal, limpa o form e recarrega a grid
+        document.getElementById('register-modal-toggle').checked = false;
+        regForm.reset();
+
+        // Usa Swal pequeno nativo apenas para o toast de confirmacao
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Usuario cadastrado!', showConfirmButton: false, timer: 3000 });
+
+        await load();
+      } catch (err) {
+        if (alertBox && alertMsg) {
+          alertMsg.textContent = err.message || 'Erro ao registrar usuario';
+          alertBox.style.display = 'flex';
+          setTimeout(() => alertBox.style.display = 'none', 5000);
+        }
+      } finally {
+        btn.innerHTML = ogText;
+        btn.disabled = false;
       }
     });
-
-    if (isConfirmed) {
-      try {
-        await API.registerUser(value.name, value.email, value.password, value.role, value.grupo);
-        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Usuario cadastrado!', showConfirmButton: false, timer: 3000 });
-        await load();
-      } catch (e) { Swal.fire('Erro', e.message, 'error'); }
-    }
   }
+
+  // Executa o init automaticamente no parser
+  setTimeout(init, 100);
 
   return { load, render, changeRole, toggleStatus, openRegister };
 })();

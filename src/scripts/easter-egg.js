@@ -108,8 +108,8 @@ function initSnake() {
         ctx.fillStyle = '#22c55e'; ctx.fillRect(food.x * gs + 1, food.y * gs + 1, gs - 2, gs - 2);
         snake.forEach((s, i) => {
             const b = Math.max(40, 255 - i * 12);
-            ctx.fillStyle = i === 0 ? '#ffffff' : \`rgb(\${b},\${b},\${b})\`; 
-            ctx.fillRect(s.x * gs + 1, s.y * gs + 1, gs - 2, gs - 2); 
+            ctx.fillStyle = i === 0 ? '#ffffff' : `rgb(${b},${b},${b})`;
+            ctx.fillRect(s.x * gs + 1, s.y * gs + 1, gs - 2, gs - 2);
         });
         ctx.fillStyle = '#333'; ctx.font = '10px JetBrains Mono, monospace'; ctx.fillText('GRUPO OM // SNAKE', 8, canvas.height - 8);
     }
@@ -146,9 +146,9 @@ function initSnake() {
             case 'ArrowRight': case 'd': case 'D': if (dx !== -1) { dx = 1; dy = 0; } break;
         }
     };
-    
+
     document.addEventListener('keydown', window._snakeKeyHandler);
     document.getElementById('snakeScore').textContent = '0';
-    draw(); 
+    draw();
     window._snakeInterval = setInterval(update, speed);
 }
