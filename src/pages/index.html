@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Acesso | Grupo OM — Painel</title>
+    <meta name="description" content="Painel de Aprovação de Checking Grupo OM. Acesso ao sistema." />
+    <link rel="icon" href="../assets/img/favicon.png" type="image/png" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ffffff",
+                        "panel-dark": "#0a0a0a",
+                        "border-dark": "#262626",
+                    },
+                    fontFamily: {
+                        "sans": ["Poppins", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: { "DEFAULT": "0px", "sm": "0px", "lg": "0px", "xl": "0px", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        /* ── Theme Variables for Login ─────────────── */
+        :root {
+            --login-bg: #000000;
+            --login-panel: #0a0a0a;
+            --login-border: #262626;
+            --login-text: #ffffff;
+            --login-text-muted: #a3a3a3;
+            --login-text-dim: #737373;
+            --login-input-bg: #000000;
+            --login-input-border: #404040;
+            --login-btn-bg: #ffffff;
+            --login-btn-text: #000000;
+            --login-btn-hover: #e5e5e5;
+            --login-grid: rgba(30, 30, 30, 0.3);
+            --login-logo-filter: invert(1);
+            --login-partner-filter: none;
+            --login-scrollbar-track: #000000;
+            --login-scrollbar-thumb: #333333;
+        }
+
+        [data-theme="light"] {
+            --login-bg: #f5f5f5;
+            --login-panel: #ffffff;
+            --login-border: #e5e5e5;
+            --login-text: #171717;
+            --login-text-muted: #525252;
+            --login-text-dim: #a3a3a3;
+            --login-input-bg: #ffffff;
+            --login-input-border: #d4d4d4;
+            --login-btn-bg: #171717;
+            --login-btn-text: #ffffff;
+            --login-btn-hover: #262626;
+            --login-grid: rgba(200, 200, 200, 0.3);
+            --login-logo-filter: invert(0);
+            --login-partner-filter: none;
+            --login-scrollbar-track: #f5f5f5;
+            --login-scrollbar-thumb: #d4d4d4;
+        }
+
+        /* Apply theme */
+        body {
+            background: var(--login-bg) !important;
+            color: var(--login-text) !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--login-scrollbar-track);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--login-scrollbar-thumb);
+        }
+
+        /* Left panel */
+        .login-left-panel {
+            background: var(--login-panel) !important;
+            border-color: var(--login-border) !important;
+        }
+
+        .login-left-panel .grid-bg {
+            background: linear-gradient(var(--login-grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--login-grid) 1px, transparent 1px) !important;
+            background-size: 40px 40px !important;
+        }
+
+        .login-left-panel img.logo-img {
+            filter: var(--login-logo-filter);
+        }
+
+        .login-left-panel h1,
+        .login-left-panel h2 {
+            color: var(--login-text) !important;
+        }
+
+        .login-left-panel p {
+            color: var(--login-text-dim) !important;
+        }
+
+        .login-left-panel .partner-logos img {
+            filter: var(--login-partner-filter);
+        }
+
+        .login-left-panel .pulse-dot-el {
+            background: var(--login-text) !important;
+        }
+
+        /* Right panel */
+        .login-right-panel {
+            background: var(--login-bg) !important;
+        }
+
+        .login-right-panel h2 {
+            color: var(--login-text) !important;
+        }
+
+        .login-right-panel p {
+            color: var(--login-text-dim) !important;
+        }
+
+        .login-right-panel label {
+            color: var(--login-text-dim) !important;
+        }
+
+        .login-right-panel input {
+            background: var(--login-input-bg) !important;
+            border-color: var(--login-input-border) !important;
+            color: var(--login-text) !important;
+        }
+
+        .login-right-panel input:focus {
+            border-color: var(--login-text) !important;
+        }
+
+        .login-right-panel input::placeholder {
+            color: var(--login-text-dim) !important;
+        }
+
+        .login-right-panel .submit-btn {
+            background: var(--login-btn-bg) !important;
+            color: var(--login-btn-text) !important;
+        }
+
+        .login-right-panel .submit-btn:hover {
+            background: var(--login-btn-hover) !important;
+        }
+
+        .login-right-panel .ghost-btn {
+            border-color: var(--login-input-border) !important;
+            color: var(--login-text-dim) !important;
+        }
+
+        .login-right-panel .ghost-btn:hover {
+            color: var(--login-text) !important;
+            border-color: var(--login-text) !important;
+        }
+
+        .login-right-panel .separator-line {
+            background: var(--login-border) !important;
+        }
+
+        .login-right-panel .icon-el {
+            color: var(--login-text-dim) !important;
+        }
+
+        .login-right-panel .back-btn {
+            color: var(--login-text-dim) !important;
+        }
+
+        .login-right-panel .back-btn:hover {
+            color: var(--login-text) !important;
+        }
+
+        /* Theme toggle */
+        .theme-toggle-login {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--login-border);
+            background: var(--login-panel);
+            color: var(--login-text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle-login:hover {
+            color: var(--login-text);
+            border-color: var(--login-text);
+        }
+
+        @keyframes pulse-line {
+
+            0%,
+            100% {
+                opacity: 0.3
+            }
+
+            50% {
+                opacity: 1
+            }
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .animate-fade-up {
+            animation: fadeUp 0.6s ease-out forwards;
+        }
+
+        .animate-fade-up-delay {
+            animation: fadeUp 0.6s ease-out 0.15s forwards;
+            opacity: 0;
+        }
+
+        .pulse-line {
+            animation: pulse-line 2s ease-in-out infinite;
+        }
+    </style>
+    <script>
+            (function () {
+                var t = localStorage.getItem('painel_theme');
+                if (t) document.documentElement.setAttribute('data-theme', t);
+            })();
+    </script>
+</head>
+
+<body class="font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- Theme Toggle -->
+    <button class="theme-toggle-login" onclick="toggleLoginTheme()" title="Alternar tema">
+        <span class="material-symbols-outlined text-[20px]" id="loginThemeIcon">dark_mode</span>
+    </button>
+
+    <div class="min-h-screen flex">
+        <div
+            class="login-left-panel hidden lg:flex lg:w-1/2 flex-col justify-between border-r p-12 relative overflow-hidden">
+            <!-- Grid background -->
+            <div class="grid-bg absolute inset-0 pointer-events-none">
+            </div>
+
+            <div class="relative z-10">
+                <div class="flex items-center gap-3 mb-16">
+                    <img src="../assets/img/logo-grupoom.png" alt="Grupo OM" class="h-8 logo-img" />
+                    <h2 class="text-sm font-semibold tracking-wide uppercase font-mono">Grupo OM <span class="mx-1"
+                            style="color:var(--login-text-dim)">//</span> <span id="loginEasterEgg"
+                            style="cursor:default">Painel</span></h2>
+                </div>
+
+                <h1 class="text-5xl font-bold tracking-tighter uppercase leading-none mb-6">
+                    Painel de<br />Aprovação
+                </h1>
+                <p class="font-mono text-xs max-w-md leading-relaxed">
+                    Sistema interno de gestão e aprovação de checkings
+                </p>
+            </div>
+
+            <!-- Company Logos -->
+            <div class="relative z-10 space-y-8">
+                <div class="partner-logos flex items-center gap-6 opacity-70">
+                    <img src="../assets/img/logo-americas.png" alt="Americas" class="h-6" />
+                    <img src="../assets/img/logo-dom.png" alt="DOM" class="h-6" />
+                    <img src="../assets/img/logo-opus.png" alt="Opus" class="h-6" />
+                    <img src="../assets/img/logo-pixel.png" alt="Pixel" class="h-6" />
+                    <img src="../assets/img/logo-senso.png" alt="Senso" class="h-6" />
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full pulse-line pulse-dot-el"></div>
+                    <span class="text-[10px] font-mono uppercase tracking-widest"
+                        style="color:var(--login-text-dim)">Sistema
+                        Operacional</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel — Forms -->
+        <div class="login-right-panel flex-1 flex items-center justify-center p-8 relative">
+            <div class="w-full max-w-md">
+
+                <!-- LOGIN SECTION -->
+                <div id="loginSection">
+                    <!-- Mobile brand -->
+                    <div class="flex items-center gap-3 mb-12 lg:hidden">
+                        <div class="size-5">
+                            <img src="../assets/img/logo-grupoom.png" alt="Grupo OM" class="h-6 logo-img" />
+                        </div>
+                        <h2 class="text-sm font-semibold tracking-wide uppercase font-mono">Grupo OM <span class="mx-1"
+                                style="color:var(--login-text-dim)">//</span> Suite</h2>
+                    </div>
+
+                    <div class="animate-fade-up">
+                        <img src="../assets/img/logo-grupoom.png" alt="Grupo OM"
+                            class="h-10 logo-img mb-8 hidden lg:block" />
+                        <h2 class="text-2xl font-bold tracking-tight uppercase mb-2">Login de Acesso</h2>
+                        <p class="text-xs font-mono uppercase tracking-wider mb-10" style="color:var(--login-text-dim)">
+                            Autenticação
+                            necessária para continuar</p>
+                    </div>
+
+                    <form id="loginForm" class="space-y-6 animate-fade-up-delay" autocomplete="on">
+                        <div>
+                            <label class="block text-[10px] font-mono uppercase tracking-wider mb-2"
+                                for="loginEmail">Endereço de Email</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 icon-el text-[18px]">alternate_email</span>
+                                <input id="loginEmail" type="email" placeholder="seu.email@grupoom.com.br" required
+                                    autocomplete="email"
+                                    class="w-full border text-sm pl-10 pr-4 py-3 font-mono focus:ring-0 transition-colors" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-mono uppercase tracking-wider mb-2"
+                                for="loginPassword">Senha</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 icon-el text-[18px]">lock</span>
+                                <input id="loginPassword" type="password" placeholder="••••••••" required
+                                    autocomplete="current-password"
+                                    class="w-full border text-sm pl-10 pr-4 py-3 font-mono focus:ring-0 transition-colors" />
+                            </div>
+                        </div>
+
+                        <button id="loginBtn" type="submit"
+                            class="submit-btn w-full font-bold text-xs uppercase tracking-widest py-4 transition-colors flex items-center justify-center gap-2">
+                            <span>Continuar com Email</span>
+                        </button>
+
+                        <div id="loginError" style="display:none"
+                            class="flex items-center gap-2 border border-red-900 bg-red-900/10 text-red-500 px-4 py-3 text-xs font-mono uppercase tracking-wider">
+                            <span class="material-symbols-outlined text-[16px]">error</span>
+                            <span id="loginErrorMsg">Credenciais inválidas</span>
+                        </div>
+                    </form>
+
+                    <div class="mt-8 flex items-center gap-4">
+                        <div class="flex-1 h-px separator-line"></div>
+                        <span class="text-[10px] font-mono uppercase tracking-wider"
+                            style="color:var(--login-text-dim)">ou criar
+                            conta</span>
+                        <div class="flex-1 h-px separator-line"></div>
+                    </div>
+
+                    <button id="showRegisterBtn" type="button"
+                        class="ghost-btn w-full mt-6 border text-xs font-mono uppercase tracking-widest py-3 transition-colors">
+                        Criar uma nova conta
+                    </button>
+
+
+                </div>
+
+                <!-- REGISTER SECTION -->
+                <div id="registerSection" style="display:none">
+                    <button id="backToLoginBtn" type="button"
+                        class="back-btn flex items-center gap-1 text-xs font-mono uppercase tracking-wider transition-colors mb-8">
+                        <span class="material-symbols-outlined text-[16px]">chevron_left</span>
+                        Voltar para Login
+                    </button>
+
+                    <h2 class="text-2xl font-bold tracking-tight uppercase mb-2">Criar Conta</h2>
+                    <p class="text-xs font-mono uppercase tracking-wider mb-10" style="color:var(--login-text-dim)">
+                        Preencha os dados para
+                        solicitar acesso</p>
+
+                    <form id="registerForm" class="space-y-6" autocomplete="off">
+                        <div>
+                            <label class="block text-[10px] font-mono uppercase tracking-wider mb-2" for="regName">Nome
+                                Completo</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 icon-el text-[18px]">person</span>
+                                <input id="regName" type="text" placeholder="Seu nome" required
+                                    class="w-full border text-sm pl-10 pr-4 py-3 font-mono focus:ring-0 transition-colors" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-mono uppercase tracking-wider mb-2"
+                                for="regEmail">Endereço de Email</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 icon-el text-[18px]">alternate_email</span>
+                                <input id="regEmail" type="email" placeholder="seu.email@grupoom.com.br" required
+                                    class="w-full border text-sm pl-10 pr-4 py-3 font-mono focus:ring-0 transition-colors" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-mono uppercase tracking-wider mb-2"
+                                for="regPassword">Senha</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 icon-el text-[18px]">lock</span>
+                                <input id="regPassword" type="password" placeholder="••••••••" required
+                                    class="w-full border text-sm pl-10 pr-4 py-3 font-mono focus:ring-0 transition-colors" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-mono uppercase tracking-wider mb-2"
+                                for="regGrupo">Grupo de Usuário</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 icon-el text-[18px]">group</span>
+                                <select id="regGrupo" required
+                                    class="w-full border text-sm pl-10 pr-4 py-3 font-mono focus:ring-0 transition-colors bg-transparent appearance-none">
+                                    <option value="Mídia">Mídia</option>
+                                    <option value="Criação">Criação</option>
+                                    <option value="Atendimento">Atendimento</option>
+                                    <option value="Planejamento">Planejamento</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button id="registerBtn" type="submit"
+                            class="submit-btn w-full font-bold text-xs uppercase tracking-widest py-4 transition-colors flex items-center justify-center gap-2">
+                            <span>Cadastrar</span>
+                        </button>
+
+                        <div id="registerError" style="display:none"
+                            class="flex items-center gap-2 border border-red-900 bg-red-900/10 text-red-500 px-4 py-3 text-xs font-mono uppercase tracking-wider">
+                            <span class="material-symbols-outlined text-[16px]">error</span>
+                            <span id="registerErrorMsg">Erro</span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (API.isLoggedIn()) { location.href = 'dashboard.html'; return; }
+
+            const loginForm = document.getElementById('loginForm');
+            const loginErr = document.getElementById('loginError');
+            const loginErrMsg = document.getElementById('loginErrorMsg');
+            const loginBtn = document.getElementById('loginBtn');
+            const registerForm = document.getElementById('registerForm');
+            const regErr = document.getElementById('registerError');
+            const regErrMsg = document.getElementById('registerErrorMsg');
+            const regBtn = document.getElementById('registerBtn');
+            const showRegBtn = document.getElementById('showRegisterBtn');
+            const backToLoginBtn = document.getElementById('backToLoginBtn');
+            const loginSec = document.getElementById('loginSection');
+            const regSec = document.getElementById('registerSection');
+
+            showRegBtn.addEventListener('click', () => { loginSec.style.display = 'none'; regSec.style.display = 'block'; });
+            backToLoginBtn.addEventListener('click', () => { regSec.style.display = 'none'; loginSec.style.display = 'block'; });
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value.trim();
+                const pw = document.getElementById('loginPassword').value;
+                if (!email || !pw) { showError(loginErr, loginErrMsg, 'Preencha todos os campos'); return; }
+                loginBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span> Entrando...';
+                try {
+                    await API.login(email, pw);
+                    location.href = 'dashboard.html';
+                } catch (err) {
+                    showError(loginErr, loginErrMsg, err.message || 'Credenciais inválidas');
+                    loginBtn.innerHTML = '<span>Continuar com Email</span>';
+                }
+            });
+
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('regName').value.trim();
+                const email = document.getElementById('regEmail').value.trim();
+                const pw = document.getElementById('regPassword').value;
+                const grupo = document.getElementById('regGrupo') ? document.getElementById('regGrupo').value : 'Mídia';
+                if (!name || !email || !pw) { showError(regErr, regErrMsg, 'Preencha todos os campos'); return; }
+                regBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span> Aguarde...';
+                try {
+                    await API.registerUser(name, email, pw, 'analyst', grupo);
+                    regErr.style.display = 'flex';
+                    regErr.className = 'flex items-center gap-2 border border-green-900 bg-green-900/10 text-green-500 px-4 py-3 text-xs font-mono uppercase tracking-wider';
+                    regErrMsg.textContent = 'Conta criada com sucesso! Faça login.';
+                    setTimeout(() => {
+                        regSec.style.display = 'none'; loginSec.style.display = 'block';
+                        document.getElementById('loginEmail').value = email;
+                        regErr.style.display = 'none';
+                        regErr.className = 'flex items-center gap-2 border border-red-900 bg-red-900/10 text-red-500 px-4 py-3 text-xs font-mono uppercase tracking-wider';
+                    }, 2000);
+                } catch (err) {
+                    showError(regErr, regErrMsg, err.message || 'Erro ao registrar');
+                } finally {
+                    regBtn.innerHTML = '<span>Cadastrar</span>';
+                }
+            });
+
+            function showError(container, msgEl, msg) {
+                msgEl.textContent = msg;
+                container.style.display = 'flex';
+                setTimeout(() => container.style.display = 'none', 5000);
+            }
+
+            // Update theme icon
+            updateLoginThemeIcon();
+        });
+
+        function toggleLoginTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('painel_theme', next);
+            updateLoginThemeIcon();
+        }
+
+        function updateLoginThemeIcon() {
+            const icon = document.getElementById('loginThemeIcon');
+            if (!icon) return;
+            const theme = document.documentElement.getAttribute('data-theme');
+            icon.textContent = theme === 'light' ? 'light_mode' : 'dark_mode';
+        }
+    </script>
+    <script src="../scripts/easter-egg.js"></script>
+</body>
+
+</html>

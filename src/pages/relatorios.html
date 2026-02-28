@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Relatórios | Painel de Aprovação Grupo OM</title>
+    <meta name="description" content="Relatórios e métricas de aprovações de checking." />
+    <link rel="icon" href="../assets/img/favicon.png" type="image/png" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ffffff",
+                        "accent": "#333333",
+                        "background-dark": "#000000",
+                        "panel-dark": "#0a0a0a",
+                        "border-dark": "#1a1a1a",
+                        "tech-gray": "#888888",
+                    },
+                    fontFamily: {
+                        "sans": ["Poppins", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: { "DEFAULT": "0px", "sm": "0px", "lg": "0px", "xl": "0px", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <script>
+            // Apply saved theme immediately to prevent flash
+            (function () {
+                var t = localStorage.getItem('painel_theme');
+                if (t) {
+                    document.documentElement.setAttribute('data-theme', t);
+                    if (t === 'dark') document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                }
+            })();
+    </script>
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.0/jspdf.umd.min.js"></script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary, #000);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-primary, #333);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .tech-border {
+            border: 1px solid var(--border-primary, #333);
+            position: relative;
+        }
+
+        .tech-border::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 6px;
+            height: 6px;
+            border-top: 1px solid var(--text-primary, white);
+            border-left: 1px solid var(--text-primary, white);
+        }
+
+        .tech-border::before {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 6px;
+            height: 6px;
+            border-bottom: 1px solid var(--text-primary, white);
+            border-right: 1px solid var(--text-primary, white);
+        }
+
+        .page-section {
+            display: none;
+            flex-direction: column;
+        }
+
+        .page-section.active {
+            display: flex;
+        }
+
+        .period-btn.active {
+            background: var(--text-primary, #000) !important;
+            color: var(--bg-primary, #fff) !important;
+            border-color: var(--text-primary, #000) !important;
+        }
+
+        .type-tab {
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .type-tab.active {
+            color: var(--text-primary, #000) !important;
+            border-bottom: 1px solid var(--text-primary, #000);
+        }
+    </style>
+</head>
+
+<body data-page="relatorios"
+    class="bg-white dark:bg-black text-slate-800 dark:text-neutral-300 font-sans min-h-screen flex flex-col overflow-x-hidden antialiased selection:bg-black dark:selection:bg-white selection:text-white dark:selection:text-black">
+    <header id="app-header"
+        class="flex items-center justify-between whitespace-nowrap border-b border-slate-300 dark:border-border-dark bg-white dark:bg-black px-6 py-3 sticky top-0 z-50 h-14">
+    </header>
+
+    <main class="flex-1 flex flex-col h-[calc(100vh-3.5rem)] relative">
+        <!-- ═══ BREADCRUMB & STATUS BAR ═══ -->
+        <div
+            class="border-b border-slate-200 dark:border-border-dark bg-white dark:bg-black px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 relative z-30">
+            <div class="flex flex-col gap-1 w-full max-w-xl">
+                <div
+                    class="flex items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-neutral-600 mb-1 tracking-wider uppercase">
+                    <span>Sistema</span>
+                    <span
+                        class="material-symbols-outlined text-[10px] text-slate-400 dark:text-neutral-800">chevron_right</span>
+                    <span>Checking</span>
+                    <span
+                        class="material-symbols-outlined text-[10px] text-slate-400 dark:text-neutral-800">chevron_right</span>
+                    <span class="text-slate-900 dark:text-white font-semibold">Relatórios</span>
+                </div>
+                <div class="flex items-center gap-4 mt-1">
+                    <h1 class="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">Relatórios &
+                        Métricas
+                    </h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Period Filter -->
+                <div class="flex gap-1" id="reportPeriodFilter">
+                    <button
+                        class="period-btn active h-7 px-3 border border-slate-300 dark:border-neutral-800 flex items-center text-[11px] font-mono text-slate-700 dark:text-neutral-400 uppercase cursor-pointer hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-colors font-semibold"
+                        data-period="all" onclick="Reports.setPeriod('all')">Todos</button>
+                    <button
+                        class="period-btn h-7 px-3 border border-slate-300 dark:border-neutral-800 flex items-center text-[11px] font-mono text-slate-700 dark:text-neutral-400 uppercase cursor-pointer hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-colors font-semibold"
+                        data-period="yearly" onclick="Reports.setPeriod('yearly')">Anual</button>
+                    <button
+                        class="period-btn h-7 px-3 border border-slate-300 dark:border-neutral-800 flex items-center text-[11px] font-mono text-slate-700 dark:text-neutral-400 uppercase cursor-pointer hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-colors font-semibold"
+                        data-period="monthly" onclick="Reports.setPeriod('monthly')">Mensal</button>
+                    <button
+                        class="period-btn h-7 px-3 border border-slate-300 dark:border-neutral-800 flex items-center text-[11px] font-mono text-slate-700 dark:text-neutral-400 uppercase cursor-pointer hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-colors font-semibold"
+                        data-period="weekly" onclick="Reports.setPeriod('weekly')">Semanal</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ MAIN CONTENT ═══ -->
+        <section class="flex-1 bg-slate-50 dark:bg-black flex flex-col min-w-0 relative page-section active"
+            id="page-relatorios" style="overflow-y: auto;">
+
+            <div class="flex-1 p-6 relative z-0">
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                    <div
+                        class="tech-border bg-white dark:bg-black p-4 flex flex-col group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                        <h5
+                            class="text-[10px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.15em] font-semibold mb-2">
+                            Total</h5>
+                        <div class="text-2xl font-bold text-slate-900 dark:text-white font-mono tracking-tighter"
+                            id="rptTotal">0</div>
+                    </div>
+                    <div
+                        class="tech-border bg-white dark:bg-black p-4 flex flex-col group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                        <h5
+                            class="text-[10px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.15em] font-semibold mb-2">
+                            Aprovados</h5>
+                        <div class="text-2xl font-bold text-green-600 dark:text-green-400 font-mono tracking-tighter"
+                            id="rptApproved">0</div>
+                    </div>
+                    <div
+                        class="tech-border bg-white dark:bg-black p-4 flex flex-col group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                        <h5
+                            class="text-[10px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.15em] font-semibold mb-2">
+                            Reprovados</h5>
+                        <div class="text-2xl font-bold text-red-600 dark:text-red-400 font-mono tracking-tighter"
+                            id="rptRejected">0</div>
+                    </div>
+                    <div
+                        class="tech-border bg-white dark:bg-black p-4 flex flex-col group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                        <h5
+                            class="text-[10px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.15em] font-semibold mb-2">
+                            Pendentes</h5>
+                        <div class="text-2xl font-bold text-amber-600 dark:text-amber-400 font-mono tracking-tighter"
+                            id="rptPending">0</div>
+                    </div>
+                    <div
+                        class="tech-border bg-white dark:bg-black p-4 flex flex-col group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                        <h5
+                            class="text-[10px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.15em] font-semibold mb-2">
+                            Taxa Aprov.</h5>
+                        <div class="text-2xl font-bold text-slate-900 dark:text-white font-mono tracking-tighter"
+                            id="rptTaxa">0%</div>
+                    </div>
+                    <div
+                        class="tech-border bg-white dark:bg-black p-4 flex flex-col group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                        <h5
+                            class="text-[10px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.15em] font-semibold mb-2">
+                            Novos Envios</h5>
+                        <div class="text-2xl font-bold text-slate-900 dark:text-white font-mono tracking-tighter"
+                            id="rptNovos">0</div>
+                    </div>
+                    <div
+                        class="tech-border bg-white dark:bg-black p-4 flex flex-col group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                        <h5
+                            class="text-[10px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.15em] font-semibold mb-2">
+                            Complementos</h5>
+                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400 font-mono tracking-tighter"
+                            id="rptComplementos">0</div>
+                    </div>
+                    <div
+                        class="tech-border bg-white dark:bg-black p-4 flex flex-col group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                        <h5
+                            class="text-[10px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.15em] font-semibold mb-2">
+                            Taxa Reenvio</h5>
+                        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400 font-mono tracking-tighter"
+                            id="rptTaxaReenvio">0%</div>
+                    </div>
+                    <div
+                        class="tech-border bg-white dark:bg-black p-4 flex flex-col group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                        <h5
+                            class="text-[10px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.15em] font-semibold mb-2">
+                            Top Veículo</h5>
+                        <div class="text-sm font-bold text-slate-900 dark:text-white font-mono tracking-tight truncate"
+                            id="rptTopVeiculo" title="">-</div>
+                    </div>
+                    <div
+                        class="tech-border bg-white dark:bg-black p-4 flex flex-col group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                        <h5
+                            class="text-[10px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.15em] font-semibold mb-2">
+                            Top Meio</h5>
+                        <div class="text-sm font-bold text-slate-900 dark:text-white font-mono tracking-tight truncate"
+                            id="rptTopMeio" title="">-</div>
+                    </div>
+                </div>
+
+                <!-- Type Filters + Export Button -->
+                <div
+                    class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 border-b border-slate-200 dark:border-border-dark pb-3">
+                    <div class="flex items-center gap-6">
+                        <button
+                            class="type-tab active text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 hover:text-slate-900 dark:hover:text-white font-semibold pb-1"
+                            onclick="setActiveTypeTab(this); Reports.setType('all')">Todos</button>
+                        <button
+                            class="type-tab text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 hover:text-slate-900 dark:hover:text-white font-semibold pb-1"
+                            onclick="setActiveTypeTab(this); Reports.setType('approved')">Aprovações</button>
+                        <button
+                            class="type-tab text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 hover:text-slate-900 dark:hover:text-white font-semibold pb-1"
+                            onclick="setActiveTypeTab(this); Reports.setType('pending')">PI Enviado</button>
+                        <button
+                            class="type-tab text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 hover:text-slate-900 dark:hover:text-white font-semibold pb-1"
+                            onclick="setActiveTypeTab(this); Reports.setType('complement')">Complemento</button>
+                    </div>
+                    <button
+                        class="h-9 px-5 border border-slate-300 dark:border-neutral-800 flex items-center justify-center gap-2 hover:bg-slate-900 dark:hover:bg-white hover:text-white dark:hover:text-black hover:border-slate-900 dark:hover:border-white transition-all group"
+                        onclick="Reports.exportPDF()">
+                        <span
+                            class="material-symbols-outlined text-[16px] text-slate-700 dark:text-neutral-400 group-hover:text-white dark:group-hover:text-black">download</span>
+                        <span
+                            class="text-[11px] font-mono uppercase tracking-widest text-slate-700 dark:text-neutral-400 group-hover:text-white dark:group-hover:text-black font-semibold">Exportar
+                            PDF</span>
+                    </button>
+                </div>
+
+                <!-- Data Table -->
+                <div class="tech-border bg-white dark:bg-black overflow-hidden">
+                    <div style="overflow-x: auto;">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr
+                                    class="border-b border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-neutral-900/50">
+                                    <th
+                                        class="px-4 py-3 text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold">
+                                        ID</th>
+                                    <th
+                                        class="px-4 py-3 text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold">
+                                        PI</th>
+                                    <th
+                                        class="px-4 py-3 text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold">
+                                        Cliente</th>
+                                    <th
+                                        class="px-4 py-3 text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold">
+                                        Veículo</th>
+                                    <th
+                                        class="px-4 py-3 text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold">
+                                        Meio</th>
+                                    <th
+                                        class="px-4 py-3 text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold text-center">
+                                        Status</th>
+                                    <th
+                                        class="px-4 py-3 text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold text-center">
+                                        Compl.</th>
+                                    <th
+                                        class="px-4 py-3 text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold">
+                                        Data</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rptTableBody">
+                                <tr>
+                                    <td colspan="8"
+                                        class="text-center py-8 text-slate-500 dark:text-neutral-500 font-mono text-[11px] uppercase">
+                                        Carregando dados...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Bar -->
+            <div
+                class="border-t border-slate-200 dark:border-border-dark bg-white dark:bg-black p-4 z-40 relative shrink-0">
+                <div class="flex justify-between items-center">
+                    <div
+                        class="flex items-center gap-3 text-slate-500 dark:text-neutral-500 text-[11px] hidden sm:flex font-mono uppercase tracking-wider font-semibold">
+                        <span class="material-symbols-outlined text-[14px]">info</span>
+                        <span>Selecione período e tipo para filtrar os dados</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2026 Grupo OM &bull; Painel de Aprovação</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="../components/Header.js"></script>
+    <script src="../scripts/api.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/sanitize.js"></script>
+    <script src="../scripts/pdf-export.js"></script>
+    <script src="../scripts/reports.js"></script>
+    <script src="../scripts/main.js"></script>
+    <script>
+        function setActiveTypeTab(btn) {
+            if (!btn) return;
+            document.querySelectorAll('.type-tab').forEach(b => {
+                b.classList.remove('active', 'text-slate-900', 'dark:text-white');
+            });
+            btn.classList.add('active', 'text-slate-900', 'dark:text-white');
+        }
+    </script>
+</body>
+
+</html>

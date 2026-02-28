@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Dashboard | Painel de Aprovação Grupo OM</title>
+    <meta name="description"
+        content="Dashboard de Aprovação de Checking com KPIs, gráficos e operações de aprovação." />
+    <link rel="icon" href="../assets/img/favicon.png" type="image/png" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ffffff",
+                        "accent": "#333333",
+                        "background-dark": "#000000",
+                        "panel-dark": "#0a0a0a",
+                        "border-dark": "#1a1a1a",
+                        "tech-gray": "#888888",
+                    },
+                    fontFamily: {
+                        "sans": ["Poppins", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: { "DEFAULT": "0px", "sm": "0px", "lg": "0px", "xl": "0px", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <script>
+            // Apply saved theme immediately to prevent flash
+            (function () {
+                var t = localStorage.getItem('painel_theme');
+                if (t) {
+                    document.documentElement.setAttribute('data-theme', t);
+                    if (t === 'dark') document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                }
+            })();
+    </script>
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <style>
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary, #000);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-primary, #333);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(to right, var(--border-primary, #1a1a1a) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--border-primary, #1a1a1a) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .tech-border {
+            border: 1px solid var(--border-primary, #333);
+            position: relative;
+        }
+
+        .tech-border::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 6px;
+            height: 6px;
+            border-top: 1px solid var(--text-primary, white);
+            border-left: 1px solid var(--text-primary, white);
+        }
+
+        .tech-border::before {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 6px;
+            height: 6px;
+            border-bottom: 1px solid var(--text-primary, white);
+            border-right: 1px solid var(--text-primary, white);
+        }
+
+        .page-section {
+            display: none;
+            flex-direction: column;
+        }
+
+        .page-section.active {
+            display: flex;
+        }
+    </style>
+</head>
+
+<body data-page="dashboard"
+    class="bg-white dark:bg-black text-slate-800 dark:text-neutral-300 font-sans min-h-screen flex flex-col overflow-x-hidden antialiased selection:bg-black dark:selection:bg-white selection:text-white dark:selection:text-black">
+    <header id="app-header"
+        class="flex items-center justify-between whitespace-nowrap border-b border-slate-300 dark:border-border-dark bg-white dark:bg-black px-6 py-3 sticky top-0 z-50 h-14">
+    </header>
+
+    <main class="flex-1 flex flex-col h-[calc(100vh-3.5rem)] relative">
+        <!-- ═══ BREADCRUMB & STATUS BAR ═══ -->
+        <div
+            class="border-b border-slate-200 dark:border-border-dark bg-white dark:bg-black px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 relative z-30">
+            <div class="flex flex-col gap-1 w-full max-w-xl">
+                <div
+                    class="flex items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-neutral-600 mb-1 tracking-wider uppercase">
+                    <span>Sistema</span>
+                    <span
+                        class="material-symbols-outlined text-[10px] text-slate-400 dark:text-neutral-800">chevron_right</span>
+                    <span>Checking</span>
+                    <span
+                        class="material-symbols-outlined text-[10px] text-slate-400 dark:text-neutral-800">chevron_right</span>
+                    <span class="text-slate-900 dark:text-white font-semibold">Dashboard</span>
+                </div>
+                <div class="flex items-center gap-4 mt-1">
+                    <h1 class="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">Visão Operacional
+                    </h1>
+                    <div
+                        class="h-5 px-2 border border-slate-300 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900/50 flex items-center justify-center">
+                        <span id="systemStatus"
+                            class="text-[11px] font-mono text-green-600 dark:text-green-500 uppercase tracking-wider font-semibold">●
+                            Online</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Global Time Filter -->
+                <div class="flex gap-1" id="dashboardGlobalFilter">
+                    <button
+                        class="period-btn active h-7 px-3 border border-slate-300 dark:border-neutral-800 flex items-center text-[11px] font-mono text-slate-700 dark:text-neutral-400 uppercase cursor-pointer hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-colors font-semibold"
+                        data-period="all" onclick="Dashboard.setPeriod('all')">Todos</button>
+                    <button
+                        class="period-btn h-7 px-3 border border-slate-300 dark:border-neutral-800 flex items-center text-[11px] font-mono text-slate-700 dark:text-neutral-400 uppercase cursor-pointer hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-colors font-semibold"
+                        data-period="monthly" onclick="Dashboard.setPeriod('monthly')">Mensal</button>
+                    <button
+                        class="period-btn h-7 px-3 border border-slate-300 dark:border-neutral-800 flex items-center text-[11px] font-mono text-slate-700 dark:text-neutral-400 uppercase cursor-pointer hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-colors font-semibold"
+                        data-period="weekly" onclick="Dashboard.setPeriod('weekly')">Semanal</button>
+                    <button
+                        class="period-btn h-7 px-3 border border-slate-300 dark:border-neutral-800 flex items-center text-[11px] font-mono text-slate-700 dark:text-neutral-400 uppercase cursor-pointer hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-colors font-semibold"
+                        data-period="daily" onclick="Dashboard.setPeriod('daily')">Diário</button>
+                </div>
+                <div class="text-right border-l border-slate-200 dark:border-neutral-800 pl-4 hidden md:block">
+                    <div
+                        class="text-[11px] font-mono text-slate-500 dark:text-neutral-500 uppercase tracking-wider mb-0.5 font-semibold">
+                        Hora do Sistema</div>
+                    <div class="text-sm font-mono text-slate-900 dark:text-white font-semibold" id="serverTime">--:--:--
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ MAIN CONTENT ═══ -->
+        <div class="flex flex-1 overflow-hidden relative">
+            <!-- ═══ SIDEBAR ═══ -->
+            <aside
+                class="w-72 border-r border-slate-200 dark:border-border-dark bg-white dark:bg-black overflow-y-auto flex flex-col shrink-0 hidden lg:flex">
+                <!-- Metadata -->
+                <div
+                    class="px-5 py-3 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-black flex justify-between items-center sticky top-0 z-10">
+                    <h3
+                        class="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-neutral-500 flex items-center gap-2 font-semibold">
+                        <span class="material-symbols-outlined text-[12px]">dataset</span>
+                        Resumo
+                    </h3>
+                </div>
+                <div class="font-mono text-[12px] divide-y divide-slate-100 dark:divide-neutral-900">
+                    <div class="p-5 grid grid-cols-1 gap-y-5">
+                        <div>
+                            <div
+                                class="text-[11px] text-slate-500 dark:text-neutral-600 uppercase tracking-wider mb-1 font-semibold">
+                                Total Registros</div>
+                            <div class="text-xl text-slate-900 dark:text-white font-bold" id="kpiTotal">0</div>
+                        </div>
+                        <div>
+                            <div
+                                class="text-[11px] text-slate-500 dark:text-neutral-600 uppercase tracking-wider mb-1 font-semibold">
+                                Pendentes</div>
+                            <div class="flex items-end justify-between">
+                                <span class="text-xl text-amber-600 dark:text-amber-400 font-bold"
+                                    id="kpiPending">0</span>
+                                <span class="text-[10px] text-slate-500 dark:text-neutral-500 font-semibold"><span
+                                        id="kpiNovos">0</span> novos • <span id="kpiComplementos">0</span> compl</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div
+                                class="text-[11px] text-slate-500 dark:text-neutral-600 uppercase tracking-wider mb-1 font-semibold">
+                                Aprovados</div>
+                            <div class="flex items-end justify-between">
+                                <span class="text-xl text-green-600 dark:text-green-400 font-bold"
+                                    id="kpiApproved">0</span>
+                                <span class="text-[10px] text-green-600 dark:text-green-500 font-bold"
+                                    id="kpiTaxaAprov">0%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div
+                                class="text-[11px] text-slate-500 dark:text-neutral-600 uppercase tracking-wider mb-1 font-semibold">
+                                Reprovados</div>
+                            <div class="text-xl text-red-600 dark:text-red-400 font-bold" id="kpiRejected">0</div>
+                        </div>
+                    </div>
+
+                    <!-- System Health Bar -->
+                    <div class="p-5">
+                        <div
+                            class="text-[11px] text-slate-500 dark:text-neutral-600 uppercase tracking-wider mb-2 font-semibold">
+                            Taxa de Aprovação</div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-lg text-slate-900 dark:text-white font-bold"
+                                id="kpiGaugePercent">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 dark:bg-neutral-900 h-1.5">
+                            <div id="systemHealthBar" class="bg-green-500 h-full transition-all duration-1000"
+                                style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Métricas Avançadas -->
+                    <div class="p-5 space-y-4">
+                        <div
+                            class="text-[11px] text-slate-500 dark:text-neutral-600 uppercase tracking-wider mb-2 font-semibold">
+                            Métricas Avançadas</div>
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] text-slate-500 dark:text-neutral-400 font-semibold">Veículos
+                                    Distintos</span>
+                                <span class="text-sm text-slate-900 dark:text-white font-bold" id="kpiVehicles">0</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] text-slate-500 dark:text-neutral-400 font-semibold">Top
+                                    Veículo</span>
+                                <span class="text-sm text-slate-900 dark:text-white font-bold"
+                                    id="kpiTopVehicle">—</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 dark:text-neutral-600 text-right font-semibold"
+                                id="kpiTopVehicleCount">—</div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] text-slate-500 dark:text-neutral-400 font-semibold">Taxa
+                                    Complementos</span>
+                                <span class="text-sm text-slate-900 dark:text-white font-bold"
+                                    id="kpiComplementRate">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Log -->
+                <div class="mt-auto border-t border-slate-200 dark:border-border-dark">
+                    <div class="px-5 py-2 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-black">
+                        <h3
+                            class="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-neutral-500 font-semibold">
+                            Log de Atividades</h3>
+                    </div>
+                    <div class="p-5" style="max-height:280px;overflow-y:auto">
+                        <ol class="relative border-l border-slate-200 dark:border-neutral-800 ml-1" id="auditLogList">
+                        </ol>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- ═══ ANALYTICS AREA ═══ -->
+            <section class="flex-1 bg-slate-50 dark:bg-black flex flex-col min-w-0 relative page-section active"
+                id="page-dashboard">
+                <div class="absolute inset-0 grid-bg pointer-events-none opacity-10 dark:opacity-20"></div>
+                <div
+                    class="h-10 border-b border-slate-200 dark:border-border-dark flex items-center justify-between px-6 bg-white dark:bg-black z-10 relative">
+                    <div class="flex items-center gap-4">
+                        <h3
+                            class="text-[11px] font-mono uppercase text-slate-900 dark:text-white tracking-[0.2em] flex items-center gap-2 font-bold">
+                            Analytics
+                            <span class="w-1.5 h-3 bg-slate-900 dark:bg-white block animate-pulse"></span>
+                        </h3>
+                    </div>
+                    <div class="flex gap-2 text-slate-400 dark:text-neutral-400">
+                        <span
+                            class="material-symbols-outlined text-[16px] cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors">grid_view</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6 relative z-0">
+                    <div class="grid grid-cols-12 gap-5">
+                        <!-- ═══ CHART: Volume Operacional ═══ -->
+                        <div
+                            class="col-span-12 lg:col-span-8 tech-border bg-white dark:bg-black p-5 flex flex-col relative overflow-hidden">
+                            <div class="flex justify-between items-start mb-4 relative z-10">
+                                <div class="space-y-0.5">
+                                    <h4
+                                        class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
+                                        Gráfico_01</h4>
+                                    <h2 class="text-base font-semibold text-slate-900 dark:text-white tracking-wide">
+                                        Volume Operacional</h2>
+                                </div>
+                            </div>
+                            <div id="opVolumeChart"
+                                class="flex-1 flex items-end justify-between gap-3 px-3 pb-3 relative border-b border-slate-200 dark:border-neutral-900"
+                                style="min-height:180px">
+                                <div
+                                    class="w-full bg-slate-200 dark:bg-neutral-900 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
+                                    <div
+                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
+                                        0</div>
+                                </div>
+                                <div
+                                    class="w-full bg-slate-200 dark:bg-neutral-800 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
+                                    <div
+                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
+                                        0</div>
+                                </div>
+                                <div class="w-full bg-slate-300 dark:bg-white h-[10%] relative group">
+                                    <div
+                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white font-mono font-semibold">
+                                        0</div>
+                                </div>
+                                <div
+                                    class="w-full bg-slate-200 dark:bg-neutral-800 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
+                                    <div
+                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
+                                        0</div>
+                                </div>
+                                <div
+                                    class="w-full bg-slate-200 dark:bg-neutral-900 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
+                                    <div
+                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
+                                        0</div>
+                                </div>
+                                <div
+                                    class="w-full bg-slate-200 dark:bg-neutral-800 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
+                                    <div
+                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
+                                        0</div>
+                                </div>
+                                <div
+                                    class="w-full bg-slate-200 dark:bg-neutral-900 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
+                                    <div
+                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
+                                        0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ═══ CHART: Status Distribution (Donut) ═══ -->
+                        <div
+                            class="col-span-12 lg:col-span-4 tech-border bg-white dark:bg-black p-5 flex flex-col relative overflow-hidden">
+                            <div class="flex justify-between items-center mb-4 z-10">
+                                <h4
+                                    class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
+                                    Gráfico_02</h4>
+                                <div class="text-[11px] font-mono text-slate-900 dark:text-white font-semibold">
+                                    Distribuição</div>
+                            </div>
+                            <div class="flex-1 flex items-center justify-center relative" id="pieChartDiv">
+                                <div class="size-40 relative flex items-center justify-center">
+                                    <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                                        <path class="text-slate-200 dark:text-neutral-900"
+                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                            fill="none" stroke="currentColor" stroke-width="3"></path>
+                                        <path id="donutApproved" class="text-green-500"
+                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                            fill="none" stroke="currentColor" stroke-dasharray="0, 100" stroke-width="3"
+                                            style="transition: stroke-dasharray 1s ease"></path>
+                                        <path id="donutPending" class="text-amber-400"
+                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                            fill="none" stroke="currentColor" stroke-dasharray="0, 100" stroke-width="3"
+                                            style="transition: stroke-dasharray 1s ease, stroke-dashoffset 1s ease">
+                                        </path>
+                                        <path id="donutRejected" class="text-red-500"
+                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                            fill="none" stroke="currentColor" stroke-dasharray="0, 100" stroke-width="3"
+                                            style="transition: stroke-dasharray 1s ease, stroke-dashoffset 1s ease">
+                                        </path>
+                                    </svg>
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span
+                                            class="text-2xl font-bold text-slate-900 dark:text-white font-mono tracking-tighter"
+                                            id="donutCenterValue">0</span>
+                                        <span
+                                            class="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-neutral-500 mt-0.5 font-semibold">Total</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 space-y-2 z-10 font-mono text-[11px]">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <div class="size-2 bg-green-500"></div><span
+                                            class="text-slate-600 dark:text-neutral-300 uppercase tracking-wider font-semibold">Aprovados</span>
+                                    </div>
+                                    <div class="text-slate-900 dark:text-white font-bold" id="donutApprovedCount">0
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <div class="size-2 bg-amber-400"></div><span
+                                            class="text-slate-600 dark:text-neutral-300 uppercase tracking-wider font-semibold">Pendentes</span>
+                                    </div>
+                                    <div class="text-slate-900 dark:text-white font-bold" id="donutPendingCount">0</div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <div class="size-2 bg-red-500"></div><span
+                                            class="text-slate-600 dark:text-neutral-300 uppercase tracking-wider font-semibold">Reprovados</span>
+                                    </div>
+                                    <div class="text-slate-900 dark:text-white font-bold" id="donutRejectedCount">0
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ═══ CHART: Evolução de Aprovações (Area) ═══ -->
+                        <div
+                            class="col-span-12 lg:col-span-6 tech-border bg-white dark:bg-black p-5 flex flex-col relative">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="space-y-0.5">
+                                    <h4
+                                        class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
+                                        Gráfico_03</h4>
+                                    <h2 class="text-base font-semibold text-slate-900 dark:text-white tracking-wide">
+                                        Evolução de Aprovações</h2>
+                                </div>
+                            </div>
+                            <div class="flex-1 relative flex items-end px-2 pb-2" style="min-height:160px"
+                                id="areaChartDiv">
+                                <svg id="areaChartSvg" class="absolute inset-0 h-full w-full z-10 p-2"
+                                    preserveAspectRatio="none" viewBox="0 0 100 100">
+                                    <defs>
+                                        <linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
+                                            <stop offset="0%" stop-color="currentColor" stop-opacity="0.15"
+                                                class="text-slate-900 dark:text-white"></stop>
+                                            <stop offset="100%" stop-color="currentColor" stop-opacity="0.0"
+                                                class="text-slate-900 dark:text-white"></stop>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M0,90 L20,90 L40,90 L60,90 L80,90 L100,90 V100 H0 Z"
+                                        fill="url(#areaGradient)" stroke="none"></path>
+                                    <path d="M0,90 L20,90 L40,90 L60,90 L80,90 L100,90" fill="none"
+                                        class="stroke-slate-900 dark:stroke-white" stroke-width="0.5"></path>
+                                    <circle
+                                        class="fill-white dark:fill-black stroke-slate-900 dark:stroke-white stroke-[0.5]"
+                                        cx="0" cy="90" r="1.5"></circle>
+                                    <circle
+                                        class="fill-white dark:fill-black stroke-slate-900 dark:stroke-white stroke-[0.5]"
+                                        cx="20" cy="90" r="1.5"></circle>
+                                    <circle
+                                        class="fill-white dark:fill-black stroke-slate-900 dark:stroke-white stroke-[0.5]"
+                                        cx="40" cy="90" r="1.5"></circle>
+                                    <circle
+                                        class="fill-white dark:fill-black stroke-slate-900 dark:stroke-white stroke-[0.5]"
+                                        cx="60" cy="90" r="1.5"></circle>
+                                    <circle
+                                        class="fill-white dark:fill-black stroke-slate-900 dark:stroke-white stroke-[0.5]"
+                                        cx="80" cy="90" r="1.5"></circle>
+                                    <circle class="fill-slate-900 dark:fill-white" cx="100" cy="90" r="1.5"></circle>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- ═══ KPI CARDS ═══ -->
+                        <div class="col-span-12 lg:col-span-6 grid grid-cols-2 gap-4">
+                            <div
+                                class="tech-border bg-white dark:bg-black p-4 flex flex-col justify-between group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                                <div class="flex justify-between">
+                                    <h5
+                                        class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
+                                        Total Registros</h5>
+                                    <div class="size-2 bg-slate-900 dark:bg-white"></div>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="text-2xl font-bold text-slate-900 dark:text-white font-mono tracking-tighter"
+                                        id="kpiTotalCard">0</div>
+                                </div>
+                            </div>
+                            <div
+                                class="tech-border bg-white dark:bg-black p-4 flex flex-col justify-between group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                                <div class="flex justify-between">
+                                    <h5
+                                        class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
+                                        Taxa Aprovação</h5>
+                                    <div class="size-2 bg-green-500"></div>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="text-2xl font-bold text-slate-900 dark:text-white font-mono tracking-tighter"
+                                        id="kpiTaxaCard">0<span
+                                            class="text-lg text-slate-400 dark:text-neutral-400">%</span></div>
+                                </div>
+                            </div>
+                            <div
+                                class="tech-border bg-white dark:bg-black p-4 flex flex-col justify-between col-span-2 group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
+                                <div class="flex justify-between items-center">
+                                    <h5
+                                        class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
+                                        Processamento em Tempo Real</h5>
+                                    <div
+                                        class="h-4 px-2 border border-slate-300 dark:border-white/20 flex items-center justify-center">
+                                        <span
+                                            class="text-[10px] text-slate-900 dark:text-white font-mono font-bold">LIVE</span>
+                                    </div>
+                                </div>
+                                <div id="processingBars" class="mt-4 flex gap-1 h-4 items-end">
+                                    <div class="flex-1 bg-slate-200 dark:bg-neutral-800 h-[40%]"></div>
+                                    <div class="flex-1 bg-slate-300 dark:bg-neutral-700 h-[60%]"></div>
+                                    <div class="flex-1 bg-slate-900 dark:bg-white h-[80%]"></div>
+                                    <div class="flex-1 bg-slate-400 dark:bg-neutral-600 h-[50%]"></div>
+                                    <div class="flex-1 bg-slate-200 dark:bg-neutral-800 h-[30%]"></div>
+                                    <div class="flex-1 bg-slate-900 dark:bg-white h-[90%]"></div>
+                                    <div class="flex-1 bg-slate-500 dark:bg-neutral-500 h-[70%]"></div>
+                                    <div class="flex-1 bg-slate-200 dark:bg-neutral-800 h-[45%]"></div>
+                                    <div class="flex-1 bg-slate-300 dark:bg-neutral-700 h-[65%]"></div>
+                                    <div class="flex-1 bg-slate-900 dark:bg-white h-[100%]"></div>
+                                    <div class="flex-1 bg-slate-400 dark:bg-neutral-600 h-[55%]"></div>
+                                    <div class="flex-1 bg-slate-200 dark:bg-neutral-800 h-[35%]"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Bar -->
+                <div class="border-t border-slate-200 dark:border-border-dark bg-white dark:bg-black p-4 z-40 relative">
+                    <div class="flex justify-between items-center">
+                        <div
+                            class="flex items-center gap-3 text-slate-500 dark:text-neutral-500 text-[11px] hidden sm:flex font-mono uppercase tracking-wider font-semibold">
+                            <div class="h-1.5 w-1.5 bg-green-500 animate-pulse rounded-full"></div>
+                            <span>Dados ao vivo • Conexão segura</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2026 Grupo OM &bull; Painel de Aprovação</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="../components/Header.js"></script>
+    <script src="../scripts/api.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/charts.js"></script>
+    <script src="../scripts/approvals.js"></script>
+    <script src="../scripts/users.js"></script>
+    <script src="../scripts/pdf-export.js"></script>
+    <script src="../scripts/dashboard.js"></script>
+    <script src="../scripts/easter-egg.js"></script>
+    <script src="../scripts/sanitize.js"></script>
+    <script src="../scripts/main.js"></script>
+</body>
+
+</html>

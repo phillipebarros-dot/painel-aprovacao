@@ -66,8 +66,8 @@ const API = (() => {
     try {
       const r = await fetch(BASE_URL, { method: 'POST', headers: h, body: JSON.stringify({ action, ...body }) });
       let d; try { d = await r.json(); } catch { d = { message: await r.text() }; }
-      // Se retornou 401, o token expirou -- manda pro login
-      if (r.status === 401) { removeToken(); if (location.pathname.includes('dashboard')) location.href = 'index.html'; throw new Error(d.error || 'Sessao expirada'); }
+      // Se retornou 401, o token expirou -- manda pro login de qualquer pagina
+      if (r.status === 401) { removeToken(); if (!location.pathname.includes('index.html')) location.href = 'index.html'; throw new Error(d.error || 'Sessao expirada'); }
       if (!r.ok) {
         console.error(`[API Error] ${action}:`, d);
         throw new Error(d.error || d.message || `Erro ${r.status}`);
@@ -107,7 +107,7 @@ const API = (() => {
     reject: (id, u, r) => call('reject', { id, approval_user: u, reason: r }),
     getUsers: () => call('get_users'),
     getFiles: (id) => call('get_files', { submission_id: id }),
-    registerUser: (n, e, p, r = 'analyst') => call('register_user', { name: n, email: e, password: p, role: r }),
+    registerUser: (n, e, p, r = 'analyst', g = 'Midia') => call('register_user', { name: n, email: e, password: p, role: r, grupo: g }),
     updateUserRole: (id, r) => call('update_user_role', { userId: id, newRole: r }),
     updateUserStatus: (id, s) => call('update_user_status', { userId: id, status: s })
   };

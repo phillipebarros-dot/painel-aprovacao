@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Usuários | Painel Grupo OM</title>
+    <meta name="description" content="Gestão de usuários e permissões do painel." />
+    <link rel="icon" href="../assets/img/favicon.png" type="image/png" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ffffff",
+                        "accent": "#333333",
+                        "background-dark": "#000000",
+                        "panel-dark": "#0a0a0a",
+                        "border-dark": "#1a1a1a",
+                        "tech-gray": "#888888",
+                    },
+                    fontFamily: {
+                        "sans": ["Poppins", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: { "DEFAULT": "0px", "sm": "0px", "lg": "0px", "xl": "0px", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <script>
+            // Apply saved theme immediately to prevent flash
+            (function () {
+                var t = localStorage.getItem('painel_theme');
+                if (t) {
+                    document.documentElement.setAttribute('data-theme', t);
+                    if (t === 'dark') document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                }
+            })();
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333333;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555555;
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(to right, #1a1a1a 1px, transparent 1px),
+                linear-gradient(to bottom, #1a1a1a 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .tech-border {
+            border: 1px solid #333;
+            position: relative;
+        }
+
+        .tech-border::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 6px;
+            height: 6px;
+            border-top: 1px solid white;
+            border-left: 1px solid white;
+        }
+
+        .tech-border::before {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 6px;
+            height: 6px;
+            border-bottom: 1px solid white;
+            border-right: 1px solid white;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 1px;
+            background: #333;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            cursor: pointer;
+            border: 1px solid #000;
+        }
+
+        input[type="checkbox"] {
+            appearance: none;
+            background-color: transparent;
+            margin: 0;
+            font: inherit;
+            color: currentColor;
+            width: 0.85em;
+            height: 0.85em;
+            border: 1px solid #666;
+            display: grid;
+            place-content: center;
+        }
+
+        input[type="checkbox"]::before {
+            content: "";
+            width: 0.45em;
+            height: 0.45em;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em white;
+        }
+
+        input[type="checkbox"]:checked::before {
+            transform: scale(1);
+        }
+
+        input[type="checkbox"]:checked {
+            border-color: white;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: flex;
+        }
+    </style>
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.0/jspdf.umd.min.js"></script>
+</head>
+
+<body data-page="usuarios"
+    class="bg-white dark:bg-black text-slate-800 dark:text-neutral-300 font-sans min-h-screen flex flex-col overflow-x-hidden antialiased selection:bg-black dark:bg-white selection:text-white dark:text-black">
+    <header id="app-header"
+        class="flex items-center justify-between whitespace-nowrap border-b border-slate-300 dark:border-border-dark bg-white dark:bg-black px-6 py-3 sticky top-0 z-50 h-14">
+    </header>
+    <main class="flex-1 flex flex-col h-[calc(100vh-3.5rem)] relative">
+        <section class="flex-1 bg-white dark:bg-black flex flex-col min-w-0 relative page-section" id="page-usuarios"
+            style="padding: 24px; overflow-y: auto;">
+            <div class="section-header">
+                <div>
+                    <h3
+                        style="font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Gestão de Usuários</h3>
+                    <p
+                        style="font-size:11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; color:var(--text-secondary);margin-top:4px">
+                        Administrar acessos e
+                        permissões</p>
+                </div>
+                <button
+                    class="bg-black dark:bg-white/10 hover:bg-black dark:bg-white/20 text-slate-900 dark:text-white font-mono text-xs px-4 py-2 flex items-center gap-2 border border-black dark:border-white/20 transition-colors uppercase tracking-wider"
+                    onclick="Users.openRegister()">
+                    <span class="material-symbols-outlined">person_add</span> Novo Usuário
+                </button>
+            </div>
+            <div class="users-grid" id="usersGrid">
+                <div class="empty-state"><span class="material-symbols-outlined">group</span>
+                    <h4>Carregando...</h4>
+                </div>
+            </div>
+        </section>
+    </main>
+    <input class="peer hidden" id="reject-modal-toggle" type="checkbox" />
+    <div
+        class="fixed inset-0 z-[60] hidden peer-checked:flex items-center justify-center bg-white dark:bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
+        <label class="absolute inset-0 cursor-default" for="reject-modal-toggle"></label>
+        <div
+            class="bg-white dark:bg-black border border-black dark:border-white/20 shadow-2xl max-w-lg w-full relative overflow-hidden flex flex-col max-h-[90vh]">
+            <div
+                class="p-6 border-b border-black dark:border-white/10 flex justify-between items-center bg-white dark:bg-black">
+                <h3 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-[0.2em] font-mono">
+                    Rejeitar Item</h3>
+                <label
+                    class="text-slate-600 dark:text-neutral-500 hover:text-slate-900 dark:text-white cursor-pointer transition-colors"
+                    for="reject-modal-toggle">
+                    <span class="material-symbols-outlined">close</span>
+                </label>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <div class="bg-slate-100 dark:bg-neutral-900/50 p-4 border-l-2 border-black dark:border-white mb-6">
+                    <p class="text-[10px] font-mono text-slate-800 dark:text-neutral-300 uppercase tracking-wider">Acao:
+                        Protocolo de
+                        Rejeicao Iniciado</p>
+                </div>
+                <div class="space-y-6">
+                    <div>
+                        <label
+                            class="block text-[10px] font-mono uppercase text-slate-600 dark:text-neutral-500 mb-2 tracking-wider">Codigo
+                            do Motivo</label>
+                        <select
+                            class="w-full bg-white dark:bg-black border border-slate-300 dark:border-neutral-800 text-slate-900 dark:text-white text-xs focus:border-black dark:border-white focus:ring-0 font-mono py-2 uppercase">
+                            <option>INCORRETO</option>
+                            <option>DIFERENCA_DE_COR</option>
+                            <option>BAIXA_RESOLUCAO</option>
+                            <option>LOCALIZACAO_ERRADA</option>
+                            <option>MIDIA_DANIFICADA</option>
+                            <option>OUTROS</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-[10px] font-mono uppercase text-slate-600 dark:text-neutral-500 mb-2 tracking-wider">Log
+                            Detalhado</label>
+                        <textarea
+                            class="w-full bg-white dark:bg-black border border-slate-300 dark:border-neutral-800 text-slate-900 dark:text-white text-xs focus:border-black dark:border-white focus:ring-0 placeholder:text-slate-400 dark:text-neutral-700 font-mono p-3"
+                            placeholder="// Insira as observacoes detalhadas..." rows="4"
+                            id="rejectReasonText"></textarea>
+                    </div>
+                    <div
+                        class="flex items-center gap-3 mt-2 border border-slate-200 dark:border-neutral-900 p-3 bg-slate-100 dark:bg-neutral-900/20">
+                        <input
+                            class="rounded-none border-slate-400 dark:border-neutral-700 text-slate-900 dark:text-white focus:ring-0 bg-transparent checked:bg-black dark:bg-white checked:border-black dark:border-white"
+                            type="checkbox" />
+                        <span
+                            class="text-[10px] text-slate-700 dark:text-neutral-400 font-mono uppercase tracking-wider">Marcar
+                            prioridade
+                            urgente</span>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-black dark:border-white/10 bg-white dark:bg-black flex justify-end gap-3">
+                <label
+                    class="px-6 py-3 border border-transparent text-slate-600 dark:text-neutral-500 font-mono text-[10px] uppercase tracking-[0.2em] hover:text-slate-900 dark:text-white cursor-pointer transition-colors"
+                    for="reject-modal-toggle">Cancelar</label>
+                <button
+                    class="px-6 py-3 border border-black dark:border-white text-slate-900 dark:text-white hover:bg-black dark:bg-white hover:text-white dark:text-black font-mono text-[10px] uppercase tracking-[0.2em] transition-all"
+                    onclick="Approvals.openReject()">Confirmar Rejeicao</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../components/Header.js"></script>
+    <script src="../scripts/api.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/charts.js"></script>
+    <script src="../scripts/approvals.js"></script>
+    <script src="../scripts/users.js"></script>
+    <script src="../scripts/pdf-export.js"></script>
+    <script src="../scripts/dashboard.js"></script>
+    <script src="../scripts/sanitize.js"></script>
+    <script src="../scripts/main.js"></script>
+</body>
+
+</html>

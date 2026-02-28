@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Aprovações | Painel Grupo OM</title>
+    <meta name="description" content="Gestão de aprovações de checking." />
+    <link rel="icon" href="../assets/img/favicon.png" type="image/png" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ffffff",
+                        "accent": "#333333",
+                        "background-dark": "#000000",
+                        "panel-dark": "#0a0a0a",
+                        "border-dark": "#1a1a1a",
+                        "tech-gray": "#888888",
+                    },
+                    fontFamily: {
+                        "sans": ["Poppins", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: { "DEFAULT": "0px", "sm": "0px", "lg": "0px", "xl": "0px", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <script>
+            // Apply saved theme immediately to prevent flash
+            (function () {
+                var t = localStorage.getItem('painel_theme');
+                if (t) {
+                    document.documentElement.setAttribute('data-theme', t);
+                    if (t === 'dark') document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                }
+            })();
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333333;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555555;
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(to right, #1a1a1a 1px, transparent 1px),
+                linear-gradient(to bottom, #1a1a1a 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .tech-border {
+            border: 1px solid #333;
+            position: relative;
+        }
+
+        .tech-border::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 6px;
+            height: 6px;
+            border-top: 1px solid white;
+            border-left: 1px solid white;
+        }
+
+        .tech-border::before {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 6px;
+            height: 6px;
+            border-bottom: 1px solid white;
+            border-right: 1px solid white;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 1px;
+            background: #333;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            cursor: pointer;
+            border: 1px solid #000;
+        }
+
+        input[type="checkbox"] {
+            appearance: none;
+            background-color: transparent;
+            margin: 0;
+            font: inherit;
+            color: currentColor;
+            width: 0.85em;
+            height: 0.85em;
+            border: 1px solid #666;
+            display: grid;
+            place-content: center;
+        }
+
+        input[type="checkbox"]::before {
+            content: "";
+            width: 0.45em;
+            height: 0.45em;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em white;
+        }
+
+        input[type="checkbox"]:checked::before {
+            transform: scale(1);
+        }
+
+        input[type="checkbox"]:checked {
+            border-color: white;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: flex;
+        }
+    </style>
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.0/jspdf.umd.min.js"></script>
+</head>
+
+<body data-page="aprovacoes"
+    class="bg-white dark:bg-black text-slate-800 dark:text-neutral-300 font-sans min-h-screen flex flex-col overflow-x-hidden antialiased selection:bg-black dark:bg-white selection:text-white dark:text-black">
+    <header id="app-header"
+        class="flex items-center justify-between whitespace-nowrap border-b border-slate-300 dark:border-border-dark bg-white dark:bg-black px-6 py-3 sticky top-0 z-50 h-14">
+    </header>
+    <main class="flex-1 flex flex-col h-[calc(100vh-3.5rem)] relative">
+        <!-- ═══ PAGE: APROVAÇÕES ═══ -->
+        <section class="flex-1 bg-white dark:bg-black flex flex-col min-w-0 relative page-section" id="page-aprovacoes"
+            style="padding: 24px; overflow-y: auto;">
+            <div class="section-header">
+                <div>
+                    <h3
+                        style="font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Gestão de Aprovações</h3>
+                    <p
+                        style="font-size:11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; color:var(--text-secondary);margin-top:4px">
+                        Aprovar, reprovar e monitorar
+                        checkings</p>
+                </div>
+                <div id="pendingBadge"
+                    style="display:none;align-items:center;gap:6px;padding:6px 12px;background:var(--accent-amber-bg);border: 1px solid var(--accent-amber);border-radius:0;color:var(--accent-amber);font-size:10px;font-family: var(--font-mono); text-transform: uppercase; font-weight:700">
+                    <span class="material-symbols-outlined" style="font-size:14px">pending</span>
+                    <span id="pendingBadgeNum">0</span> pendentes
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-toolbar">
+                    <div class="table-toolbar-row">
+                        <div class="search-input-wrapper">
+                            <span class="material-symbols-outlined">search</span>
+                            <input class="search-input" id="tableSearch" type="text" placeholder="Buscar cliente, PI..."
+                                oninput="Approvals.setSearch(this.value)" />
+                        </div>
+                        <div class="filter-tabs">
+                            <button class="filter-tab active"
+                                onclick="setActiveTab(this);Approvals.setFilterStatus('all')">Todos</button>
+                            <button class="filter-tab"
+                                onclick="setActiveTab(this);Approvals.setFilterStatus('pending')">Pendentes
+                                <span class="count-badge" id="tabPendingCount">0</span></button>
+                            <button class="filter-tab"
+                                onclick="setActiveTab(this);Approvals.setFilterStatus('approved')">Aprovados</button>
+                            <button class="filter-tab"
+                                onclick="setActiveTab(this);Approvals.setFilterStatus('rejected')">Reprovados</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>PI</th>
+                                <th>Veículo</th>
+                                <th>Meio</th>
+                                <th style="text-align:center">Tipo</th>
+                                <th style="text-align:center">Pasta</th>
+                                <th style="text-align:center">Status</th>
+                                <th style="text-align:center">Repr.</th>
+                                <th style="text-align:center">Responsável</th>
+                                <th style="text-align:center" class="no-print">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="checkingsBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="table-footer">
+                    <p class="table-footer-info">Mostrando <strong id="showCount">0</strong>
+                        de <strong id="totalCount">0</strong></p>
+                    <div class="pagination">
+                        <button class="page-btn" id="prevPage" onclick="Approvals.prevPage()" disabled><span
+                                class="material-symbols-outlined">chevron_left</span></button>
+                        <span class="page-current" id="pageInfo">1/1</span>
+                        <button class="page-btn" id="nextPage" onclick="Approvals.nextPage()"><span
+                                class="material-symbols-outlined">chevron_right</span></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+
+
+
+    </main>
+    <!-- Scripts -->
+    <script src="../components/Header.js"></script>
+    <script src="../scripts/api.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/charts.js"></script>
+    <script src="../scripts/approvals.js"></script>
+    <script src="../scripts/users.js"></script>
+    <script src="../scripts/pdf-export.js"></script>
+    <script src="../scripts/dashboard.js"></script>
+    <script src="../scripts/sanitize.js"></script>
+    <script src="../scripts/main.js"></script>
+</body>
+
+</html>

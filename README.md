@@ -1,4 +1,5 @@
 # Painel de Aprovacao - Grupo OM
+*(Criado por Eru)*
 
 Sistema interno de aprovacao de checkings para o departamento de Midia do Grupo OM. Desenvolvido com frontend HTML/CSS/JS puro e backend n8n conectado ao Google BigQuery, Google Drive e servidor SMTP para notificacoes por email.
 
@@ -394,8 +395,8 @@ No arquivo `api.js`, a constante `IS_TEST_MODE` controla qual URL do webhook ser
 ```javascript
 const IS_TEST_MODE = false;  // false = producao, true = teste
 const BASE_URL = IS_TEST_MODE
-    ? 'https://n8n.grupoom.com.br/webhook-test/painel-aprovacao'
-    : 'https://n8n.grupoom.com.br/webhook/painel-aprovacao';
+    ? 'https:-test/fake-aprovacao'
+    : 'https:produção-aprovacao';
 ```
 
 Ao usar `IS_TEST_MODE = true`, as requisicoes vao para o webhook de teste do n8n, que requer que o workflow esteja em modo de escuta (botao "Test Workflow" clicado no n8n).
@@ -434,7 +435,8 @@ Ao usar `IS_TEST_MODE = true`, as requisicoes vao para o webhook de teste do n8n
 
 ---
 
-Grupo OM -- Painel de Aprovacao - 2026
+## Propriedade Intelectual e Autoria
+**Desenvolvido e Criado por:** Nero/Phillipe 
+**Propriedade Intelectual e Direitos Atribuidos a:** Grupo OM
 
-
-[def]: #processo-de-desenvolvimento
+*Este sistema foi idealizado e construido integralmente por Nero/Phillipe para uso exclusivo do departamento de chekin e midia do Grupo OM. Todo o codigo, arquitetura e fluxos sao de propriedade intelectual exclusiva do Grupo OM.*

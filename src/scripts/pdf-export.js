@@ -6,13 +6,31 @@
  */
 
 // Isso aqui roda tudo, mais veloz que o Sonic na fase final
-function generateAuditPDF() {
+async function generateAuditPDF(reportType = 'atual') {
     // Pega a biblioteca jsPDF que ja carregou via CDN la no HTML
     const { jsPDF } = window.jspdf;
     if (!jsPDF) {
         alert('Erro: biblioteca jsPDF nao carregou. Recarregue a pagina.');
         return;
     }
+
+    const isReportsPage = document.body.getAttribute('data-page') === 'relatorios';
+
+    // Indicador visual de carregamento
+    const dk = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: `Processando Relatório...`,
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            background: dk ? '#0f1629' : '#fff',
+            color: dk ? '#f1f5f9' : '#111'
+        });
+    }
+
+    let reportData = null;
+    // O sistema agora extrai diretamente do DOM ou da aba de Relatorios sem recitar chamadas de API redundantes
+    // Se precisar da base de dados, pega do `Reports.getFilteredCheckings()`!
 
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -22,34 +40,27 @@ function generateAuditPDF() {
     let y = margin;
 
     // Cores do tema Grupo OM -- cada cor foi escolhida na mao, nao e random nao
+    // Cores premium, corporativas e super profissionais (Monocromatico / Silver / Slate)
     const colors = {
-        primary: [15, 23, 42],
-        secondary: [71, 85, 105],
-        tertiary: [148, 163, 184],
-        green: [34, 197, 94],
-        red: [239, 68, 68],
-        amber: [245, 158, 11],
-        blue: [37, 99, 235],
-        white: [255, 255, 255],
-        lightGray: [241, 245, 249],
-        border: [226, 232, 240]
+        primary: [15, 23, 42],        // Muito escuro (quase preto)
+        secondary: [71, 85, 105],     // Cinza escuro texto
+        tertiary: [148, 163, 184],    // Cinza medio
+        accent: [30, 41, 59],         // Slate 800 (detalhes sobrios)
+        silver: [203, 213, 225],      // Prata p/ linhas
+        lightGray: [248, 250, 252],   // Fundo quase branco
+        border: [226, 232, 240]       // Cinza borda
     };
 
     // ═══════════════════════════════════════════════════════════════
     // FUNCOES AUXILIARES -- Agora ta legal, agora vai funcionar
     // ═══════════════════════════════════════════════════════════════
 
-    // Desenha a barra arco-iris no estilo Grupo OM
-    function drawRainbowBar(yPos, height) {
-        const barColors = [
-            [2, 6, 23], [51, 65, 85], [148, 163, 184],
-            [203, 213, 225], [148, 163, 184], [51, 65, 85], [2, 6, 23]
-        ];
-        const segWidth = contentWidth / barColors.length;
-        barColors.forEach((c, i) => {
-            doc.setFillColor(c[0], c[1], c[2]);
-            doc.rect(margin + i * segWidth, yPos, segWidth + 0.5, height, 'F');
-        });
+    // Desenha uma barra premium minimalista sobria em vez de arco-iris
+    function drawPremiumBar(yPos, height) {
+        doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
+        doc.rect(margin, yPos, contentWidth, height, 'F');
+        doc.setFillColor(colors.border[0], colors.border[1], colors.border[2]);
+        doc.rect(margin, yPos + height, contentWidth, 0.5, 'F');
     }
 
     // Verifica se precisa pular pagina -- ninguem gosta de texto cortado no meio
@@ -57,8 +68,8 @@ function generateAuditPDF() {
         if (y + neededHeight > pageHeight - 20) {
             doc.addPage();
             y = margin;
-            drawRainbowBar(y, 1.5);
-            y += 6;
+            drawPremiumBar(y, 2);
+            y += 8;
             return true;
         }
         return false;
@@ -71,8 +82,8 @@ function generateAuditPDF() {
         doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
         doc.rect(x, yPos, width, 22, 'S');
 
-        // Linha colorida na esquerda do card
-        doc.setFillColor(color[0], color[1], color[2]);
+        // Um sutil marcador de esquerda ultra-profissional Escuro/Silver
+        doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
         doc.rect(x, yPos, 1.5, 22, 'F');
 
         doc.setFontSize(8);
@@ -84,69 +95,150 @@ function generateAuditPDF() {
         doc.text(String(value), x + 5, yPos + 17);
     }
 
+    // Helper para carregar a logo do Grupo OM e manter a proporcao
+    const loadLogo = () => new Promise(resolve => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve({ data: canvas.toDataURL('image/png'), w: img.width, h: img.height });
+        };
+        img.onerror = () => resolve(null);
+        img.src = '../assets/img/logo-grupoom.png'; // Caminho relativo da logo
+    });
+
+    const logoObj = await loadLogo();
+
     // ═══════════════════════════════════════════════════════════════
-    // CABECALHO DO PDF -- Tipo capa de filme, bonito demais
+    // CABECALHO DO PDF -- Ultra Premium e Minimalista
     //
-    // Fundo do cabecalho
-    doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.rect(0, 0, pageWidth, 45, 'F');
+    // Fundo do cabecalho (Muito sobrio, branco e borders cinza)
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, 50, 'F');
+    // Borda grossa preta em cima
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageWidth, 6, 'F');
 
-    // Barra arco-iris
-    drawRainbowBar(45, 2);
+    let textStartX = margin;
 
-    // Titulo
-    doc.setFontSize(18);
-    doc.setTextColor(255, 255, 255);
-    doc.text('GRUPO OM', margin, 18);
+    if (logoObj && logoObj.data) {
+        // Calcula a largura proporcional para uma altura maxima de 20
+        const targetHeight = 18;
+        const targetWidth = (targetHeight * logoObj.w) / logoObj.h;
+        // Inserir logo no cabecalho branco
+        doc.addImage(logoObj.data, 'PNG', margin, 18, targetWidth, targetHeight);
+        textStartX = margin + targetWidth + 8; // Espaco extra depois da logo
+    } else {
+        doc.setFontSize(22);
+        doc.setTextColor(15, 23, 42);
+        doc.setFont("helvetica", "bold");
+        doc.text('GRUPO OM', margin, 32);
+        textStartX = margin + 50;
+    }
 
-    doc.setFontSize(10);
-    doc.setTextColor(148, 163, 184);
-    doc.text('RELATORIO DE AUDITORIA — PAINEL DE APROVACAO', margin, 26);
+    // Divisoria vertical fina cinza entre logo e titulo
+    doc.setDrawColor(226, 232, 240);
+    doc.line(textStartX - 4, 16, textStartX - 4, 38);
 
-    // Data e usuario
+    // Titulo refinado e corporativo
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.text('RELATÓRIO DE AUDITORIA', textStartX, 25);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text('DEPARTAMENTO DE MÍDIA — PAINEL DE APROVAÇÕES', textStartX, 32);
+
+    // Linha fina separando o cabecalho
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(margin, 45, pageWidth - margin, 45);
+
+    // Info metadados sutil
     const user = API.getUser();
     const dataGeracao = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text('Gerado em: ' + dataGeracao, margin, 34);
-    doc.text('Operador: ' + (user ? user.name : 'Sistema'), margin, 39);
-    doc.text('Confidencial — Uso Interno', pageWidth - margin, 34, { align: 'right' });
 
-    y = 52;
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text('EMITIDO EM: ' + dataGeracao, margin, 52);
+    doc.text('RESPONSÁVEL: ' + (user ? user.name.toUpperCase() : 'SISTEMA'), margin + 65, 52);
+    doc.text('DOCUMENTO OFICIAL', pageWidth - margin, 52, { align: 'right' });
+
+    y = 65;
 
     // ═══════════════════════════════════════════════════════════════
     // SECAO 1: INDICADORES GERAIS (KPIs)
     // Ta pior que o Nero ativando a Devil Trigger -- potencia maxima
     // ═══════════════════════════════════════════════════════════════
 
-    doc.setFontSize(11);
-    doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.text('1. INDICADORES GERAIS', margin, y);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`1. RESUMO EXECUTIVO (${reportType.toUpperCase()})`, margin, y);
+    doc.setFont("helvetica", "normal");
     y += 2;
-    doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.line(margin, y, margin + 50, y);
+    doc.setLineWidth(0.7);
+    doc.setDrawColor(15, 23, 42);
+    doc.line(margin, y, margin + 45, y);
+    doc.setLineWidth(0.5);
     y += 6;
 
-    // Pega os dados dos KPIs direto da tela -- sem chamada extra ao backend
-    const kpiTotal = document.getElementById('kpiTotal')?.textContent || '0';
-    const kpiPending = document.getElementById('kpiPending')?.textContent || '0';
-    const kpiApproved = document.getElementById('kpiApproved')?.textContent || '0';
-    const kpiRejected = document.getElementById('kpiRejected')?.textContent || '0';
-    const kpiTaxa = document.getElementById('kpiTaxaAprov')?.textContent || '0%';
-    const kpiNovos = document.getElementById('kpiNovos')?.textContent || '0';
-    const kpiCompl = document.getElementById('kpiComplementos')?.textContent || '0';
+    // Pega os dados dos KPIs da tela OU do relatorio backend
+    let kpiTotal = '0', kpiPending = '0', kpiApproved = '0', kpiRejected = '0', kpiTaxa = '0%', kpiNovos = '0', kpiCompl = '0';
+
+    if (reportData) {
+        kpiTotal = reportData.stats.total || '0';
+        kpiPending = reportData.stats.pending || '0';
+        kpiApproved = reportData.stats.approved || '0';
+        kpiRejected = reportData.stats.rejected || '0';
+        kpiTaxa = reportData.stats.taxa || '0%';
+        kpiNovos = reportData.stats.novos || '0';
+        kpiCompl = reportData.stats.complementos || '0';
+    } else if (isReportsPage) {
+        kpiTotal = document.getElementById('rptTotal')?.textContent || '0';
+        kpiPending = document.getElementById('rptPending')?.textContent || '0';
+        kpiApproved = document.getElementById('rptApproved')?.textContent || '0';
+        kpiRejected = document.getElementById('rptRejected')?.textContent || '0';
+        kpiTaxa = document.getElementById('rptTaxa')?.textContent || '0%';
+        kpiNovos = document.getElementById('rptNovos')?.textContent || '0';
+        kpiCompl = document.getElementById('rptComplementos')?.textContent || '0';
+    } else {
+        kpiTotal = document.getElementById('kpiTotal')?.textContent || '0';
+        kpiPending = document.getElementById('kpiPending')?.textContent || '0';
+        kpiApproved = document.getElementById('kpiApproved')?.textContent || '0';
+        kpiRejected = document.getElementById('kpiRejected')?.textContent || '0';
+        kpiTaxa = document.getElementById('kpiTaxaAprov')?.textContent || '0%';
+        kpiNovos = document.getElementById('kpiNovos')?.textContent || '0';
+        kpiCompl = document.getElementById('kpiComplementos')?.textContent || '0';
+    }
 
     const cardWidth = (contentWidth - 9) / 4;
-    drawKpiCard(margin, y, cardWidth, 'Total Registros', kpiTotal, colors.blue);
-    drawKpiCard(margin + cardWidth + 3, y, cardWidth, 'Pendentes', kpiPending, colors.amber);
-    drawKpiCard(margin + (cardWidth + 3) * 2, y, cardWidth, 'Aprovados', kpiApproved, colors.green);
-    drawKpiCard(margin + (cardWidth + 3) * 3, y, cardWidth, 'Reprovados', kpiRejected, colors.red);
+    // Omit color arguments as colors are now professional monochrome inside drawKpiCard
+    drawKpiCard(margin, y, cardWidth, 'Total Analisado', kpiTotal, []);
+    drawKpiCard(margin + cardWidth + 3, y, cardWidth, 'Fila Restante', kpiPending, []);
+    drawKpiCard(margin + (cardWidth + 3) * 2, y, cardWidth, 'Volumes Aprovados', kpiApproved, []);
+    drawKpiCard(margin + (cardWidth + 3) * 3, y, cardWidth, 'Casos Rejeitados', kpiRejected, []);
     y += 28;
 
     // Metricas adicionais
     doc.setFontSize(8);
     doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
-    doc.text('Taxa de Aprovacao: ' + kpiTaxa + '   |   Novos: ' + kpiNovos + '   |   Complementos: ' + kpiCompl, margin, y);
+    let extrasText = 'Taxa de Aprovacao: ' + kpiTaxa + '   |   Novos: ' + kpiNovos + '   |   Complementos: ' + kpiCompl;
+
+    if (isReportsPage) {
+        const taxaReenvio = document.getElementById('rptTaxaReenvio')?.textContent || '0%';
+        const topVeiculo = document.getElementById('rptTopVeiculo')?.textContent || '-';
+        const topMeio = document.getElementById('rptTopMeio')?.textContent || '-';
+        extrasText += '   |   Taxa Reenvio: ' + taxaReenvio + '   |   Top Veiculo: ' + topVeiculo + '   |   Top Meio: ' + topMeio;
+    }
+
+    doc.text(extrasText, margin, y);
     y += 10;
 
     // ═══════════════════════════════════════════════════════════════
@@ -154,22 +246,34 @@ function generateAuditPDF() {
     // Isso aqui e cinema puro, tabela completa com todos os dados
     // ═══════════════════════════════════════════════════════════════
 
-    doc.setFontSize(11);
-    doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.text('2. REGISTRO DE CHECKINGS', margin, y);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text('2. REGISTRO DE DADOS', margin, y);
+    doc.setFont("helvetica", "normal");
     y += 2;
-    doc.line(margin, y, margin + 50, y);
+    doc.setLineWidth(0.7);
+    doc.setDrawColor(15, 23, 42);
+    doc.line(margin, y, margin + 45, y);
+    doc.setLineWidth(0.5);
     y += 6;
 
-    // Pega os dados do modulo Approvals
-    const checkings = typeof Approvals !== 'undefined' ? Approvals.getCheckings() : [];
+    // Pega os dados do modulo Approvals, Reports ou do Relatorio Backend
+    let checkings = [];
+    if (reportData && reportData.checkings) {
+        checkings = reportData.checkings;
+    } else if (isReportsPage && typeof Reports !== 'undefined') {
+        checkings = Reports.getFilteredCheckings();
+    } else {
+        checkings = typeof Approvals !== 'undefined' ? Approvals.getCheckings() : [];
+    }
 
     if (checkings.length > 0) {
         // Cabecalho da tabela
         const colWidths = [25, 40, 20, 35, 25, 35];
-        const headers = ['PI', 'CLIENTE', 'MEIO', 'VEICULO', 'STATUS', 'RESPONSAVEL'];
+        const headers = ['PI', 'ANUNCIANTE', 'MEIO', 'VEICULO', 'STATUS', 'RESPONSAVEL'];
 
-        // Desenha cabecalho
+        // Desenha cabecalho (High contrast dark gray)
         doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
         let xPos = margin;
         headers.forEach((h, i) => {
@@ -178,12 +282,14 @@ function generateAuditPDF() {
         });
 
         doc.setFontSize(6.5);
+        doc.setFont("helvetica", "bold");
         doc.setTextColor(255, 255, 255);
         xPos = margin;
         headers.forEach((h, i) => {
             doc.text(h, xPos + 2, y + 5);
             xPos += colWidths[i];
         });
+        doc.setFont("helvetica", "normal");
         y += 7;
 
         // Linhas da tabela -- cada checking vira uma linha
@@ -203,7 +309,8 @@ function generateAuditPDF() {
 
             const st = (c.status || 'pending').toLowerCase();
             const statusLabel = st === 'approved' ? 'APROVADO' : st === 'rejected' ? 'REPROVADO' : 'PENDENTE';
-            const statusColor = st === 'approved' ? colors.green : st === 'rejected' ? colors.red : colors.amber;
+            // Status agora usa preto ou cinza escuro pra ser profissional
+            const statusColor = st === 'approved' ? [30, 41, 59] : st === 'rejected' ? [15, 23, 42] : [100, 116, 139];
 
             const rowData = [
                 (c.n_pi || '').substring(0, 12),
@@ -217,9 +324,11 @@ function generateAuditPDF() {
             xPos = margin;
             rowData.forEach((val, i) => {
                 if (i === 4) {
-                    // Status com cor
+                    // Status text with bold weighting
+                    doc.setFont("helvetica", "bold");
                     doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
                     doc.text(val, xPos + 2, y + 4.5);
+                    doc.setFont("helvetica", "normal");
                     doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
                 } else {
                     doc.text(val, xPos + 2, y + 4.5);
@@ -253,11 +362,16 @@ function generateAuditPDF() {
 
     checkPageBreak(30);
 
-    doc.setFontSize(11);
-    doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.text('3. LOG DE AUDITORIA', margin, y);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text('3. LOG DE AUDITORIA DE SISTEMA', margin, y);
+    doc.setFont("helvetica", "normal");
     y += 2;
-    doc.line(margin, y, margin + 50, y);
+    doc.setLineWidth(0.7);
+    doc.setDrawColor(15, 23, 42);
+    doc.line(margin, y, margin + 65, y);
+    doc.setLineWidth(0.5);
     y += 6;
 
     // Monta log a partir dos checkings processados
@@ -316,25 +430,30 @@ function generateAuditPDF() {
 
             doc.setFontSize(6);
             const isApprove = entry.acao === 'APROVACAO';
-            const acaoColor = isApprove ? colors.green : colors.red;
+            // Usa as cores padronizadas (Cinza escuro/Chumbo) ao inves de cores vibrantes
+            const acaoColor = isApprove ? [30, 41, 59] : [15, 23, 42];
 
+            // String() + || '' garante que nenhum val chega undefined pro doc.text()
             const rowData = [
-                entry.acao,
-                entry.cliente.substring(0, 22),
-                entry.pi.substring(0, 12),
-                entry.responsavel.substring(0, 16),
-                entry.data
+                String(entry.acao || ''),
+                String(entry.cliente || '').substring(0, 22),
+                String(entry.pi || '').substring(0, 12),
+                String(entry.responsavel || '').substring(0, 16),
+                String(entry.data || 'Sem data')
             ];
 
             axPos = margin;
             rowData.forEach((val, i) => {
+                const safeVal = (val != null) ? String(val) : '';
                 if (i === 0) {
                     doc.setTextColor(acaoColor[0], acaoColor[1], acaoColor[2]);
                 } else {
                     doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
                 }
-                doc.text(val, axPos + 2, y + 4.5);
-                axPos += auditWidths[i];
+                if (auditWidths[i] !== undefined) {
+                    doc.text(safeVal, axPos + 2, y + 4.5);
+                    axPos += auditWidths[i];
+                }
             });
 
             y += 6.5;
@@ -401,6 +520,49 @@ function generateAuditPDF() {
     doc.text(complementRate, margin + 70, y);
 
     // ═══════════════════════════════════════════════════════════════
+    // SECAO 4: TERMO DE AUTENTICIDADE (Assinatura PDF)
+    // ═══════════════════════════════════════════════════════════════
+
+    checkPageBreak(50);
+
+    y += 10;
+    doc.setDrawColor(226, 232, 240);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text('DECLARAÇÃO DE AUTENTICIDADE', margin, y);
+    doc.setFont("helvetica", "normal");
+    y += 6;
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    const termo = `Este documento é um relatório oficial gerado pelo Painel de Aprovação do Grupo OM. Os dados referentes à auditoria  visual dos processos de Mídia (aprovações e rejeições) listados acima foram processados e armazenados sistematicamente por usuários credenciados, e são considerados auditáveis e definitivos até a presente data.`;
+    const splitTermo = doc.splitTextToSize(termo, contentWidth);
+    doc.text(splitTermo, margin, y);
+
+    y += splitTermo.length * 4 + 15;
+
+    // Assinatura automatica gerada
+    doc.setDrawColor(15, 23, 42);
+    doc.line(margin, y, margin + 60, y);
+    y += 4;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+    doc.text((user ? user.name.toUpperCase() : 'SISTEMA'), margin, y);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Responsável pela Extração', margin, y + 4);
+
+    const dataFull = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    doc.text('Data de Emissão: ' + dataFull, margin, y + 8);
+    doc.text('Grupo OM - Departamento de Mídia', margin, y + 12);
+    // ═══════════════════════════════════════════════════════════════
     // RODAPE -- Assinatura digital, serio mesmo
     // ═══════════════════════════════════════════════════════════════
 
@@ -409,16 +571,13 @@ function generateAuditPDF() {
     for (let p = 1; p <= totalPages; p++) {
         doc.setPage(p);
 
-        // Barra inferior
-        drawRainbowBar(pageHeight - 8, 1.5);
+        // Barra inferior corporativa
+        drawPremiumBar(pageHeight - 8, 1.5);
 
-        doc.setFontSize(6);
-        doc.setTextColor(colors.tertiary[0], colors.tertiary[1], colors.tertiary[2]);
-        doc.text(
-            'Grupo OM — Painel de Aprovacao — Relatorio gerado automaticamente em ' + dataGeracao,
-            margin, pageHeight - 11
-        );
-        doc.text('Pagina ' + p + ' de ' + totalPages, pageWidth - margin, pageHeight - 11, { align: 'right' });
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184);
+        doc.text('Painel de Aprovação — Uso Restrito', margin, pageHeight - 11);
+        doc.text(`Página ${p} de ${totalPages}`, pageWidth - margin, pageHeight - 11, { align: 'right' });
 
         // Linha de confidencialidade
         doc.setFontSize(5);

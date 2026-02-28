@@ -116,31 +116,37 @@ const Approvals = (() => {
                 : st === 'rejected' ? '<span class="status-badge badge-rejected"><span class="material-symbols-outlined">cancel</span>Reprovado</span>'
                     : '<span class="status-badge badge-pending"><span class="material-symbols-outlined">pending</span>Pendente</span>';
 
-            const driveLink = c.webViewLink ? `<a href="${c.webViewLink}" target="_blank" class="drive-link"><span class="material-symbols-outlined" style="font-size:16px">folder_open</span>Abrir</a>` : '';
+            const safeWebViewLink = escapeHtml(c.webViewLink);
+            const driveLink = c.webViewLink ? `<a href="${safeWebViewLink}" target="_blank" rel="noopener noreferrer" class="drive-link"><span class="material-symbols-outlined" style="font-size:16px">folder_open</span>Abrir</a>` : '';
 
-            const resp = c.approval_user ? `<span class="user-pill"><span class="material-symbols-outlined">person</span>${c.approval_user}</span>` : '';
+            const safeApprovalUser = escapeHtml(c.approval_user);
+            const resp = c.approval_user ? `<span class="user-pill"><span class="material-symbols-outlined">person</span>${safeApprovalUser}</span>` : '';
 
-            // Botao OPEN REVIEW -- manda pra pagina de review detalhado
             const reviewBtn = `<a href="review.html?id=${encodeURIComponent(c.submission_id || '')}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--text-primary);color:var(--bg-primary);text-decoration:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border:1px solid var(--text-primary);transition:all 0.2s"><span class="material-symbols-outlined" style="font-size:16px">terminal</span> OPEN REVIEW</a>`;
 
             let actions = `<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;align-items:center">${reviewBtn}</div>`;
 
-            // Mostra motivo da reprovacao se tiver
-            const reason = st === 'rejected' && c.rejection_reason ? `<br><span style="font-size:10px;color:var(--accent-red);max-width:120px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.rejection_reason}">${c.rejection_reason}</span>` : '';
+            const safeReason = escapeHtml(c.rejection_reason);
+            const reason = st === 'rejected' && c.rejection_reason ? `<br><span style="font-size:10px;color:var(--accent-red);max-width:120px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${safeReason}">${safeReason}</span>` : '';
 
-            // Badge de NOVO ou COMPLEMENTO
             const complementBadge = Number(c.is_complement) === 1 ? '<span class="status-badge" style="background:var(--bg-secondary);color:var(--accent-amber);border:1px solid var(--accent-amber);font-size:9px;padding:2px 6px">COMPL</span>' : '<span class="status-badge" style="background:var(--bg-secondary);color:var(--text-tertiary);border:1px solid var(--border-primary);font-size:9px;padding:2px 6px">NOVO</span>';
 
+            const safeId = escapeHtml(c.submission_id);
+            const safeCliente = escapeHtml(c.cliente);
+            const safePi = escapeHtml(c.n_pi);
+            const safeVeiculo = escapeHtml(c.veiculo);
+            const safeMeio = escapeHtml(c.meio);
+
             return `<tr>
-        <td class="mono">${c.submission_id || ''}</td>
-        <td style="font-weight:600">${c.cliente || ''}</td>
-        <td class="mono">${c.n_pi || ''}</td>
-        <td style="color:var(--text-secondary);font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.veiculo || ''}">${c.veiculo || ''}</td>
-        <td style="font-size:11px;color:var(--text-secondary)">${c.meio || '-'}</td>
+        <td class="mono">${safeId}</td>
+        <td style="font-weight:600">${safeCliente}</td>
+        <td class="mono">${safePi}</td>
+        <td style="color:var(--text-secondary);font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${safeVeiculo}">${safeVeiculo}</td>
+        <td style="font-size:11px;color:var(--text-secondary)">${safeMeio || '-'}</td>
         <td style="text-align:center">${complementBadge}</td>
         <td style="text-align:center">${driveLink}</td>
         <td style="text-align:center">${badge}${reason}</td>
-        <td style="text-align:center;font-family:var(--font-mono);font-size:11px;color:${Number(c.rejection_count || 0) > 0 ? 'var(--accent-red)' : 'var(--text-tertiary)'}">${c.rejection_count || '0'}</td>
+        <td style="text-align:center;font-family:var(--font-mono);font-size:11px;color:${Number(c.rejection_count || 0) > 0 ? 'var(--accent-red)' : 'var(--text-tertiary)'}">${escapeHtml(c.rejection_count) || '0'}</td>
         <td style="text-align:center">${resp}</td>
         <td style="text-align:center" class="no-print">${actions}</td>
       </tr>`;
@@ -354,15 +360,30 @@ const Approvals = (() => {
         // Mostra ate 20 registros -- os mais recentes
         el.innerHTML = logs.slice(0, 20).map(e => {
             const isApprove = e.action === 'approve';
-            return `<div class="audit-log-item anim-fade-up">
-        <div class="audit-log-icon ${isApprove ? 'approve' : 'reject'}">
-          <span class="material-symbols-outlined">${isApprove ? 'check_circle' : 'block'}</span>
-        </div>
-        <div class="audit-log-content">
-          <p class="audit-log-text"><strong>${e.user}</strong> ${isApprove ? 'aprovou' : 'reprovou'} o checking <strong>${e.cliente}</strong> (${e.id})${e.reason ? ` Motivo: ${e.reason}` : ''}</p>
-          <p class="audit-log-time">${e.timestamp}</p>
-        </div>
-      </div>`;
+            const actionText = isApprove ? 'AUTO_APPROVE' : 'MANUAL_REJECT';
+            const dotClass = isApprove ? 'bg-green-500' : 'bg-red-500';
+            const titleClass = isApprove ? 'text-green-400 dark:text-green-500' : 'text-red-500';
+
+            const timeParts = e.timestamp.split(' ');
+            const shortTime = timeParts.length > 1 ? timeParts[1] : e.timestamp;
+
+            const safeUser = escapeHtml(e.user);
+            const safeCliente = escapeHtml(e.cliente);
+            const safeId = escapeHtml(e.id);
+            const safeReason = escapeHtml(e.reason);
+            const safeTimestamp = escapeHtml(e.timestamp);
+
+            return `<li class="mb-6 ml-4">
+                <span class="absolute w-1.5 h-1.5 ${dotClass} -left-[3.5px] mt-1.5"></span>
+                <div class="flex justify-between items-baseline mb-1">
+                    <div class="text-[10px] ${titleClass} font-mono font-bold">${actionText}</div>
+                    <div class="text-[10px] text-slate-500 dark:text-neutral-600 font-mono" title="${safeTimestamp}">${escapeHtml(shortTime)}</div>
+                </div>
+                <div class="text-[10px] text-slate-600 dark:text-neutral-400">
+                    <span class="font-bold text-slate-900 dark:text-white">${safeUser}</span> ${isApprove ? 'validou' : 'rejeitou'} o checklist de <span class="font-bold text-slate-800 dark:text-neutral-300">${safeCliente}</span> (${safeId}).
+                    ${e.reason ? `<br><span class="text-red-600 dark:text-red-400 mt-1 block">Motivo: ${safeReason}</span>` : ''}
+                </div>
+            </li>`;
         }).join('');
     }
 

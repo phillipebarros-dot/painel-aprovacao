@@ -11,6 +11,65 @@
 const Dashboard = (() => {
     let statsData = null;
     let refreshTimer = null;
+    let currentPeriod = 'all';
+
+    function setPeriod(period) {
+        currentPeriod = period;
+        // update UI buttons
+        const container = document.getElementById('dashboardGlobalFilter');
+        if (container) {
+            container.querySelectorAll('.period-btn').forEach(b => {
+                if (b.dataset.period === period) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+        }
+        applyFilter();
+    }
+
+    function applyFilter() {
+        const allCheckings = typeof Approvals !== 'undefined' ? Approvals.getCheckings() : [];
+        let filteredCheckings = allCheckings;
+        let filteredStats = { ...statsData };
+
+        if (currentPeriod !== 'all' && allCheckings.length > 0) {
+            const now = new Date();
+            let days = 0;
+            if (currentPeriod === 'daily') days = 1;
+            else if (currentPeriod === 'weekly') days = 7;
+            else if (currentPeriod === 'monthly') days = 30;
+
+            if (days > 0) {
+                const limitTs = now.getTime() - (days * 24 * 60 * 60 * 1000);
+                filteredCheckings = allCheckings.filter(c => {
+                    if (!c.created_at) return false;
+                    return new Date(c.created_at.replace(' ', 'T')).getTime() >= limitTs;
+                });
+
+                let approved = 0, pending = 0, rejected = 0, novos = 0, comp = 0;
+                filteredCheckings.forEach(c => {
+                    if (c.status === 'APROVADO') approved++;
+                    else if (c.status === 'REJEITADO' || c.status === 'REPROVADO') rejected++;
+                    else {
+                        pending++;
+                        if (c.is_complement == 1) comp++;
+                        else novos++;
+                    }
+                });
+
+                filteredStats = {
+                    total_geral: filteredCheckings.length,
+                    total_approved: approved,
+                    total_rejected: rejected,
+                    total_pending: pending,
+                    novos_pendentes: novos,
+                    complementos_pendentes: comp
+                };
+            }
+        }
+
+        updateKPIs(filteredStats, filteredCheckings);
+        Charts.setData(filteredStats, filteredCheckings);
+    }
 
     // Inicializa TUDO do dashboard -- este e o ponto de partida
     // Checa sessao, configura menu, navegacao, tema e carrega dados
@@ -18,16 +77,44 @@ const Dashboard = (() => {
     async function init() {
         if (!Auth.checkSession()) return;
         Auth.setupUserMenu();
-        setupNavigation();
         setupThemeToggle();
+        startServerClock();
         Charts.init();
-        // Carrega stats e checkings em paralelo -- mais veloz que o Sonic
-        await Promise.all([refreshStats(), Approvals.load()]);
-        Charts.setData(statsData, Approvals.getCheckings());
+        await Promise.all([refreshStats(), Approvals.load(), fetchHealthCheck()]);
+        applyFilter();
         Approvals.renderAuditLog();
         startAutoRefresh();
-        // Redimensiona os graficos quando a janela muda de tamanho
         window.addEventListener('resize', () => Charts.resize());
+    }
+
+    // Fetch health check from backend
+    async function fetchHealthCheck() {
+        try {
+            const d = await API.healthCheck();
+            const el = document.getElementById('systemStatus');
+            if (el && d.status === 'online') {
+                el.innerHTML = '● Online';
+                el.className = 'text-[11px] font-mono text-green-600 dark:text-green-500 uppercase tracking-wider font-semibold';
+            }
+        } catch (e) {
+            const el = document.getElementById('systemStatus');
+            if (el) {
+                el.innerHTML = '● Offline';
+                el.className = 'text-[11px] font-mono text-red-600 dark:text-red-500 uppercase tracking-wider font-semibold';
+            }
+        }
+    }
+
+    // Live server time clock
+    function startServerClock() {
+        const el = document.getElementById('serverTime');
+        if (!el) return;
+        function tick() {
+            const now = new Date();
+            el.textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        tick();
+        setInterval(tick, 1000);
     }
 
     // Busca as estatisticas do backend e atualiza os KPIs na tela
@@ -44,7 +131,8 @@ const Dashboard = (() => {
     // Atualiza todos os KPIs na tela com os dados recebidos
     // Cada numero e animado com easing cubico -- ficou show
     // Ainda bem que a AI me ajudou nisso kkk, a matematica do gauge foi tensa
-    function updateKPIs(d) {
+    function updateKPIs(d, checkingsItems = null) {
+        if (!d) return;
         const pending = Number(d.total_pending || 0);
         const approved = Number(d.total_approved || 0);
         const rejected = Number(d.total_rejected || 0);
@@ -70,24 +158,22 @@ const Dashboard = (() => {
         if (compEl) compEl.textContent = comp;
 
         // ── KPIs Avancados ──────────────────────────────
-        // Gauge circular -- o SVG e manipulado direto via stroke-dasharray
-        // A matematica aqui e: (percentual / 100) * circunferencia
-        const gaugeCircle = document.getElementById('gaugeCircle');
+        // Atualiza a barra horizontal de progresso do sistema
         const gaugePercent = document.getElementById('kpiGaugePercent');
-        if (gaugeCircle && gaugePercent) {
+        const systemHealthBar = document.getElementById('systemHealthBar');
+        if (gaugePercent && systemHealthBar) {
             const pct = processed > 0 ? (approved / processed) * 100 : 0;
-            const circumference = 2 * Math.PI * 15.5; // ~97.4
-            const filled = (pct / 100) * circumference;
-            gaugeCircle.setAttribute('stroke-dasharray', `${filled} ${circumference - filled}`);
+            systemHealthBar.style.width = `${pct}%`;
             gaugePercent.textContent = pct.toFixed(1) + '%';
-            // Cor muda conforme a taxa -- verde = bom, amarelo = meh, vermelho = ruim
-            if (pct >= 80) gaugeCircle.setAttribute('stroke', 'var(--accent-green)');
-            else if (pct >= 50) gaugeCircle.setAttribute('stroke', 'var(--accent-amber)');
-            else gaugeCircle.setAttribute('stroke', 'var(--accent-red)');
+
+            // Cor muda conforme a taxa
+            if (pct >= 80) systemHealthBar.className = 'bg-green-500 h-full transition-all duration-1000';
+            else if (pct >= 50) systemHealthBar.className = 'bg-amber-500 h-full transition-all duration-1000';
+            else systemHealthBar.className = 'bg-red-500 h-full transition-all duration-1000';
         }
 
         // Estatisticas de veiculos -- agrupa os checkings por veiculo
-        const checkings = typeof Approvals !== 'undefined' ? Approvals.getCheckings() : [];
+        const checkings = checkingsItems !== null ? checkingsItems : (typeof Approvals !== 'undefined' ? Approvals.getCheckings() : []);
         const vehicles = {};
         let compCount = 0;
         checkings.forEach(c => {
@@ -108,6 +194,22 @@ const Dashboard = (() => {
             topVehicleEl.textContent = sorted[0][0];
             if (topVehicleCountEl) topVehicleCountEl.textContent = sorted[0][1] + ' checkings';
         }
+
+        // Sync donut legend counts
+        const donutCenter = document.getElementById('donutCenterValue');
+        if (donutCenter) donutCenter.textContent = total.toLocaleString('pt-BR');
+        const donutAC = document.getElementById('donutApprovedCount');
+        const donutPC = document.getElementById('donutPendingCount');
+        const donutRC = document.getElementById('donutRejectedCount');
+        if (donutAC) donutAC.textContent = approved.toLocaleString('pt-BR');
+        if (donutPC) donutPC.textContent = pending.toLocaleString('pt-BR');
+        if (donutRC) donutRC.textContent = rejected.toLocaleString('pt-BR');
+
+        // Sync KPI cards
+        const kpiTotalCard = document.getElementById('kpiTotalCard');
+        if (kpiTotalCard) kpiTotalCard.textContent = total.toLocaleString('pt-BR');
+        const kpiTaxaCard = document.getElementById('kpiTaxaCard');
+        if (kpiTaxaCard) kpiTaxaCard.innerHTML = taxa + '<span class="text-lg text-slate-400 dark:text-neutral-400">%</span>';
 
         // Taxa de complementos -- quanto % do total sao reenvios
         const complementRateEl = document.getElementById('kpiComplementRate');
@@ -136,22 +238,7 @@ const Dashboard = (() => {
         requestAnimationFrame(step);
     }
 
-    // Configura a navegacao entre as abas (Dashboard, Aprovacoes, Usuarios)
-    // Cada botao ativa sua secao e desativa as outras
-    function setupNavigation() {
-        document.querySelectorAll('[data-nav]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const target = btn.dataset.nav;
-                document.querySelectorAll('[data-nav]').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-                const section = document.getElementById(`page-${target}`);
-                if (section) section.classList.add('active');
-                // Se clicou em Usuarios, carrega a lista
-                if (target === 'usuarios') Users.load();
-            });
-        });
-    }
+
 
     // Configura o tema claro/escuro
     // Respeita a preferencia salva no localStorage, ou o tema do sistema
@@ -169,8 +256,10 @@ const Dashboard = (() => {
         const next = current === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem('painel_theme', next);
+        // Sync Tailwind class-based dark mode
+        if (next === 'dark') document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
         updateDashThemeIcon();
-        Charts.renderAll();
     }
 
     // Atualiza o icone do botao de tema -- sol pra light, lua pra dark
@@ -187,9 +276,9 @@ const Dashboard = (() => {
         refreshTimer = setInterval(async () => {
             await refreshStats();
             await Approvals.load();
-            Charts.setData(statsData, Approvals.getCheckings());
+            applyFilter();
         }, 60000);
     }
 
-    return { init, refreshStats, toggleTheme, animateCounter };
+    return { init, refreshStats, toggleTheme, animateCounter, setPeriod, applyFilter };
 })();
