@@ -432,6 +432,7 @@
         if (keyLeft) playerX -= turnSpeed;
         else if (keyRight) playerX += turnSpeed;
 
+        let oldPosition = position;
         position = Util.increase(position, dt * speed, trackLength);
 
         if (keyFaster) speed = Util.accelerate(speed, accel, dt);
@@ -493,14 +494,8 @@
             }
         });
 
-        if (position > trackLength) {
-            position -= trackLength;
+        if (oldPosition > trackLength * 0.8 && position < trackLength * 0.2) {
             currentLap++;
-
-            // Loop all cars backwards to keep relative positions
-            cars.forEach(car => {
-                car.z -= trackLength;
-            });
 
             if (currentLap > maxLaps && !raceFinished) {
                 raceFinished = true;
