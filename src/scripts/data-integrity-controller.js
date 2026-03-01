@@ -5,20 +5,94 @@
     // Cannibal (Red), Sidewinder (White), Weasel (Teal/Greenish), Bayside (Purple)
     // We have 6 agencies, we'll map the closest authentic colors.
     const agencies = [
-        { name: 'GRUPO OM', color: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'], logo: '../assets/img/logo-grupoom.png' }, // Gradient
-        { name: 'AMERICAS', color: ['#3b82f6', '#fbbf24'], logo: '../assets/img/logo-americas.png' }, // Americas name, Blue & Yellow
-        { name: 'DOM', color: '#FF0000', logo: '../assets/img/logo-dom.png' },      // Red
-        { name: 'OPUS MULTIPLA', color: '#FFFFFF', logo: '../assets/img/logo-opus.png' },     // Opus name -> Opus Multipla, White
-        { name: 'TAILOR MEDIA', color: '#ccff00', logo: '../assets/img/Marca TailorMedia vertical s_tagline - RGB.png' }, // Tailor Media - AMRELA LIMÃO
-        { name: 'BRAIN BOX', color: '#FFFF00', logo: '../assets/img/logo-pixel.png' },    // Pixel name -> Brain Box, Yellow
-        { name: 'SENSENO', color: '#00FFFF', logo: '../assets/img/logo-senso.png' }     // Senso name -> Senseno, Cyan
+        { name: 'GRUPO OM', color: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'], logo: '../assets/img/logo-grupoom.png', sprite: 'white_car.png' },
+        { name: 'AMERICAS', color: ['#3b82f6', '#fbbf24'], logo: '../assets/img/logo-americas.png', sprite: 'white_car.png' },
+        { name: 'DOM', color: '#FF0000', logo: '../assets/img/logo-dom.png', sprite: 'white_car.png' },
+        { name: 'OPUS MULTIPLA', color: '#FFFFFF', logo: '../assets/img/logo-opus.png', sprite: 'white_car.png' },
+        { name: 'TAILOR MEDIA', color: '#ccff00', logo: '../assets/img/Marca TailorMedia vertical s_tagline - RGB.png', sprite: 'white_car.png' },
+        { name: 'BRAIN BOX', color: '#FFFF00', logo: '../assets/img/logo-pixel.png', sprite: 'white_car.png' },
+        { name: 'SENSENO', color: '#00FFFF', logo: '../assets/img/logo-senso.png', sprite: 'white_car.png' }
     ];
 
+    const phases = [
+        {
+            name: 'LAS VEGAS',
+            country: 'USA',
+            colors: { light: { road: '#444', grass: '#004d00', rumble: '#fff', lane: '#fff' }, dark: { road: '#333', grass: '#003300', rumble: '#ef4444', lane: '#333' }, sky: ['#000033', '#000066'] },
+            curves: [{ start: 200, end: 600, val: 5 }, { start: 700, end: 1100, val: -5 }, { start: 1300, end: 1800, val: 6 }, { start: 2200, end: 2600, val: -4 }],
+            hills: [],
+            maxLaps: 5
+        },
+        {
+            name: 'RIO DE JANEIRO',
+            country: 'AMERICA',
+            colors: { light: { road: '#858c97', grass: '#32CD32', rumble: '#fff', lane: '#fff' }, dark: { road: '#6b7280', grass: '#228B22', rumble: '#ef4444', lane: '#6b7280' }, sky: ['#55AAFF', '#AADDFF'] },
+            curves: [{ start: 300, end: 700, val: -4 }, { start: 1000, end: 1500, val: 5 }, { start: 1800, end: 2200, val: -6 }],
+            hills: [{ start: 500, end: 1200, height: 2000 }, { start: 1800, end: 2500, height: 1500 }],
+            maxLaps: 3
+        },
+        {
+            name: 'TOKYO',
+            country: 'JAPAN',
+            colors: { light: { road: '#555', grass: '#800080', rumble: '#fff', lane: '#fff' }, dark: { road: '#444', grass: '#4B0082', rumble: '#00FFFF', lane: '#444' }, sky: ['#ff0055', '#330033'] },
+            curves: [{ start: 100, end: 800, val: 3 }, { start: 900, end: 1600, val: -3 }, { start: 1800, end: 2800, val: 2 }],
+            hills: [],
+            maxLaps: 4
+        },
+        {
+            name: 'ROME',
+            country: 'ITALY',
+            colors: { light: { road: '#998877', grass: '#AAAA55', rumble: '#fff', lane: '#fff' }, dark: { road: '#887766', grass: '#888833', rumble: '#ef4444', lane: '#887766' }, sky: ['#FFaa55', '#FFddaa'] },
+            curves: [{ start: 400, end: 900, val: 6 }, { start: 1200, end: 1700, val: -7 }, { start: 2000, end: 2400, val: 5 }],
+            hills: [{ start: 200, end: 800, height: 1000 }, { start: 1000, end: 1600, height: -500 }, { start: 1800, end: 2600, height: 800 }],
+            maxLaps: 3
+        },
+        {
+            name: 'STOCKHOLM',
+            country: 'SCANDINAVIA',
+            colors: { light: { road: '#ccc', grass: '#ddd', rumble: '#fff', lane: '#fff' }, dark: { road: '#bbb', grass: '#ccc', rumble: '#ef4444', lane: '#bbb' }, sky: ['#99ccff', '#ccffff'] }, // Snow
+            curves: [{ start: 200, end: 600, val: -3 }, { start: 800, end: 1500, val: -5 }, { start: 1700, end: 2300, val: 4 }],
+            hills: [{ start: 1000, end: 2000, height: 1200 }],
+            maxLaps: 5
+        }
+    ];
     let gameContainer = null;
     let canvas, ctx;
     let width = 1024, height = 768;
 
+    let carSprites = {};
+    let spritesLoaded = false;
+
+    function loadSprites(callback) {
+        if (spritesLoaded) return callback();
+        let loaded = 0;
+        let sources = [];
+        for (let i = 0; i < 7; i++) sources.push('car_' + i + '.png');
+        sources.push('topgear-logo.png'); // Cache logo as well for safety
+
+        sources.forEach(src => {
+            let img = new Image();
+            img.src = '../assets/sprites/' + src;
+            img.onload = () => {
+                loaded++;
+                carSprites[src] = img;
+                if (loaded === sources.length) {
+                    spritesLoaded = true;
+                    callback();
+                }
+            };
+            img.onerror = () => {
+                loaded++; // gracefully fail
+                if (loaded === sources.length) {
+                    spritesLoaded = true;
+                    callback();
+                }
+            };
+        });
+    }
+
     let selectedPlayerIndex = -1;
+    let selectedPhaseIndex = -1;
     let animationFrameId = null;
 
     // Racing Core Variables
@@ -36,6 +110,8 @@
 
     let segments = [];
     let position = 0;
+    let currentLap = 1;
+    let maxLaps = 1;
     let playerX = 0;
     let playerZ = cameraHeight * cameraDepth;
     let speed = 0;
@@ -76,28 +152,30 @@
     function start16BitEasterEgg() {
         if (document.getElementById('retroGameContainer')) return;
 
-        gameContainer = document.createElement('div');
-        gameContainer.id = 'retroGameContainer';
-        gameContainer.style.cssText = `
-            position: fixed; inset: 0; background: #000; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: white; font-family: 'Press Start 2P', 'Courier New', monospace;
-        `;
-        document.body.appendChild(gameContainer);
-        showSelectionScreen();
+        loadSprites(() => {
+            gameContainer = document.createElement('div');
+            gameContainer.id = 'retroGameContainer';
+            gameContainer.style.cssText = `
+                position: fixed; inset: 0; background: #000; z-index: 9999;
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                color: white; font-family: 'Press Start 2P', 'Courier New', monospace;
+            `;
+            document.body.appendChild(gameContainer);
+            showSelectionScreen();
+        });
     }
 
     function showSelectionScreen() {
         gameContainer.innerHTML = `
             <div style="text-align: center; max-width: 900px; width: 100%;">
-                <h1 style="color: #FF0000; font-size: 56px; margin-bottom: 10px; text-shadow: 4px 4px 0px #000, 0 0 20px rgba(255,0,0,0.8); font-style: italic;">TOP GEAR OM</h1>
-                <h2 style="color: #fff; font-size: 12px; margin-bottom: 50px;">CHOOSE YOUR RACING AGENCY</h2>
+                <img src="../assets/img/topgear-logo.png" style="max-height: 120px; filter: drop-shadow(0 0 20px rgba(255,255,255,0.3)); margin-bottom: 20px;" />
+                <h2 style="color: #fff; font-size: 14px; margin-bottom: 50px; text-shadow: 2px 2px 0px #000;">CHOOSE YOUR RACING AGENCY</h2>
                 
                 <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 40px;">
                     ${agencies.map((l, i) => `
-                        <div class="retro-selector" data-index="${i}" style="padding: 10px; width: 180px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; background: #111; border: 4px solid #333; border-bottom-color: ${Array.isArray(l.color) ? l.color[0] : l.color}; cursor: pointer; transition: all 0.1s; image-rendering: pixelated;">
+                        <div class="retro-selector" data-index="${i}" style="padding: 10px; width: 180px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; background: #111; border: 4px solid #333; border-bottom-color: ${Array.isArray(l.color) ? l.color[0] : l.color}; cursor: pointer; transition: all 0.1s; image-rendering: pixelated; box-shadow: 0 4px 6px rgba(0,0,0,0.5);">
                             <img src="${l.logo}" style="max-height: 40px; max-width: 120px; filter: invert(1); pointer-events: none;" />
-                            <div style="width: 100%; height: 24px; background: ${Array.isArray(l.color) ? 'linear-gradient(90deg, ' + l.color.join(',') + ')' : l.color}; margin-top: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: ${l.color === '#FFFFFF' ? '#000' : '#fff'}; text-shadow: 1px 1px 0px ${l.color === '#FFFFFF' ? 'transparent' : '#000'}; border: 2px solid #222;">${l.name}</div>
+                            <div style="width: 100%; height: 24px; background: ${Array.isArray(l.color) ? 'linear-gradient(90deg, ' + l.color.join(',') + ')' : l.color}; margin-top: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: ${!Array.isArray(l.color) && (l.color === '#FFFFFF' || l.color === '#FFFF00' || l.color === '#00FFFF' || l.color === '#ccff00') ? '#000' : '#fff'}; font-weight: bold; text-shadow: 1px 1px 0px ${!Array.isArray(l.color) && (l.color === '#FFFFFF' || l.color === '#FFFF00' || l.color === '#00FFFF' || l.color === '#ccff00') ? 'transparent' : '#000'}; border: 2px solid #222;">${l.name}</div>
                         </div>
                     `).join('')}
                 </div>
@@ -125,6 +203,47 @@
             });
             sel.addEventListener('click', () => {
                 selectedPlayerIndex = parseInt(sel.getAttribute('data-index'));
+                showPhaseSelectionScreen();
+            });
+        });
+
+        document.getElementById('closeRetroGame').addEventListener('click', () => {
+            document.body.removeChild(gameContainer);
+        });
+    }
+
+    function showPhaseSelectionScreen() {
+        gameContainer.innerHTML = `
+            <div style="text-align: center; max-width: 900px; width: 100%;">
+                <img src="../assets/img/topgear-logo.png" style="max-height: 120px; filter: drop-shadow(0 0 20px rgba(255,255,255,0.3)); margin-bottom: 20px;" />
+                <h2 style="color: #fff; font-size: 14px; margin-bottom: 50px; text-shadow: 2px 2px 0px #000;">SELECT MAP PHASE</h2>
+                
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 40px;">
+                    ${phases.map((p, i) => `
+                        <div class="phase-selector" data-index="${i}" style="padding: 15px; width: 220px; background: #111; border: 4px solid #555; cursor: pointer; transition: all 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.5);">
+                            <div style="font-size: 18px; color: ${p.colors.sky[0]}; margin-bottom: 10px; text-shadow: 1px 1px 0 #fff;">${p.name}</div>
+                            <div style="font-size: 10px; color: #888;">${p.country}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <button id="backToAgencies" style="padding: 15px 30px; background: transparent; border: 2px solid #555; color: #aaa; cursor: pointer; font-family: 'Press Start 2P'; font-size: 14px; transition: all 0.2s;">BACK</button>
+            </div>
+        `;
+
+        const selectors = gameContainer.querySelectorAll('.phase-selector');
+        selectors.forEach(sel => {
+            sel.addEventListener('mouseover', () => {
+                sel.style.borderColor = '#fff';
+                sel.style.transform = 'translateY(-5px)';
+                sel.style.background = '#222';
+            });
+            sel.addEventListener('mouseout', () => {
+                sel.style.borderColor = '#555';
+                sel.style.transform = 'none';
+                sel.style.background = '#111';
+            });
+            sel.addEventListener('click', () => {
+                selectedPhaseIndex = parseInt(sel.getAttribute('data-index'));
                 // Force play command after user interaction to bypass autoplay blocks
                 const iframe = document.getElementById('carMusicPlayer');
                 if (iframe) {
@@ -134,40 +253,44 @@
             });
         });
 
-        document.getElementById('closeRetroGame').addEventListener('click', () => {
-            document.body.removeChild(gameContainer);
-        });
+        document.getElementById('backToAgencies').addEventListener('click', showSelectionScreen);
     }
 
     // --- Track Building ---
     function resetTrack() {
         segments = [];
         const numSegments = 3000;
+        let pData = phases[selectedPhaseIndex];
+
+        currentLap = 1;
+        maxLaps = pData.maxLaps || 3;
 
         let currentY = 0;
         for (let n = 0; n < numSegments; n++) {
             let curve = 0;
             let targetY = 0;
 
-            // Track layout
-            if (n > 200 && n < 600) curve = 4; // Right
-            if (n > 700 && n < 1000) curve = -5; // Left
-            if (n > 1100 && n < 1500) { curve = 3; targetY = 2000; } // Big Hill up
-            if (n > 1500 && n < 1800) { targetY = 0; } // Downhill Fast
-            if (n > 1900 && n < 2300) curve = -6; // Hairpin left
-            if (n > 2400 && n < 2600) { curve = 4; targetY = 1000; }
-            if (n > 2600 && n < 2900) { targetY = 0; } // Flat to finish
+            // Apply phase-specific curves
+            pData.curves.forEach(c => {
+                if (n > c.start && n < c.end) curve = c.val;
+            });
+
+            // Apply phase-specific hills
+            pData.hills.forEach(h => {
+                if (n > h.start && n < h.end) {
+                    // smooth hill interpolation
+                    let progress = (n - h.start) / (h.end - h.start);
+                    targetY = Math.sin(progress * Math.PI) * h.height;
+                }
+            });
 
             let isFinish = n >= numSegments - 120 && n <= numSegments - 100;
 
             // Interpolate Y 
             currentY = currentY + (targetY - currentY) * 0.05;
 
-            // Classic Top Gear Daytime Track Colors
-            let colorDark = { road: '#6b7280', grass: '#228B22', rumble: '#ef4444', lane: '#6b7280' };
-            let colorLight = { road: '#858c97', grass: '#32CD32', rumble: '#fff', lane: '#fff' };
-
-            let segColor = Math.floor(n / rumLength) % 2 ? colorLight : colorDark;
+            // Apply Phase Colors
+            let segColor = Math.floor(n / rumLength) % 2 ? pData.colors.light : pData.colors.dark;
             if (isFinish) {
                 segColor = { road: '#1e293b', grass: segColor.grass, rumble: '#fff', lane: '#fff' };
                 if (n === numSegments - 110) segColor.isFinishLine = true;
@@ -253,8 +376,8 @@
             if (e.code === 'Escape') quitRace();
         };
 
-        document.addEventListener('keydown', onKeyDown);
-        document.addEventListener('keyup', onKeyUp);
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
         gameContainer._onKeyDown = onKeyDown;
         gameContainer._onKeyUp = onKeyUp;
 
@@ -266,8 +389,8 @@
     function quitRace() {
         isRacing = false;
         cancelAnimationFrame(animationFrameId);
-        document.removeEventListener('keydown', gameContainer._onKeyDown);
-        document.removeEventListener('keyup', gameContainer._onKeyUp);
+        window.removeEventListener('keydown', gameContainer._onKeyDown);
+        window.removeEventListener('keyup', gameContainer._onKeyUp);
         if (gameContainer && gameContainer.parentNode) {
             document.body.removeChild(gameContainer);
         }
@@ -370,13 +493,23 @@
             }
         });
 
-        if (position > trackLength - (segmentLength * 5) && !raceFinished) {
-            raceFinished = true;
-            let finalPlace = 1;
+        if (position > trackLength) {
+            position -= trackLength;
+            currentLap++;
+
+            // Loop all cars backwards to keep relative positions
             cars.forEach(car => {
-                if (car.z > position && car.z < position + 100000) finalPlace++;
+                car.z -= trackLength;
             });
-            drawFinishOverlay(finalPlace);
+
+            if (currentLap > maxLaps && !raceFinished) {
+                raceFinished = true;
+                let finalPlace = 1;
+                cars.forEach(car => {
+                    if (car.z > position && car.z < position + 100000) finalPlace++;
+                });
+                drawFinishOverlay(finalPlace);
+            }
         }
     }
 
@@ -394,9 +527,10 @@
         let x = 0;
         let dx = - (baseSegment.curve * basePercent);
 
+        let phaseData = phases[selectedPhaseIndex];
         let grad = ctx.createLinearGradient(0, 0, 0, height / 2);
-        grad.addColorStop(0, '#55AAFF');
-        grad.addColorStop(1, '#AADDFF');
+        grad.addColorStop(0, phaseData.colors.sky[0]);
+        grad.addColorStop(1, phaseData.colors.sky[1]);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, width, height / 2);
 
@@ -488,11 +622,22 @@
                 let spriteY = segment.p1.screen.y;
 
                 let scaleFactor = spriteScale * 1920;
-                Render.carSprite(ctx, spriteX, spriteY, scaleFactor, car.color, false, 0);
 
-                ctx.fillStyle = '#fff';
-                ctx.font = `${Math.floor(12 * scaleFactor)}px "Press Start 2P"`;
-                ctx.fillText(agencies[car.agencyIndex].name, spriteX - (30 * scaleFactor), spriteY - (60 * scaleFactor));
+                // Only render if the scale is positive to prevent upside-down/backwards sprites
+                if (scaleFactor > 0) {
+                    Render.carSprite(ctx, spriteX, spriteY, scaleFactor, car.agencyIndex, false, 0);
+
+                    ctx.fillStyle = '#fff';
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = Math.max(2, Math.floor(3 * scaleFactor));
+                    ctx.font = `${Math.floor(12 * scaleFactor)}px "Press Start 2P"`;
+
+                    let textX = spriteX - (30 * scaleFactor);
+                    let textY = spriteY - (60 * scaleFactor);
+
+                    ctx.strokeText(agencies[car.agencyIndex].name, textX, textY);
+                    ctx.fillText(agencies[car.agencyIndex].name, textX, textY);
+                }
             });
         }
 
@@ -506,7 +651,7 @@
 
         if (Math.abs(playerX) > 1.1 && speed > 50) pY += (Math.random() * 6) - 3;
 
-        Render.carSprite(ctx, pX, pY, pScale, agencies[selectedPlayerIndex].color, true, steerAngle);
+        Render.carSprite(ctx, pX, pY, pScale, selectedPlayerIndex, true, steerAngle);
 
         ctx.fillStyle = '#fff';
         ctx.font = '24px "Press Start 2P", monospace';
@@ -516,6 +661,8 @@
 
         const displaySpeed = Math.floor(speed / maxSpeed * 280);
         ctx.fillText(`SPEED ${displaySpeed} KMH`, 40, 60);
+
+        ctx.fillText(`LAP ${currentLap}/${maxLaps}`, width / 2 - 80, 60);
 
         const progress = Math.min(100, Math.floor((position / trackLength) * 100));
         ctx.fillText(`TRACK ${progress}%`, width - 360, 60);
@@ -640,100 +787,65 @@
                 Render.polygon(ctx, laneX1 - l1 / 2, y1, laneX1 + l1 / 2, y1, laneX2 + l2 / 2, y2, laneX2 - l2 / 2, y2, lane);
             }
         },
-        carSprite: (ctx, x, y, scale, color, isPlayer, steer) => {
-            let w = 200 * scale;
-            let h = w * 0.35;
+        carSprite: (ctx, x, y, scale, agencyIndex, isPlayer, steer) => {
+            let imgName = 'car_' + agencyIndex + '.png';
+            let img = carSprites[imgName];
+            if (!img) return; // Fallback
+
+            let w = 240 * scale;
+            let h = w * (img.height / img.width || 0.45);
             x = x - w / 2;
             y = y - h;
             let sway = steer * (w * 0.15);
+
             ctx.save();
             ctx.imageSmoothingEnabled = false;
-            ctx.fillStyle = '#0a0a0a';
-            ctx.fillRect(x + sway, y + h - (h * 0.3), w * 0.25, h * 0.4);
-            ctx.fillRect(x + w - (w * 0.25) + sway, y + h - (h * 0.3), w * 0.25, h * 0.4);
-            ctx.fillStyle = '#444';
-            ctx.fillRect(x + sway + (w * 0.05), y + h - (h * 0.2), w * 0.15, h * 0.2);
-            ctx.fillRect(x + w - (w * 0.2) + sway, y + h - (h * 0.2), w * 0.15, h * 0.2);
-            ctx.fillStyle = '#1a1a1a';
+
+            // Draw shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.beginPath();
-            ctx.moveTo(x + sway - (w * 0.02), y + (h * 0.65));
-            ctx.lineTo(x + w + sway + (w * 0.02), y + (h * 0.65));
-            ctx.lineTo(x + w + (w * 0.02), y + h);
-            ctx.lineTo(x - (w * 0.02), y + h);
+            ctx.ellipse(x + w / 2 + sway * 0.5, y + h, w * 0.4, h * 0.2, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#aaa';
-            ctx.fillRect(x + (w * 0.1), y + (h * 0.8), w * 0.12, h * 0.2);
-            ctx.fillRect(x + (w * 0.78), y + (h * 0.8), w * 0.12, h * 0.2);
-            ctx.fillStyle = '#000';
-            ctx.fillRect(x + (w * 0.12), y + (h * 0.85), w * 0.08, h * 0.1);
-            ctx.fillRect(x + (w * 0.80), y + (h * 0.85), w * 0.08, h * 0.1);
-            if (Array.isArray(color)) {
-                let paintGrad = ctx.createLinearGradient(x + sway - (w * 0.15), 0, x + w + sway + (w * 0.15), 0);
-                for (let i = 0; i < color.length; i++) paintGrad.addColorStop(i / (color.length - 1), color[i]);
-                ctx.fillStyle = paintGrad;
-            } else ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(x + sway - (w * 0.15), y + (h * 0.45));
-            ctx.lineTo(x + w + sway + (w * 0.15), y + (h * 0.45));
-            ctx.lineTo(x + w + sway + (w * 0.05), y + (h * 0.7));
-            ctx.lineTo(x + sway - (w * 0.05), y + (h * 0.7));
-            ctx.fill();
-            ctx.fillStyle = 'rgba(255,255,255,0.2)';
-            ctx.fillRect(x + sway - (w * 0.05), y + (h * 0.45), w * 1.1, h * 0.05);
-            ctx.fillStyle = '#000';
-            ctx.fillRect(x + sway - (w * 0.1), y + (h * 0.5), w * 1.2, h * 0.2);
-            let lightColor = isPlayer && keySlower ? '#FF0000' : '#770000';
-            ctx.fillStyle = lightColor;
-            ctx.fillRect(x + sway - (w * 0.08), y + (h * 0.53), w * 0.35, h * 0.12);
-            ctx.fillRect(x + sway + w - (w * 0.27), y + (h * 0.53), w * 0.35, h * 0.12);
+
+            // Draw the perfect 16-bit car sprite!
+            ctx.drawImage(img, x + sway, y, w, h);
+
+            // Draw braking lights for realism if player is braking
             if (isPlayer && keySlower) {
-                ctx.shadowColor = '#FF0000'; ctx.shadowBlur = 10;
-                ctx.fillRect(x + sway - (w * 0.08), y + (h * 0.53), w * 0.35, h * 0.12);
-                ctx.fillRect(x + sway + w - (w * 0.27), y + (h * 0.53), w * 0.35, h * 0.12);
-                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#FF0000';
+                ctx.shadowColor = '#FF0000';
+                ctx.shadowBlur = 15;
+                ctx.fillRect(x + sway + (w * 0.1), y + (h * 0.45), w * 0.2, h * 0.1);
+                ctx.fillRect(x + sway + w - (w * 0.3), y + (h * 0.45), w * 0.2, h * 0.1);
             }
-            ctx.fillStyle = '#ddd';
-            ctx.fillRect(x + sway + (w * 0.12), y + (h * 0.55), w * 0.1, h * 0.08);
-            ctx.fillRect(x + sway + w - (w * 0.22), y + (h * 0.55), w * 0.1, h * 0.08);
-            if (Array.isArray(color)) {
-                let roofGrad = ctx.createLinearGradient(x + (w * 0.15), 0, x + (w * 0.85), 0);
-                for (let i = 0; i < color.length; i++) roofGrad.addColorStop(i / (color.length - 1), color[i]);
-                ctx.fillStyle = roofGrad;
-            } else ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(x + (w * 0.15), y + (h * 0.45));
-            ctx.lineTo(x + (w * 0.3) - sway * 0.5, y);
-            ctx.lineTo(x + (w * 0.7) - sway * 0.5, y);
-            ctx.lineTo(x + (w * 0.85), y + (h * 0.45));
-            ctx.fill();
-            ctx.fillStyle = '#050505';
-            ctx.beginPath();
-            ctx.moveTo(x + (w * 0.18), y + (h * 0.42));
-            ctx.lineTo(x + (w * 0.32) - sway * 0.4, y + (h * 0.05));
-            ctx.lineTo(x + (w * 0.68) - sway * 0.4, y + (h * 0.05));
-            ctx.lineTo(x + (w * 0.82), y + (h * 0.42));
-            ctx.fill();
-            if (Array.isArray(color)) {
-                let spGrad = ctx.createLinearGradient(x + sway - (w * 0.2), 0, x + w + sway + (w * 0.2), 0);
-                for (let i = 0; i < color.length; i++) spGrad.addColorStop(i / (color.length - 1), color[i]);
-                ctx.fillStyle = spGrad;
-            } else ctx.fillStyle = color;
-            ctx.fillRect(x + sway - (w * 0.2), y + (h * 0.2), w * 1.4, h * 0.1);
-            ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            ctx.fillRect(x + sway - (w * 0.2), y + (h * 0.2), w * 1.4, h * 0.03);
+
+            // Draw Dynamic License Plate (Restoring the original SNES requested feature)
+            // The plate maps to the back trunk of the sprite
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#888';
+            let plateW = w * 0.35;
+            let plateH = h * 0.12;
+            let plateX = x + sway + (w / 2) - (plateW / 2);
+            let plateY = y + (h * 0.70);
+
+            ctx.fillRect(plateX, plateY, plateW, plateH);
+
+            // Inner black border
             ctx.fillStyle = '#111';
-            ctx.fillRect(x + sway + (w * 0.15), y + (h * 0.3), w * 0.08, h * 0.15);
-            ctx.fillRect(x + sway + w - (w * 0.23), y + (h * 0.3), w * 0.08, h * 0.15);
-            if (isPlayer) {
-                ctx.fillStyle = '#FBBF24';
-                ctx.fillRect(x + (w * 0.4) + sway * 0.5, y + (h * 0.75), w * 0.2, h * 0.15);
-                ctx.fillStyle = '#000';
-                ctx.font = `bold ${Math.floor(11 * scale)}px "Courier New"`;
-                ctx.fillText("CEO", x + (w * 0.43) + sway * 0.5, y + (h * 0.86));
-            } else {
-                ctx.fillStyle = '#333';
-                ctx.fillRect(x + (w * 0.4) + sway * 0.5, y + (h * 0.75), w * 0.2, h * 0.08);
-            }
+            ctx.fillRect(plateX + 2, plateY + 2, plateW - 4, plateH - 4);
+
+            // Text
+            let carName = isPlayer ? "VOCÊ" : agencies[agencyIndex].name;
+            // Shorten extremely long names to fit the tiny plate
+            if (carName.length > 8) carName = carName.substring(0, 8);
+
+            ctx.fillStyle = '#FFD700'; // Gold text
+            let fontSize = Math.floor(w * 0.05); // Dynamic relative font size
+            ctx.font = `bold ${fontSize}px "Press Start 2P"`;
+            ctx.textAlign = 'center';
+            ctx.fillText(carName, plateX + (plateW / 2), plateY + (plateH * 0.75));
+            ctx.textAlign = 'left';
+
             ctx.restore();
         }
     };

@@ -126,7 +126,7 @@ const Approvals = (() => {
                 : st === 'rejected' ? '<span class="status-badge badge-rejected"><span class="material-symbols-outlined">cancel</span>Reprovado</span>'
                     : '<span class="status-badge badge-pending"><span class="material-symbols-outlined">pending</span>Pendente</span>';
 
-            const safeWebViewLink = escapeHtml(c.webViewLink);
+            const safeWebViewLink = typeof sanitizeUrl === 'function' ? sanitizeUrl(c.webViewLink) : escapeHtml(c.webViewLink);
             const driveLink = c.webViewLink ? `<a href="${safeWebViewLink}" target="_blank" rel="noopener noreferrer" class="drive-link"><span class="material-symbols-outlined" style="font-size:16px">folder_open</span>Abrir</a>` : '';
 
             const safeApprovalUser = escapeHtml(c.approval_user);
@@ -308,8 +308,9 @@ const Approvals = (() => {
 
                     const bg = isImg && f.thumbnailUrl ? `background-image:url('${f.thumbnailUrl}');background-size:cover;background-position:center` : `background:${dk ? '#111827' : '#f8fafc'}`;
 
+                    const safeUrl = typeof sanitizeUrl === 'function' ? sanitizeUrl(f.viewUrl || f.downloadUrl) : escapeHtml(f.viewUrl || f.downloadUrl || '#');
                     html += `
-                    <a href="${f.viewUrl || f.downloadUrl}" target="_blank" style="text-decoration:none;display:flex;flex-direction:column;border:1px solid ${dk ? '#1e293b' : '#e2e8f0'};border-radius:8px;overflow:hidden;transition:all 0.2s;color:inherit;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'">
+                    <a href="${safeUrl}" target="_blank" style="text-decoration:none;display:flex;flex-direction:column;border:1px solid ${dk ? '#1e293b' : '#e2e8f0'};border-radius:8px;overflow:hidden;transition:all 0.2s;color:inherit;box-shadow:0 1px 2px rgba(0,0,0,0.05)" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'">
                         <div style="height:90px;width:100%;${bg};display:flex;align-items:center;justify-content:center;position:relative">
                             ${!isImg || !f.thumbnailUrl ? `<span class="material-symbols-outlined" style="font-size:32px;color:${color}">${icon}</span>` : ''}
                         </div>

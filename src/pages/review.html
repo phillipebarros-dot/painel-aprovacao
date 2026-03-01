@@ -695,6 +695,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../scripts/sanitize.js"></script>
     <script src="../scripts/api.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -776,11 +777,12 @@
                 } else if (st === 'rejected') {
                     badge.textContent = 'Reprovado';
                     badge.className = 'px-2 py-0.5 text-[10px] uppercase font-mono tracking-wider border border-red-700 text-red-500 bg-red-900/10';
+                    const safeReason = escapeHtml(submission.rejection_reason || '');
                     document.getElementById('actionsBanner').innerHTML = `
                         <a href="aprovacoes.html" class="flex-1 sm:flex-none border border-neutral-700 hover:border-neutral-400 text-neutral-400 hover:text-white uppercase tracking-widest text-xs font-bold py-3 px-6 transition-all flex items-center justify-center gap-2 group no-underline">
                             <span class="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">arrow_back</span> Voltar
                         </a>
-                        <span class="text-red-500 uppercase font-mono tracking-widest text-xs flex items-center gap-2 justify-center sm:justify-start px-4"><span class="material-symbols-outlined">block</span> Reprovado: ${submission.rejection_reason || ''}</span>
+                        <span class="text-red-500 uppercase font-mono tracking-widest text-xs flex items-center gap-2 justify-center sm:justify-start px-4"><span class="material-symbols-outlined">block</span> Reprovado: ${safeReason}</span>
                     `;
                 }
 
@@ -807,15 +809,18 @@
                             contentHtml = `<span class="material-symbols-outlined text-neutral-600 text-[48px] group-hover:text-white transition-colors duration-300">${icon}</span>`;
                         }
 
+                        const safeUrl = typeof sanitizeUrl === 'function' ? sanitizeUrl(f.viewUrl || f.downloadUrl) : (f.viewUrl || f.downloadUrl || '#').replace(/"/g, '&quot;');
+                        const safeDetalhe = escapeHtml(f.detalhe || 'Asset');
+
                         assetsGrid.innerHTML += `
                 <div class="group relative bg-neutral-900 aspect-video overflow-hidden flex flex-col items-center justify-center">
                     ${contentHtml}
                     <div class="absolute inset-0 border border-transparent group-hover:border-white/50 transition-colors pointer-events-none"></div>
                     <div class="absolute top-0 left-0 right-0 p-3 flex justify-between items-start opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gradient-to-b from-black/80 to-transparent">
-                        <span class="text-[10px] font-mono text-white bg-black/50 px-1.5 py-0.5 border border-white/20 truncate max-w-[70%]">${f.detalhe || 'Asset'}</span>
+                        <span class="text-[10px] font-mono text-white bg-black/50 px-1.5 py-0.5 border border-white/20 truncate max-w-[70%]">${safeDetalhe}</span>
                     </div>
                     <div class="absolute bottom-0 right-0 left-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gradient-to-t from-black/80 to-transparent flex justify-end">
-                        <a href="${f.viewUrl || f.downloadUrl}" target="_blank" class="bg-black/80 hover:bg-white hover:text-black border border-white/30 text-white p-1.5 transition-colors">
+                        <a href="${safeUrl}" target="_blank" class="bg-black/80 hover:bg-white hover:text-black border border-white/30 text-white p-1.5 transition-colors">
                             <span class="material-symbols-outlined text-[16px] block">open_in_full</span>
                         </a>
                     </div>
