@@ -1,5 +1,5 @@
 # Painel de Aprovacao - Grupo OM
-*(Criado por Eru)*
+*(Criador Phillipe)*
 
 Sistema interno de aprovacao de checkings para o departamento de Midia do Grupo OM. Desenvolvido com frontend HTML/CSS/JS puro e backend n8n conectado ao Google BigQuery, Google Drive e servidor SMTP para notificacoes por email.
 
