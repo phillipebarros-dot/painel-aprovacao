@@ -41,8 +41,11 @@ const Dashboard = (() => {
             if (days > 0) {
                 const limitTs = now.getTime() - (days * 24 * 60 * 60 * 1000);
                 filteredCheckings = allCheckings.filter(c => {
-                    if (!c.created_at) return false;
-                    return new Date(c.created_at.replace(' ', 'T')).getTime() >= limitTs;
+                    const ts = c.created_at || c.approved_at || c.rejected_at || c.timestamp;
+                    if (!ts) return false;
+                    let isoTs = ts.replace(' ', 'T');
+                    if (!isoTs.endsWith('Z') && !isoTs.match(/[+\-]\d{2}:?\d{2}$/)) isoTs += 'Z';
+                    return new Date(isoTs).getTime() >= limitTs;
                 });
 
                 let approved = 0, pending = 0, rejected = 0, novos = 0, comp = 0;

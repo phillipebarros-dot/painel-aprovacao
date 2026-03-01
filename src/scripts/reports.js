@@ -63,7 +63,9 @@ const Reports = (() => {
             const ts = c.approved_at || c.rejected_at || c.created_at || c.timestamp || '';
             if (!ts) return false;
             try {
-                const d = new Date(ts);
+                let isoTs = ts.replace(' ', 'T');
+                if (!isoTs.endsWith('Z') && !isoTs.match(/[+\-]\d{2}:?\d{2}$/)) isoTs += 'Z';
+                const d = new Date(isoTs);
                 return d >= cutoff;
             } catch {
                 return false;
@@ -148,7 +150,11 @@ const Reports = (() => {
             const ts = c.approved_at || c.rejected_at || c.created_at || c.timestamp || '-';
             let shortTs = '-';
             if (ts !== '-') {
-                try { shortTs = new Date(ts).toLocaleDateString('pt-BR'); } catch { shortTs = ts; }
+                try {
+                    let isoTs = ts.replace(' ', 'T');
+                    if (!isoTs.endsWith('Z') && !isoTs.match(/[+\-]\d{2}:?\d{2}$/)) isoTs += 'Z';
+                    shortTs = new Date(isoTs).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                } catch { shortTs = ts; }
             }
 
             return `<tr class="${i % 2 === 0 ? 'bg-white dark:bg-black' : 'bg-slate-50 dark:bg-neutral-900/30'} hover:bg-slate-100 dark:hover:bg-neutral-800/30 transition-colors">

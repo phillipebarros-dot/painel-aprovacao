@@ -1221,7 +1221,7 @@ const Dashboard = (() => {
 })();\n```\n
 ================================================================================
 CAPITULO: ANALISE ARQUITETURAL DO ARQUIVO EASTER-EGG.JS
-CAMINHO ABSOLUTO: c:\Users\Nero\Videos\painel de aprovação\src\scripts\easter-egg.js
+CAMINHO ABSOLUTO: c:\Users\Nero\Videos\painel de aprovação\src\scripts\ui-animation-library.js
 ================================================================================
 
 A seguir, e dissecada a implementacao exata projetada por Nero para este modulo.
@@ -3484,7 +3484,7 @@ ESTATISTICAS DO ARQUIVO:
     <script src="../scripts/users.js"></script>
     <script src="../scripts/pdf-export.js"></script>
     <script src="../scripts/dashboard.js"></script>
-    <script src="../scripts/easter-egg.js"></script>
+    <script src="../scripts/ui-animation-library.js"></script>
     <script src="../scripts/sanitize.js"></script>
     <script src="../scripts/main.js"></script>
 </body>
@@ -4053,7 +4053,7 @@ ESTATISTICAS DO ARQUIVO:
             icon.textContent = theme === 'light' ? 'light_mode' : 'dark_mode';
         }
     </script>
-    <script src="../scripts/easter-egg.js"></script>
+    <script src="../scripts/ui-animation-library.js"></script>
 </body>
 
 </html>\n```\n

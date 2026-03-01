@@ -767,11 +767,21 @@
                 if (st === 'approved') {
                     badge.textContent = 'Aprovado';
                     badge.className = 'px-2 py-0.5 text-[10px] uppercase font-mono tracking-wider border border-green-700 text-green-500 bg-green-900/10';
-                    document.getElementById('actionsBanner').innerHTML = '<span class="text-green-500 uppercase font-mono tracking-widest text-xs flex items-center gap-2"><span class="material-symbols-outlined">verified</span> Verificado</span>';
+                    document.getElementById('actionsBanner').innerHTML = `
+                        <a href="aprovacoes.html" class="flex-1 sm:flex-none border border-neutral-700 hover:border-neutral-400 text-neutral-400 hover:text-white uppercase tracking-widest text-xs font-bold py-3 px-6 transition-all flex items-center justify-center gap-2 group no-underline">
+                            <span class="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">arrow_back</span> Voltar
+                        </a>
+                        <span class="text-green-500 uppercase font-mono tracking-widest text-xs flex items-center gap-2 justify-center sm:justify-start px-4"><span class="material-symbols-outlined">verified</span> Verificado</span>
+                    `;
                 } else if (st === 'rejected') {
                     badge.textContent = 'Reprovado';
                     badge.className = 'px-2 py-0.5 text-[10px] uppercase font-mono tracking-wider border border-red-700 text-red-500 bg-red-900/10';
-                    document.getElementById('actionsBanner').innerHTML = `<span class="text-red-500 uppercase font-mono tracking-widest text-xs flex items-center gap-2"><span class="material-symbols-outlined">block</span> Reprovado: ${submission.rejection_reason || ''}</span>`;
+                    document.getElementById('actionsBanner').innerHTML = `
+                        <a href="aprovacoes.html" class="flex-1 sm:flex-none border border-neutral-700 hover:border-neutral-400 text-neutral-400 hover:text-white uppercase tracking-widest text-xs font-bold py-3 px-6 transition-all flex items-center justify-center gap-2 group no-underline">
+                            <span class="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">arrow_back</span> Voltar
+                        </a>
+                        <span class="text-red-500 uppercase font-mono tracking-widest text-xs flex items-center gap-2 justify-center sm:justify-start px-4"><span class="material-symbols-outlined">block</span> Reprovado: ${submission.rejection_reason || ''}</span>
+                    `;
                 }
 
                 // Fetch files

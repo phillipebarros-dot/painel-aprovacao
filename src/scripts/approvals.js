@@ -41,7 +41,11 @@ const Approvals = (() => {
                 const ts = c.approved_at || c.rejected_at || '';
                 let formattedTs = '';
                 if (ts) {
-                    try { formattedTs = new Date(ts).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }); }
+                    try {
+                        let isoTs = ts.replace(' ', 'T');
+                        if (!isoTs.endsWith('Z') && !isoTs.match(/[+\-]\d{2}:?\d{2}$/)) isoTs += 'Z';
+                        formattedTs = new Date(isoTs).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                    }
                     catch { formattedTs = ts; }
                 }
                 auditLog.push({
@@ -56,9 +60,15 @@ const Approvals = (() => {
         });
         // Ordena pelos mais recentes primeiro -- quem quer ver coisa velha?
         auditLog.sort((a, b) => {
-            const da = new Date(a.timestamp.split('/').reverse().join('-') || 0);
-            const db = new Date(b.timestamp.split('/').reverse().join('-') || 0);
-            return db - da;
+            function parsePtBrDate(dateStr) {
+                if (!dateStr || dateStr === 'Sem data') return 0;
+                const parts = dateStr.split(/[\s,]+/);
+                if (parts.length < 2) return new Date(dateStr).getTime() || 0;
+                const dParts = parts[0].split('/');
+                if (dParts.length !== 3) return new Date(dateStr).getTime() || 0;
+                return new Date(`${dParts[2]}-${dParts[1]}-${dParts[0]}T${parts[1]}`).getTime() || 0;
+            }
+            return parsePtBrDate(b.timestamp) - parsePtBrDate(a.timestamp);
         });
         renderAuditLog();
     }

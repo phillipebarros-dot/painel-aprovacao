@@ -67,16 +67,24 @@ const Charts = (() => {
         for (let i = 6; i >= 0; i--) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
+            const dParts = d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }).split('/');
+            const dateStr = `${dParts[2]}-${dParts[1]}-${dParts[0]}`;
             recentDates[dateStr] = 0;
         }
 
         if (checkingsData && checkingsData.length) {
             checkingsData.forEach(c => {
-                if (c.created_at) {
-                    const dateStr = c.created_at.split(' ')[0];
-                    if (recentDates.hasOwnProperty(dateStr)) {
-                        recentDates[dateStr]++;
+                const ts = c.created_at || c.approved_at || c.rejected_at || c.timestamp;
+                if (ts) {
+                    let isoTs = ts.replace(' ', 'T');
+                    if (!isoTs.endsWith('Z') && !isoTs.match(/[+\-]\d{2}:?\d{2}$/)) isoTs += 'Z';
+                    const d = new Date(isoTs);
+                    const dParts = d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }).split('/');
+                    if (dParts.length === 3) {
+                        const dateStr = `${dParts[2]}-${dParts[1]}-${dParts[0]}`;
+                        if (recentDates.hasOwnProperty(dateStr)) {
+                            recentDates[dateStr]++;
+                        }
                     }
                 }
             });
@@ -109,8 +117,11 @@ const Charts = (() => {
         if (checkingsData && checkingsData.length) {
             const now = new Date();
             checkingsData.forEach(c => {
-                if (c.created_at) {
-                    const d = new Date(c.created_at.replace(' ', 'T'));
+                const ts = c.created_at || c.approved_at || c.rejected_at || c.timestamp;
+                if (ts) {
+                    let isoTs = ts.replace(' ', 'T');
+                    if (!isoTs.endsWith('Z') && !isoTs.match(/[+\-]\d{2}:?\d{2}$/)) isoTs += 'Z';
+                    const d = new Date(isoTs);
                     const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
                     // Group into 6 buckets (e.g. 0-5 days ago)
                     if (diffDays >= 0 && diffDays < 6) {

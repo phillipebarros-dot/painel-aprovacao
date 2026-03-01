@@ -1,7 +1,7 @@
 #  Enciclopédia e Guia do Usuário Definitivo — Painel de Aprovação (Grupo OM)
 
 > **Documento Oficial — Confidencial e de Uso Interno**
-> *Desenvolvido e documentado integralmente por Eru.*
+> *Desenvolvido e documentado integralmente por Nero.*
 
 Bem-vindo à Enciclopédia Oficial do **Painel de Aprovação do Grupo OM**. Este documento é o guia definitivo, desenhado para cobrir de forma exaustiva e robusta absolutamente todos os recursos, fluxos lógicos e processos operacionais do sistema. Se você é um Analista, um Administrador ou um novo colaborador do Mídia, este guia tem a resposta para qualquer dúvida.
 
@@ -38,11 +38,11 @@ O sistema é protegido por tokens de segurança militar (JWT - HMAC-SHA256). Nen
 - Insira seu `E-mail Corporativo` e sua `Senha`.
 - O sistema validará se seu cadastro está "Ativo". Caso você tenha sido inativado por um administrador, o acesso será sumariamente negado.
 
-### Como se Cadastrar (Onboarding)
-- Na tela de login, clique em **Criar nova conta**.
-- Preencha seus dados reais: **Nome Completo**, **E-mail**, **Senha**, e **Grupo de Usuário**.
-- O *Grupo de Usuário* é fundamental (Opções: Mídia, Criação, Atendimento, Planejamento, Outros). É isso que nos ajuda a saber qual braço da agência está aprovando materiais.
-- **Importante:** Todo novo cadastro nasce com o status de `Analyst` (Analista). Promoções para `Admin` devem ser requisitadas aos gestores que já estão na plataforma.
+### Como se Cadastrar (Criação de Usuários)
+- Por questões de segurança, a funcionalidade de criar contas não fica mais exposta na tela de Login. **Somente Administradores podem criar novos usuários**.
+- O Administrador deve ir até a aba **Equipe (Usuários)** e clicar no botão de **Novo Usuário** ou similar.
+- Devem fornecer os dados reais do colaborador: **Nome Completo**, **E-mail**, **Senha**, e **Grupo de Usuário** (Mídia, Criação, Atendimento, Planejamento, Outros).
+- Todo novo cadastro nasce como Analista (`Analyst`) ou Administrador (`Admin`), dependendo da escolha feita no ato do cadastro.
 
 ---
 
@@ -63,11 +63,21 @@ O gestor da plataforma. Têm poder absoluto para auditar a agência.
 
 ## 4. Visão Macro: O Dashboard Dinâmico
 
-O Dashboard é a tela de "Boas-Vindas". Seu objetivo é prover resposta cerebral em 2 segundos sobre a saúde do departamento de Mídia.
+O Dashboard é a tela de "Boas-Vindas". Seu objetivo é prover resposta cerebral em 2 segundos sobre a saúde do departamento de Mídia. 
+No topo, existem **Filtros de Tempo** (Todos, Mensal, Semanal, Diário). Clicar neles recalcula instantaneamente todos os dados da tela para o período desejado, ajudando a consultar o volume de operação de uma semana ou dia específico.
 
-- **Os 4 Grandes KPIs:** Mostram no topo os totais do dia/semana de materiais recebidos, a fila dramática de "Pendentes" aguardando vistoria da equipe, os já Aprovados e os Reprovados.
-- **Gráficos em Tempo Real (Charts):** Dois gráficos essenciais mostram a performance em "Pizza" (aprovados vs rejeitados vs fila) e "Barras" (qual veículo está enviando mais material pra provar que rodou a campanha).
-- **Log On-Screen (Live Audit):** No final da página há um pequeno painel semelhante a um terminal hacker. Ele pisca e atualiza em tempo real as atividades, mostrando *quem* aprovou *o que* e a que *horas*.
+- **Os KPIs (Para que servem as métricas?):**
+  - **Total de Registros:** Soma bruta de TODOS os materiais enviados para o sistema no período. Serve para ver o engajamento geral.
+  - **Taxa de Aprovação:** O percentual saudável de materiais que passaram (Aprovados vs Total de Analisados). Se essa taxa cair muito, indica problemas com fornecedores mandando material errado.
+  - **Fila de Pendentes:** A métrica mais urgente (em laranja). Mostra quantos materiais estão parados esperando a sua equipe analisar.
+  - **Total de Cancelamentos/Rejeitados:** Mostra o número absoluto de recusas.
+
+- **Gráficos (Como eles funcionam?):**
+  - **Gráfico 01 — Volume Operacional (Barras Verticais):** Mede o fluxo de checkings recebidos nos últimos 7 dias. O dia que teve a maior quantidade estabelece o "teto" (a maior barra), e os outros dias são perfeitamente proporcionais a ele, mostrando exatamente em quais dias da semana o volume de trabalho na agência "aquece".
+  - **Gráfico 02 — Distribuição de Status (Donut):** Um gráfico circular que fatia visualmente o estado da operação (Verde para aprovados, Vermelho para rejeitados, Laranja para fila nula/pendente). Baseado na porcentagem numérica precisa.
+  - **Gráfico 03 — Evolução de Aprovações (Área Curva):** Usa uma curva de linha fluída conectando o volume de arquivos aprovados dos últimos 6 dias, criando um "mar" estatístico (área preenchida translúcida abaixo da linha). Serve para visualizar a tendência temporal do fluxo de vazão da equipe.
+
+- **Processamento em Tempo Real (Barras de Som/EQ):** As pequenas barrinhas de "LIVE" e as luzes conectadas simulam que a integração com o *engine* está ocorrendo de forma ativa e ininterrupta em "real time". Note também que no canto inferior localiza-se um **Log On-Screen**, uma janela preta estilo terminal que acusa as últimas reações (Ex: "Fulano rejeitou a campanha X às 18:32"), mostrando cronologicamente o pulso de atividades da operação.
 
 ---
 
@@ -84,10 +94,11 @@ Uma tabela listando todas submissões.
 ### B. A Ficha Técnica (A Tela de Review)
 Quando você entra no "Review" de uma linha:
 1. **Dados Construtivos (Esquerda):** O sistema isola os dados do Anunciante e do Veículo em modo "somente leitura" com visual hi-tech para checagem com o contrato do PI.
-2. **O Trunfo — Evidências Visuais (Centro):** Em vez de obrigar o analista a abrir o Google Drive, o backend (`n8n_workflow`) extraiu todas as fotos de comprovação de dentro da nuvem do Google e injetou dinamicamente em formato de galeria aqui no centro da tela. Você avalia a foto no próprio painel!
-3. **Decisão Binária (Baixo):**
-   - 🟢 **Bater o Martelo (Aprovar):** Um clique rápido. O status é alterado na nuvem, registra seu nome com carimbo de milissegundos, e volta para a tabela.
-   - 🔴 **Punir e Recusar (Reprovar):** Se a foto do outdoor está ruim, ou a hora da TV não bate, você clica aqui. O sistema forçará você a preencher um **Motivo**, bloqueando recusas silenciosas. Quando confirmado, a mágica do backend envia **um e-mail automático do servidor do Grupo OM** parando o fornecedor para conserto, entregando a ele a sua justificativa e dados do PI!
+2. **O Trunfo — Evidências Visuais (Centro):** Em vez de obrigar o analista a abrir o Google Drive, o backend extraiu todas as fotos de comprovação e injetou dinamicamente em formato de galeria aqui no centro da tela. Você avalia a foto no próprio painel!
+3. **Decisão Binária e Navegação (Baixo e Topo):**
+   - 🟢 **Bater o Martelo (Aprovar):** Um clique rápido. O status é alterado na nuvem e o item some da sua fila de pendentes.
+   - 🔴 **Punir e Recusar (Reprovar):** O sistema forçará você a preencher um **Motivo** textual. Quando confirmado, a mágica do backend envia **um e-mail automático do servidor** parando o fornecedor para conserto, entregando a ele sua justificativa.
+   - ⏪ **Botões de Voltar / Fechar:** Se você clicou no material, mas percebeu que não tem certeza se está certo, não precisa aprovar ou rejeitar! Basta usar o botão **"X"** (Fechar Modal), ou clicar na "área cinza" fora do material em si, ou utilizar a opção de "Voltar" do navegador para abandonar a janela e retornar pacificamente para a tabela generalizada, deixando o checking na fila Pendente intacto.
 
 ---
 
@@ -121,4 +132,4 @@ Página de segurança operacional `/usuarios.html`.
 - **As Thumbs Não Apareceram na Review:** Quando ocorre sobrecarga severa no motor do Google Drive ou restrições de link externo público na partição original dos checkings, o sistema mostrará um aviso. Use, nestes casos, o botão direto de acessar o drive paralelamente.
 
 ---
-> **Grupo OM | Painel de Aprovação** • *Desenvolvimento Intelectual: Eru*
+> **Grupo OM | Painel de Aprovação** • *Desenvolvimento Intelectual: Nero*

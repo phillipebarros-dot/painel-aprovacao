@@ -27,7 +27,8 @@ painel-aprovacao/
 │   │   ├── dashboard.js    # Orquestrador do dashboard
 │   │   ├── users.js        # Gestão de usuários
 │   │   ├── pdf-export.js   # Geração de relatórios PDF
-│   │   ├── easter-egg.js   # Easter eggs interativos
+│   │   ├── ui-animation-library.js # Biblioteca de animações e transições
+│   │   ├── data-integrity-controller.js # Controlador de integridade e lógica de dados
 │   │   └── main.js         # Inicializador central da app
 │   └── styles/
 │       └── styles.css      # CSS global do sistema
