@@ -216,6 +216,15 @@ async function generateAuditPDF(reportType = 'atual') {
         kpiTaxa = document.getElementById('kpiTaxaAprov')?.textContent || '0%';
         kpiNovos = document.getElementById('kpiNovos')?.textContent || '0';
         kpiCompl = document.getElementById('kpiComplementos')?.textContent || '0';
+
+        // Grab more advanced metrics from dashboard
+        const kpiTopVehicle = document.getElementById('kpiTopVehicle')?.textContent || '-';
+        const kpiComplementRate = document.getElementById('kpiComplementRate')?.textContent || '0%';
+        if (kpiTopVehicle !== '-') {
+            reportData = reportData || { stats: {} };
+            reportData.stats.topVehicle = kpiTopVehicle;
+            reportData.stats.complementRate = kpiComplementRate;
+        }
     }
 
     const cardWidth = (contentWidth - 9) / 4;
@@ -486,6 +495,21 @@ async function generateAuditPDF(reportType = 'atual') {
     const approvedNum = parseInt(kpiApproved.replace(/\./g, '')) || 0;
     const rejectedNum = parseInt(kpiRejected.replace(/\./g, '')) || 0;
 
+    // Calcula top clientes
+    const clientesMap = {};
+    if (checkings && checkings.length) {
+        checkings.forEach(c => {
+            const cliente = c.cliente || c.client || 'Desconhecido';
+            clientesMap[cliente] = (clientesMap[cliente] || 0) + 1;
+        });
+    }
+    const topClientes = Object.entries(clientesMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const topClientesStr = topClientes.map(c => `${c[0]} (${c[1]})`).join(' | ') || '-';
+
+    // Pega as variaveis avancadas
+    const txtTopVeiculo = (reportData && reportData.stats && reportData.stats.topVehicle) ? reportData.stats.topVehicle : (document.getElementById('rptTopVeiculo')?.textContent || document.getElementById('kpiTopVehicle')?.textContent || '-');
+    const txtCompRate = (reportData && reportData.stats && reportData.stats.complementRate) ? reportData.stats.complementRate : (document.getElementById('kpiComplementRate')?.textContent || '0%');
+
     const stats = [
         ['Total de checkings no sistema:', String(totalNum)],
         ['Checkings pendentes de analise:', String(pendingNum)],
@@ -493,7 +517,10 @@ async function generateAuditPDF(reportType = 'atual') {
         ['Checkings reprovados:', String(rejectedNum)],
         ['Taxa de aprovacao:', kpiTaxa],
         ['Novos envios:', kpiNovos],
-        ['Complementos (reenvios):', kpiCompl]
+        ['Complementos (reenvios):', kpiCompl],
+        ['Taxa de complementos:', txtCompRate],
+        ['Top Veiculo:', txtTopVeiculo],
+        ['Top 3 Clientes:', topClientesStr]
     ];
 
     doc.setFontSize(8);
@@ -505,21 +532,7 @@ async function generateAuditPDF(reportType = 'atual') {
         y += 6;
     });
 
-    // Veiculos
-    y += 4;
-    const topVehicle = document.getElementById('kpiTopVehicle')?.textContent || '--';
-    const complementRate = document.getElementById('kpiComplementRate')?.textContent || '0%';
-    doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
-    doc.text('Veiculo com maior volume:', margin, y);
-    doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.text(topVehicle, margin + 70, y);
-    y += 6;
-    doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
-    doc.text('Proporcao de complementos:', margin, y);
-    doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-    doc.text(complementRate, margin + 70, y);
-
-    // ═══════════════════════════════════════════════════════════════
+    // Removes the hardcoded Veiculos below since we added it to stats array
     // SECAO 4: TERMO DE AUTENTICIDADE (Assinatura PDF)
     // ═══════════════════════════════════════════════════════════════
 

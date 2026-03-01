@@ -15,6 +15,8 @@
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -287,6 +289,17 @@
             <section class="flex-1 bg-slate-50 dark:bg-black flex flex-col min-w-0 relative page-section active"
                 id="page-dashboard">
                 <div class="absolute inset-0 grid-bg pointer-events-none opacity-10 dark:opacity-20"></div>
+                <!-- Master Tooltip Flutuante -->
+                <div id="masterChartTooltip"
+                    class="absolute pointer-events-none opacity-0 z-50 transition-opacity duration-200 bg-slate-900 dark:bg-white text-white dark:text-black text-[10px] font-mono px-3 py-2 shadow-xl whitespace-nowrap !rounded-[0px]">
+                    <div id="tooltipDate"
+                        class="text-slate-400 dark:text-neutral-500 mb-0.5 tracking-wider uppercase font-semibold">Data
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="size-1.5 bg-green-400 rounded-full"></div>
+                        <span id="tooltipValue" class="text-sm font-bold tracking-tighter">0</span>
+                    </div>
+                </div>
                 <div
                     class="h-10 border-b border-slate-200 dark:border-border-dark flex items-center justify-between px-6 bg-white dark:bg-black z-10 relative">
                     <div class="flex items-center gap-4">
@@ -303,235 +316,138 @@
                 </div>
 
                 <div class="flex-1 overflow-y-auto p-6 relative z-0">
-                    <div class="grid grid-cols-12 gap-5">
-                        <!-- ═══ CHART: Volume Operacional ═══ -->
+                    <div class="grid grid-cols-12 gap-5 mb-6">
+                        <!-- ═══ CHART: Fluxo de Envios ═══ -->
                         <div
                             class="col-span-12 lg:col-span-8 tech-border bg-white dark:bg-black p-5 flex flex-col relative overflow-hidden">
-                            <div class="flex justify-between items-start mb-4 relative z-10">
+                            <div class="flex items-center justify-between mb-6 relative z-10">
                                 <div class="space-y-0.5">
                                     <h4
-                                        class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
+                                        class="text-[11px] font-mono uppercase text-tech-gray dark:text-neutral-500 tracking-[0.2em] font-semibold">
                                         Gráfico_01</h4>
                                     <h2 class="text-base font-semibold text-slate-900 dark:text-white tracking-wide">
-                                        Volume Operacional</h2>
+                                        Fluxo de Envios</h2>
+                                    <p class="text-[10px] text-slate-400 dark:text-neutral-500 mt-1">Volume por cliente
+                                        nos últimos 90 dias</p>
+                                </div>
+                                <div
+                                    class="flex items-center gap-1 bg-slate-50 dark:bg-panel-dark border border-slate-200 dark:border-border-dark p-1">
+                                    <button id="btnAll"
+                                        class="chart-period-btn active px-3 py-1 text-[11px] font-mono uppercase font-bold bg-white dark:bg-black text-slate-900 dark:text-white border border-slate-200 dark:border-border-dark"
+                                        data-days="90">Todos</button>
+                                    <button id="btn30d"
+                                        class="chart-period-btn px-3 py-1 text-[11px] font-mono uppercase font-medium text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white"
+                                        data-days="30">30d</button>
+                                    <button id="btn7d"
+                                        class="chart-period-btn px-3 py-1 text-[11px] font-mono uppercase font-medium text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white"
+                                        data-days="7">7d</button>
                                 </div>
                             </div>
-                            <div id="opVolumeChart"
-                                class="flex-1 flex items-end justify-between gap-3 px-3 pb-3 relative border-b border-slate-200 dark:border-neutral-900"
-                                style="min-height:180px">
-                                <div
-                                    class="w-full bg-slate-200 dark:bg-neutral-900 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
-                                    <div
-                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
-                                        0</div>
-                                </div>
-                                <div
-                                    class="w-full bg-slate-200 dark:bg-neutral-800 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
-                                    <div
-                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
-                                        0</div>
-                                </div>
-                                <div class="w-full bg-slate-300 dark:bg-white h-[10%] relative group">
-                                    <div
-                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white font-mono font-semibold">
-                                        0</div>
-                                </div>
-                                <div
-                                    class="w-full bg-slate-200 dark:bg-neutral-800 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
-                                    <div
-                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
-                                        0</div>
-                                </div>
-                                <div
-                                    class="w-full bg-slate-200 dark:bg-neutral-900 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
-                                    <div
-                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
-                                        0</div>
-                                </div>
-                                <div
-                                    class="w-full bg-slate-200 dark:bg-neutral-800 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
-                                    <div
-                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
-                                        0</div>
-                                </div>
-                                <div
-                                    class="w-full bg-slate-200 dark:bg-neutral-900 h-[10%] hover:bg-slate-900 dark:hover:bg-white transition-colors duration-300 relative group">
-                                    <div
-                                        class="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 font-mono transition-opacity font-semibold">
-                                        0</div>
-                                </div>
+                            <div class="flex-1 min-h-[400px] w-full relative z-10">
+                                <canvas id="areaChart"></canvas>
                             </div>
                         </div>
 
-                        <!-- ═══ CHART: Status Distribution (Donut) ═══ -->
+                        <!-- ═══ CHART: Top Performance ═══ -->
                         <div
                             class="col-span-12 lg:col-span-4 tech-border bg-white dark:bg-black p-5 flex flex-col relative overflow-hidden">
-                            <div class="flex justify-between items-center mb-4 z-10">
+                            <div class="space-y-0.5 mb-6 relative z-10">
                                 <h4
-                                    class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
+                                    class="text-[11px] font-mono uppercase text-tech-gray dark:text-neutral-500 tracking-[0.2em] font-semibold">
                                     Gráfico_02</h4>
-                                <div class="text-[11px] font-mono text-slate-900 dark:text-white font-semibold">
-                                    Distribuição</div>
+                                <h2 class="text-base font-semibold text-slate-900 dark:text-white tracking-wide">Top
+                                    Performance</h2>
+                                <p class="text-[10px] text-slate-400 dark:text-neutral-500 mt-1">Volume por Cliente (Top
+                                    6)</p>
                             </div>
-                            <div class="flex-1 flex items-center justify-center relative" id="pieChartDiv">
-                                <div class="size-40 relative flex items-center justify-center">
-                                    <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                                        <path class="text-slate-200 dark:text-neutral-900"
-                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                            fill="none" stroke="currentColor" stroke-width="3"></path>
-                                        <path id="donutApproved" class="text-green-500"
-                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                            fill="none" stroke="currentColor" stroke-dasharray="0, 100" stroke-width="3"
-                                            style="transition: stroke-dasharray 1s ease"></path>
-                                        <path id="donutPending" class="text-amber-400"
-                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                            fill="none" stroke="currentColor" stroke-dasharray="0, 100" stroke-width="3"
-                                            style="transition: stroke-dasharray 1s ease, stroke-dashoffset 1s ease">
-                                        </path>
-                                        <path id="donutRejected" class="text-red-500"
-                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                            fill="none" stroke="currentColor" stroke-dasharray="0, 100" stroke-width="3"
-                                            style="transition: stroke-dasharray 1s ease, stroke-dashoffset 1s ease">
-                                        </path>
-                                    </svg>
-                                    <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span
-                                            class="text-2xl font-bold text-slate-900 dark:text-white font-mono tracking-tighter"
-                                            id="donutCenterValue">0</span>
-                                        <span
-                                            class="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-neutral-500 mt-0.5 font-semibold">Total</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-4 space-y-2 z-10 font-mono text-[11px]">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <div class="size-2 bg-green-500"></div><span
-                                            class="text-slate-600 dark:text-neutral-300 uppercase tracking-wider font-semibold">Aprovados</span>
-                                    </div>
-                                    <div class="text-slate-900 dark:text-white font-bold" id="donutApprovedCount">0
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <div class="size-2 bg-amber-400"></div><span
-                                            class="text-slate-600 dark:text-neutral-300 uppercase tracking-wider font-semibold">Pendentes</span>
-                                    </div>
-                                    <div class="text-slate-900 dark:text-white font-bold" id="donutPendingCount">0</div>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <div class="size-2 bg-red-500"></div><span
-                                            class="text-slate-600 dark:text-neutral-300 uppercase tracking-wider font-semibold">Reprovados</span>
-                                    </div>
-                                    <div class="text-slate-900 dark:text-white font-bold" id="donutRejectedCount">0
-                                    </div>
-                                </div>
+                            <div class="flex-1 min-h-[240px] w-full relative z-10">
+                                <canvas id="radarChart"></canvas>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- ═══ CHART: Evolução de Aprovações (Area) ═══ -->
-                        <div
-                            class="col-span-12 lg:col-span-6 tech-border bg-white dark:bg-black p-5 flex flex-col relative">
-                            <div class="flex justify-between items-start mb-4">
-                                <div class="space-y-0.5">
-                                    <h4
-                                        class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
-                                        Gráfico_03</h4>
-                                    <h2 class="text-base font-semibold text-slate-900 dark:text-white tracking-wide">
-                                        Evolução de Aprovações</h2>
-                                </div>
-                            </div>
-                            <div class="flex-1 relative flex items-end px-2 pb-2" style="min-height:160px"
-                                id="areaChartDiv">
-                                <svg id="areaChartSvg" class="absolute inset-0 h-full w-full z-10 p-2"
-                                    preserveAspectRatio="none" viewBox="0 0 100 100">
-                                    <defs>
-                                        <linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
-                                            <stop offset="0%" stop-color="currentColor" stop-opacity="0.15"
-                                                class="text-slate-900 dark:text-white"></stop>
-                                            <stop offset="100%" stop-color="currentColor" stop-opacity="0.0"
-                                                class="text-slate-900 dark:text-white"></stop>
-                                        </linearGradient>
-                                    </defs>
-                                    <path d="M0,90 L20,90 L40,90 L60,90 L80,90 L100,90 V100 H0 Z"
-                                        fill="url(#areaGradient)" stroke="none"></path>
-                                    <path d="M0,90 L20,90 L40,90 L60,90 L80,90 L100,90" fill="none"
-                                        class="stroke-slate-900 dark:stroke-white" stroke-width="0.5"></path>
-                                    <circle
-                                        class="fill-white dark:fill-black stroke-slate-900 dark:stroke-white stroke-[0.5]"
-                                        cx="0" cy="90" r="1.5"></circle>
-                                    <circle
-                                        class="fill-white dark:fill-black stroke-slate-900 dark:stroke-white stroke-[0.5]"
-                                        cx="20" cy="90" r="1.5"></circle>
-                                    <circle
-                                        class="fill-white dark:fill-black stroke-slate-900 dark:stroke-white stroke-[0.5]"
-                                        cx="40" cy="90" r="1.5"></circle>
-                                    <circle
-                                        class="fill-white dark:fill-black stroke-slate-900 dark:stroke-white stroke-[0.5]"
-                                        cx="60" cy="90" r="1.5"></circle>
-                                    <circle
-                                        class="fill-white dark:fill-black stroke-slate-900 dark:stroke-white stroke-[0.5]"
-                                        cx="80" cy="90" r="1.5"></circle>
-                                    <circle class="fill-slate-900 dark:fill-white" cx="100" cy="90" r="1.5"></circle>
-                                </svg>
+                    <!-- ═══ LOGS DE OPERAÇÕES ═══ -->
+                    <div class="flex flex-col gap-4 relative z-10">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white tracking-wide">Logs de
+                                Operações</h3>
+                            <div id="pendenteBadge"
+                                class="hidden items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-amber-700 dark:text-amber-400 text-[11px] font-bold uppercase tracking-wider">
+                                <span class="material-symbols-outlined text-[14px]">pending</span>
+                                <span id="pendenteBadgeCount">0</span> pendentes
                             </div>
                         </div>
-
-                        <!-- ═══ KPI CARDS ═══ -->
-                        <div class="col-span-12 lg:col-span-6 grid grid-cols-2 gap-4">
+                        <div class="tech-border bg-white dark:bg-black flex flex-col">
                             <div
-                                class="tech-border bg-white dark:bg-black p-4 flex flex-col justify-between group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
-                                <div class="flex justify-between">
-                                    <h5
-                                        class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
-                                        Total Registros</h5>
-                                    <div class="size-2 bg-slate-900 dark:bg-white"></div>
-                                </div>
-                                <div class="mt-3">
-                                    <div class="text-2xl font-bold text-slate-900 dark:text-white font-mono tracking-tighter"
-                                        id="kpiTotalCard">0</div>
-                                </div>
-                            </div>
-                            <div
-                                class="tech-border bg-white dark:bg-black p-4 flex flex-col justify-between group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
-                                <div class="flex justify-between">
-                                    <h5
-                                        class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
-                                        Taxa Aprovação</h5>
-                                    <div class="size-2 bg-green-500"></div>
-                                </div>
-                                <div class="mt-3">
-                                    <div class="text-2xl font-bold text-slate-900 dark:text-white font-mono tracking-tighter"
-                                        id="kpiTaxaCard">0<span
-                                            class="text-lg text-slate-400 dark:text-neutral-400">%</span></div>
-                                </div>
-                            </div>
-                            <div
-                                class="tech-border bg-white dark:bg-black p-4 flex flex-col justify-between col-span-2 group hover:bg-slate-50 dark:hover:bg-neutral-900/30 transition-colors">
-                                <div class="flex justify-between items-center">
-                                    <h5
-                                        class="text-[11px] font-mono uppercase text-slate-500 dark:text-neutral-500 tracking-[0.2em] font-semibold">
-                                        Processamento em Tempo Real</h5>
-                                    <div
-                                        class="h-4 px-2 border border-slate-300 dark:border-white/20 flex items-center justify-center">
+                                class="p-4 border-b border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-panel-dark">
+                                <div
+                                    class="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center mb-4">
+                                    <div class="relative w-full sm:w-64">
                                         <span
-                                            class="text-[10px] text-slate-900 dark:text-white font-mono font-bold">LIVE</span>
+                                            class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-neutral-500"><span
+                                                class="material-symbols-outlined text-[18px]">search</span></span>
+                                        <input id="tableFilter"
+                                            class="w-full pl-9 pr-4 py-2 bg-white dark:bg-black dark:text-neutral-200 border border-slate-300 dark:border-border-dark text-[12px] font-mono placeholder:text-slate-600 dark:placeholder:text-neutral-400 focus:ring-1 focus:ring-slate-900 dark:focus:ring-white outline-none"
+                                            placeholder="Filtrar por cliente, PI..." type="text" />
+                                    </div>
+
+                                </div>
+                                <div
+                                    class="flex items-center gap-3 border-t border-slate-200 dark:border-border-dark pt-4 mt-2">
+                                    <p
+                                        class="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500 dark:text-neutral-500">
+                                        Aprovação:</p>
+                                    <div class="flex gap-4">
+                                        <button
+                                            class="aprov-tab active text-[12px] font-semibold text-slate-900 dark:text-white border-b-2 border-slate-900 dark:border-white pb-1"
+                                            data-aprov="all">Todos</button>
+                                        <button
+                                            class="aprov-tab text-[12px] font-semibold text-slate-500 dark:text-neutral-400 pb-1 flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white"
+                                            data-aprov="Pendente">Pendentes <span id="tabCountPendente"
+                                                class="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 ml-1">0</span></button>
+                                        <button
+                                            class="aprov-tab text-[12px] font-semibold text-slate-500 dark:text-neutral-400 pb-1 hover:text-slate-900 dark:hover:text-white"
+                                            data-aprov="Aprovado">Aprovados</button>
+                                        <button
+                                            class="aprov-tab text-[12px] font-semibold text-slate-500 dark:text-neutral-400 pb-1 hover:text-slate-900 dark:hover:text-white"
+                                            data-aprov="Reprovado">Reprovados</button>
                                     </div>
                                 </div>
-                                <div id="processingBars" class="mt-4 flex gap-1 h-4 items-end">
-                                    <div class="flex-1 bg-slate-200 dark:bg-neutral-800 h-[40%]"></div>
-                                    <div class="flex-1 bg-slate-300 dark:bg-neutral-700 h-[60%]"></div>
-                                    <div class="flex-1 bg-slate-900 dark:bg-white h-[80%]"></div>
-                                    <div class="flex-1 bg-slate-400 dark:bg-neutral-600 h-[50%]"></div>
-                                    <div class="flex-1 bg-slate-200 dark:bg-neutral-800 h-[30%]"></div>
-                                    <div class="flex-1 bg-slate-900 dark:bg-white h-[90%]"></div>
-                                    <div class="flex-1 bg-slate-500 dark:bg-neutral-500 h-[70%]"></div>
-                                    <div class="flex-1 bg-slate-200 dark:bg-neutral-800 h-[45%]"></div>
-                                    <div class="flex-1 bg-slate-300 dark:bg-neutral-700 h-[65%]"></div>
-                                    <div class="flex-1 bg-slate-900 dark:bg-white h-[100%]"></div>
-                                    <div class="flex-1 bg-slate-400 dark:bg-neutral-600 h-[55%]"></div>
-                                    <div class="flex-1 bg-slate-200 dark:bg-neutral-800 h-[35%]"></div>
+                            </div>
+                            <div class="overflow-x-auto min-h-[300px]">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr
+                                            class="bg-slate-50 dark:bg-panel-dark border-b border-slate-200 dark:border-border-dark text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-400 font-semibold">
+                                            <th class="px-4 py-3">Data/Hora</th>
+                                            <th class="px-4 py-3">Cliente</th>
+                                            <th class="px-4 py-3">PI</th>
+                                            <th class="px-4 py-3">Veículo</th>
+                                            <th class="px-4 py-3 text-center">Aprovação</th>
+                                            <th class="px-4 py-3 text-center">Responsável</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="logsTableBody"
+                                        class="divide-y divide-slate-100 dark:divide-neutral-900 text-[12px] text-slate-800 dark:text-neutral-300 font-medium">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div
+                                class="px-4 py-3 border-t border-slate-200 dark:border-border-dark flex items-center justify-between bg-white dark:bg-black">
+                                <p class="text-[11px] font-mono text-slate-500 dark:text-neutral-500">Mostrando <span
+                                        id="showingCount" class="font-bold text-slate-900 dark:text-white">0</span> de
+                                    <span id="totalCount" class="font-bold text-slate-900 dark:text-white">0</span>
+                                </p>
+                                <div class="flex gap-2">
+                                    <button id="prevPage"
+                                        class="p-1 border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"><span
+                                            class="material-symbols-outlined text-[16px]">chevron_left</span></button>
+                                    <span id="pageInfo"
+                                        class="px-3 py-1 border border-slate-900 dark:border-white bg-slate-900 dark:bg-white text-white dark:text-black text-[11px] font-bold">1</span>
+                                    <button id="nextPage"
+                                        class="p-1 border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900 text-slate-500 hover:text-slate-900 dark:hover:text-white"><span
+                                            class="material-symbols-outlined text-[16px]">chevron_right</span></button>
                                 </div>
                             </div>
                         </div>

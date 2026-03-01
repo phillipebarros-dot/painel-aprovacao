@@ -155,7 +155,7 @@ const Approvals = (() => {
         <td style="font-size:11px;color:var(--text-secondary)">${safeMeio || '-'}</td>
         <td style="text-align:center">${complementBadge}</td>
         <td style="text-align:center">${driveLink}</td>
-        <td style="text-align:center">${badge}${reason}</td>
+        <td style="text-align:center">${badge}</td>
         <td style="text-align:center;font-family:var(--font-mono);font-size:11px;color:${Number(c.rejection_count || 0) > 0 ? 'var(--accent-red)' : 'var(--text-tertiary)'}">${escapeHtml(c.rejection_count) || '0'}</td>
         <td style="text-align:center">${resp}</td>
         <td style="text-align:center" class="no-print">${actions}</td>
