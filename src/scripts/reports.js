@@ -176,7 +176,144 @@ const Reports = (() => {
         }
     }
 
+    async function openSlidesModal() {
+        // Obter valores unicos para os dropdowns
+        const getUnique = (field) => [...new Set(allCheckings.map(c => c[field]).filter(v => v !== null && v !== undefined && String(v).trim() !== ''))].sort();
+
+        const clients = getUnique('cliente');
+        const pracas = getUnique('praca');
+        const meios = getUnique('meio');
+
+        const safeText = (str) => typeof escapeHtml === 'function' ? escapeHtml(str || '') : (str || '');
+
+        const { value: formValues } = await Swal.fire({
+            title: '<h3 class="text-lg font-semibold text-slate-900 dark:text-white">Gerar Slides</h3>',
+            html: `
+                <div class="text-left space-y-4 font-sans pb-2">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold mb-1">Período Início <span class="text-red-500">*</span></label>
+                            <input type="date" id="slide_inicio" class="w-full h-9 border border-slate-300 dark:border-neutral-700 bg-white dark:bg-black text-slate-900 dark:text-white px-3 text-sm focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors" required>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold mb-1">Período Fim <span class="text-red-500">*</span></label>
+                            <input type="date" id="slide_fim" class="w-full h-9 border border-slate-300 dark:border-neutral-700 bg-white dark:bg-black text-slate-900 dark:text-white px-3 text-sm focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold mb-1">Título (Opcional)</label>
+                        <input type="text" id="slide_titulo" placeholder="Ex: Campanha de Captação" class="w-full h-9 border border-slate-300 dark:border-neutral-700 bg-white dark:bg-black text-slate-900 dark:text-white px-3 text-sm focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold mb-1">Cliente (Opcional)</label>
+                        <select id="slide_cliente" class="w-full h-9 border border-slate-300 dark:border-neutral-700 bg-white dark:bg-black text-slate-900 dark:text-white px-3 text-sm focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors">
+                            <option value="">Todos</option>
+                            ` + clients.map(c => `<option value="${safeText(c)}">${safeText(c)}</option>`).join('') + `
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold mb-1">Praça (Opcional)</label>
+                        <select id="slide_praca" class="w-full h-9 border border-slate-300 dark:border-neutral-700 bg-white dark:bg-black text-slate-900 dark:text-white px-3 text-sm focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors">
+                            <option value="">Todas</option>
+                            ` + pracas.map(v => `<option value="${safeText(v)}">${safeText(v)}</option>`).join('') + `
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold mb-1">Meio (Opcional)</label>
+                        <select id="slide_meio" class="w-full h-9 border border-slate-300 dark:border-neutral-700 bg-white dark:bg-black text-slate-900 dark:text-white px-3 text-sm focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors">
+                            <option value="">Todos</option>
+                            ` + meios.map(v => `<option value="${safeText(v)}">${safeText(v)}</option>`).join('') + `
+                        </select>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Gerar Slides',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                popup: 'dark:bg-neutral-900 dark:border dark:border-neutral-800 rounded-none',
+                confirmButton: 'bg-slate-900 dark:bg-white text-white dark:text-black font-semibold px-4 py-2 text-sm rounded-none hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors',
+                cancelButton: 'bg-transparent border border-slate-300 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 font-semibold px-4 py-2 text-sm rounded-none hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors'
+            },
+            buttonsStyling: false,
+            preConfirm: () => {
+                const inicio = document.getElementById('slide_inicio').value;
+                const fim = document.getElementById('slide_fim').value;
+                if (!inicio || !fim) {
+                    Swal.showValidationMessage('Os campos de data são obrigatórios.');
+                    return false;
+                }
+
+                // Formatar para DD/MM/YYYY
+                const formatData = (d) => {
+                    const [y, m, day] = d.split('-');
+                    return `${day}/${m}/${y}`;
+                };
+
+                return {
+                    periodo_inicio: formatData(inicio),
+                    periodo_fim: formatData(fim),
+                    titulo: document.getElementById('slide_titulo').value,
+                    cliente: document.getElementById('slide_cliente').value,
+                    praca: document.getElementById('slide_praca').value,
+                    meio: document.getElementById('slide_meio').value
+                };
+            }
+        });
+
+        if (formValues) {
+            // Remover chaves vazias se forem opcionais
+            Object.keys(formValues).forEach(k => {
+                if (!formValues[k]) delete formValues[k];
+            });
+
+            Swal.fire({
+                title: 'Gerando Slides...',
+                text: 'Isso pode levar alguns minutos.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                const data = await API.generateSlides(formValues);
+
+                if (data && data.status === 'sucesso') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        html: `<p class="text-slate-700 dark:text-neutral-300">${data.mensagem}</p>
+                               <div class="mt-4">
+                                  <a href="${data.url}" target="_blank" class="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-800">Abrir Apresentação</a>
+                               </div>`,
+                        customClass: {
+                            popup: 'dark:bg-neutral-900 dark:border dark:border-neutral-800 rounded-none',
+                            confirmButton: 'bg-slate-900 dark:bg-white text-white dark:text-black font-semibold px-4 py-2 text-sm rounded-none hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors'
+                        },
+                        buttonsStyling: false
+                    });
+                } else {
+                    throw new Error(data.mensagem || 'Ocorreu um erro desconhecido.');
+                }
+
+            } catch (error) {
+                console.error("Erro ao gerar slides:", error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: error.message || 'Erro ao comunicar com a GCP Function.',
+                    customClass: {
+                        popup: 'dark:bg-neutral-900 dark:border dark:border-neutral-800 rounded-none',
+                        confirmButton: 'bg-slate-900 dark:bg-white text-white dark:text-black font-semibold px-4 py-2 text-sm rounded-none hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors'
+                    },
+                    buttonsStyling: false
+                });
+            }
+        }
+    }
+
     function getFilteredCheckings() { return filteredCheckings; }
 
-    return { init, setPeriod, setType, render, exportPDF, getFilteredCheckings };
+    return { init, setPeriod, setType, render, exportPDF, openSlidesModal, getFilteredCheckings };
 })();

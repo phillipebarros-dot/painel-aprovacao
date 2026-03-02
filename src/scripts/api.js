@@ -65,12 +65,40 @@ const API = (() => {
     const t = getToken(); if (t) h['Authorization'] = `Bearer ${t}`;
     try {
       const r = await fetch(BASE_URL, { method: 'POST', headers: h, body: JSON.stringify({ action, ...body }) });
-      let d; try { d = await r.json(); } catch { d = { message: await r.text() }; }
+      let d;
+      try {
+        d = await r.json();
+        // Se o n8n devolver um array (comum), pegamos o primeiro item
+        if (Array.isArray(d) && d.length > 0) d = d[0];
+      } catch {
+        d = { message: await r.text() };
+      }
+
+      // Tratamento especial para erro do n8n (AxiosError) que vem dentro do 200 OK
+      if (d && d.error && d.error.message) {
+        let msg = d.error.message;
+        // Limpa escapes comuns do n8n para tentar achar o JSON do GCP
+        const cleanStr = msg.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+        const jsonMatch = cleanStr.match(/\{.*\}/);
+        if (jsonMatch) {
+          try {
+            const innerJson = JSON.parse(jsonMatch[0]);
+            if (innerJson.mensagem) msg = innerJson.mensagem;
+            else if (innerJson.message) msg = innerJson.message;
+          } catch (e) { }
+        } else {
+          // Se nao for JSON, apenas limpa o prefixo do status code (ex: "404 - ")
+          msg = msg.split(' - ').pop().replace(/^"|"$/g, '');
+        }
+        throw new Error(msg);
+      }
+
       // Se retornou 401, o token expirou -- manda pro login de qualquer pagina
       if (r.status === 401) { removeToken(); if (!location.pathname.includes('index.html')) location.href = 'index.html'; throw new Error(d.error || 'Sessao expirada'); }
+
       if (!r.ok) {
         console.error(`[API Error] ${action}:`, d);
-        throw new Error(d.error || d.message || `Erro ${r.status}`);
+        throw new Error(d.error || d.message || d.mensagem || `Erro ${r.status}`);
       }
       return d;
     } catch (e) {
@@ -109,6 +137,7 @@ const API = (() => {
     getFiles: (id) => call('get_files', { submission_id: id }),
     registerUser: (n, e, p, r = 'analyst', g = 'Midia') => call('register_user', { name: n, email: e, password: p, role: r, grupo: g }),
     updateUserRole: (id, r) => call('update_user_role', { userId: id, newRole: r }),
-    updateUserStatus: (id, s) => call('update_user_status', { userId: id, status: s })
+    updateUserStatus: (id, s) => call('update_user_status', { userId: id, status: s }),
+    generateSlides: (payload) => call('generate_slides', payload)
   };
 })();
