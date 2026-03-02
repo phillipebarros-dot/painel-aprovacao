@@ -176,13 +176,19 @@ const Reports = (() => {
         }
     }
 
+    /**
+     * Dispara o modal encarregado da autogeração de Slides do PPTX na página relatorios.html.
+     * Esta função recupera as opções em tempo real a partir dos checkings locais, monta o input do usuário via SweetAlert,
+     * submete para a Cloud Function e reage inteligentemente alterando opções quando o usuário brinca com as datas.
+     */
     async function openSlidesModal() {
-        // Obter valores unicos para os dropdowns
+        // Obter valores unicos iniciais para os dropdowns (base on-load)
         const getUnique = (field) => [...new Set(allCheckings.map(c => c[field]).filter(v => v !== null && v !== undefined && String(v).trim() !== ''))].sort();
 
         const clients = getUnique('cliente');
         const pracas = getUnique('praca');
         const meios = getUnique('meio');
+        const veiculos = getUnique('veiculo');
 
         const safeText = (str) => typeof escapeHtml === 'function' ? escapeHtml(str || '') : (str || '');
 
@@ -219,6 +225,13 @@ const Reports = (() => {
                         </select>
                     </div>
                     <div>
+                        <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold mb-1">Veículo (Opcional)</label>
+                        <select id="slide_veiculo" class="w-full h-9 border border-slate-300 dark:border-neutral-700 bg-white dark:bg-black text-slate-900 dark:text-white px-3 text-sm focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors">
+                            <option value="">Todos</option>
+                            ` + veiculos.map(v => `<option value="${safeText(v)}">${safeText(v)}</option>`).join('') + `
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-semibold mb-1">Meio (Opcional)</label>
                         <select id="slide_meio" class="w-full h-9 border border-slate-300 dark:border-neutral-700 bg-white dark:bg-black text-slate-900 dark:text-white px-3 text-sm focus:outline-none focus:border-slate-900 dark:focus:border-white transition-colors">
                             <option value="">Todos</option>
@@ -236,6 +249,57 @@ const Reports = (() => {
                 cancelButton: 'bg-transparent border border-slate-300 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 font-semibold px-4 py-2 text-sm rounded-none hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors'
             },
             buttonsStyling: false,
+            didOpen: () => {
+                const dataInicio = document.getElementById('slide_inicio');
+                const dataFim = document.getElementById('slide_fim');
+
+                // Inteligência do form. Ao mudar Início/Fim, filtramos as aprovações no cache
+                // para exibir no Select Picker APENAS Clientes, Veículos e Meios que realmente tiveram campanhas naqueles dias.
+                const updateDropdowns = () => {
+                    const startVal = dataInicio.value;
+                    const endVal = dataFim.value;
+
+                    let filteredForSlides = allCheckings;
+
+                    if (startVal && endVal) {
+                        const start = new Date(startVal + 'T00:00:00');
+                        const end = new Date(endVal + 'T23:59:59');
+
+                        filteredForSlides = allCheckings.filter(c => {
+                            const ts = c.approved_at || c.rejected_at || c.created_at || c.timestamp || '';
+                            if (!ts) return false;
+                            try {
+                                let isoTs = ts.replace(' ', 'T');
+                                if (!isoTs.endsWith('Z') && !isoTs.match(/[+\-]\d{2}:?\d{2}$/)) isoTs += 'Z';
+                                const d = new Date(isoTs);
+                                return d >= start && d <= end;
+                            } catch {
+                                return false;
+                            }
+                        });
+                    }
+
+                    const subGetUnique = (field) => [...new Set(filteredForSlides.map(c => c[field]).filter(v => v !== null && v !== undefined && String(v).trim() !== ''))].sort();
+
+                    const updateSelect = (id, vals) => {
+                        const sel = document.getElementById(id);
+                        if (!sel) return;
+                        const currentVal = sel.value;
+                        sel.innerHTML = '<option value="">Todos</option>' + vals.map(v => `<option value="${safeText(v)}">${safeText(v)}</option>`).join('');
+                        if (vals.includes(currentVal)) {
+                            sel.value = currentVal;
+                        }
+                    };
+
+                    updateSelect('slide_cliente', subGetUnique('cliente'));
+                    updateSelect('slide_praca', subGetUnique('praca'));
+                    updateSelect('slide_veiculo', subGetUnique('veiculo'));
+                    updateSelect('slide_meio', subGetUnique('meio'));
+                };
+
+                dataInicio.addEventListener('change', updateDropdowns);
+                dataFim.addEventListener('change', updateDropdowns);
+            },
             preConfirm: () => {
                 const inicio = document.getElementById('slide_inicio').value;
                 const fim = document.getElementById('slide_fim').value;
@@ -256,6 +320,7 @@ const Reports = (() => {
                     titulo: document.getElementById('slide_titulo').value,
                     cliente: document.getElementById('slide_cliente').value,
                     praca: document.getElementById('slide_praca').value,
+                    veiculo: document.getElementById('slide_veiculo').value,
                     meio: document.getElementById('slide_meio').value
                 };
             }
@@ -277,13 +342,25 @@ const Reports = (() => {
             });
 
             try {
-                const data = await API.generateSlides(formValues);
+                let data = await API.generateSlides(formValues);
+
+                // Defensive programming - parse JSON caso o webhook retorne string "envelopada" como objeto ({ "data": "{\"status\":\"sucesso\"...}" })
+                if (data && typeof data.data === 'string') {
+                    try {
+                        data = JSON.parse(data.data);
+                    } catch (e) { console.warn("Erro ao fazer parse de data.data", e); }
+                    // Ou se toda a payload em si retornar stringuada (comum em falhas de parsing via webhooks do n8n)
+                } else if (typeof data === 'string') {
+                    try {
+                        data = JSON.parse(data);
+                    } catch (e) { console.warn("Erro ao fazer parse do response", e); }
+                }
 
                 if (data && data.status === 'sucesso') {
                     Swal.fire({
                         icon: 'success',
                         title: 'Sucesso!',
-                        html: `<p class="text-slate-700 dark:text-neutral-300">${data.mensagem}</p>
+                        html: `<p class="text-slate-700 dark:text-neutral-300">${data.mensagem || 'Slides gerados com sucesso!'}</p>
                                <div class="mt-4">
                                   <a href="${data.url}" target="_blank" class="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-800">Abrir Apresentação</a>
                                </div>`,
@@ -294,7 +371,7 @@ const Reports = (() => {
                         buttonsStyling: false
                     });
                 } else {
-                    throw new Error(data.mensagem || 'Ocorreu um erro desconhecido.');
+                    throw new Error(data.mensagem || data.message || 'Ocorreu um erro desconhecido ao gerar.');
                 }
 
             } catch (error) {

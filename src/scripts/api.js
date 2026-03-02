@@ -138,6 +138,6 @@ const API = (() => {
     registerUser: (n, e, p, r = 'analyst', g = 'Midia') => call('register_user', { name: n, email: e, password: p, role: r, grupo: g }),
     updateUserRole: (id, r) => call('update_user_role', { userId: id, newRole: r }),
     updateUserStatus: (id, s) => call('update_user_status', { userId: id, status: s }),
-    generateSlides: (payload) => call('generate_slides', payload)
+    generateSlides: (payload) => call('generate_slides', payload) // Comunicação com GCP para autogeração de Slides do PPTX na raiz do relatorios.html
   };
 })();
