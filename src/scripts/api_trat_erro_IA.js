@@ -74,9 +74,7 @@ const API = (() => {
                 d = { message: await r.text() };
             }
 
-            // [Branch slides_painel]: Tratamento especial para erro do n8n (AxiosError) que vem encapsulado no retorno 200 OK.
-            // O n8n intercepta os erros em texto, a regra abaixo tenta identificar os JSONs de erros devolvidos pela
-            // Cloud Function do GCP e os decoda amigavelmente.
+            // Tratamento especial para erro do n8n (AxiosError) que vem dentro do 200 OK
             if (d && d.error && d.error.message) {
                 let msg = d.error.message;
                 // Limpa escapes comuns do n8n para tentar achar o JSON do GCP
@@ -140,7 +138,6 @@ const API = (() => {
         registerUser: (n, e, p, r = 'analyst', g = 'Midia') => call('register_user', { name: n, email: e, password: p, role: r, grupo: g }),
         updateUserRole: (id, r) => call('update_user_role', { userId: id, newRole: r }),
         updateUserStatus: (id, s) => call('update_user_status', { userId: id, status: s }),
-        generateSlides: (payload) => call('generate_slides', payload)         // Comunicação com GCP para autogeração de Slides do PPTX na raiz do relatorios.html
+        generateSlides: (payload) => call('generate_slides', payload) // Comunicação com GCP para autogeração de Slides do PPTX na raiz do relatorios.html
     };
 })();
-
