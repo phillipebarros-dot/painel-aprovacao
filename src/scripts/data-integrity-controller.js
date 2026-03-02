@@ -6,12 +6,12 @@
     // We have 6 agencies, we'll map the closest authentic colors.
     const agencies = [
         { name: 'GRUPO OM', color: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'], logo: '../assets/img/logo-grupoom.png', sprite: 'white_car.png' },
-        { name: 'AMERICAS', color: ['#3b82f6', '#fbbf24'], logo: '../assets/img/logo-americas.png', sprite: 'white_car.png' },
+        { name: 'HOUSE CRICKET ', color: ['#3b82f6', '#fbbf24'], logo: '../assets/img/logo-americas.png', sprite: 'white_car.png' },
         { name: 'DOM', color: '#FF0000', logo: '../assets/img/logo-dom.png', sprite: 'white_car.png' },
-        { name: 'OPUS MULTIPLA', color: '#FFFFFF', logo: '../assets/img/logo-opus.png', sprite: 'white_car.png' },
+        { name: 'OPUS ', color: '#FFFFFF', logo: '../assets/img/logo-opus.png', sprite: 'white_car.png' },
         { name: 'TAILOR MEDIA', color: '#ccff00', logo: '../assets/img/Marca TailorMedia vertical s_tagline - RGB.png', sprite: 'white_car.png' },
         { name: 'BRAIN BOX', color: '#FFFF00', logo: '../assets/img/logo-pixel.png', sprite: 'white_car.png' },
-        { name: 'SENSENO', color: '#00FFFF', logo: '../assets/img/logo-senso.png', sprite: 'white_car.png' }
+        { name: 'SENSO', color: '#00FFFF', logo: '../assets/img/logo-senso.png', sprite: 'white_car.png' }
     ];
 
     const phases = [
@@ -322,7 +322,9 @@
                 percent: 0,
                 speed: 0,
                 maxSpeed: maxSpeed * (Math.random() * 0.35 + 0.65),
-                color: agencies[i].color
+                color: agencies[i].color,
+                experience: 0, // AI starts with no experience
+                learningFactor: Math.random() * 0.01 + 0.005 // Each car learns at a different pace
             };
             gridZ += 600;
 
@@ -440,11 +442,11 @@
         else speed = Util.accelerate(speed, decel, dt);
 
         if (((playerX < -1.1) || (playerX > 1.1)) && (speed > offRoadLimit)) {
-            speed = Util.accelerate(speed, offRoadDecel, dt);
-            playerX += (Math.random() * 0.04) - 0.02;
+            speed = Util.accelerate(speed, offRoadDecel * 0.2, dt); // Reduced off-road penalty
+            playerX += (Math.random() * 0.01) - 0.005; // Reduced jitter
         }
 
-        playerX = Util.limit(playerX, -0.9, 0.9);
+        playerX = Util.limit(playerX, -20, 20); // Massive limit (effectively no barrier)
         speed = Util.limit(speed, 0, maxSpeed);
 
         cars.forEach(car => {
@@ -454,27 +456,35 @@
                 car.speed = Util.accelerate(car.speed, accel * 0.8, dt);
             }
 
+            car.experience += dt; // Cars gain experience over time
+            let expFactor = Math.min(1, car.experience / 60); // Max experience at 60 seconds
+
             car.z = Util.increase(car.z, dt * car.speed, trackLength);
             let newSegment = findSegment(car.z);
 
             let dz = car.z - position;
             let targetOffset = (car.agencyIndex % 2 === 0 ? -0.4 : 0.4);
 
-            let upcomingSeg = findSegment(car.z + 1000);
-            if (upcomingSeg.curve > 2) targetOffset = 0.6;
-            else if (upcomingSeg.curve < -2) targetOffset = -0.6;
+            // Experienced cars predict curves better
+            let lookAhead = 1000 + (expFactor * 2000);
+            let upcomingSeg = findSegment(car.z + lookAhead);
 
-            if (dz > 0 && dz < 2000) {
-                if (Math.abs(car.offset - playerX) < 0.6) {
-                    if (car.offset < playerX) targetOffset = playerX - 0.7;
-                    else targetOffset = playerX + 0.7;
+            if (upcomingSeg.curve > 2) targetOffset = 0.6 + (expFactor * 0.3);
+            else if (upcomingSeg.curve < -2) targetOffset = -0.6 - (expFactor * 0.3);
+
+            // Experienced cars avoid the player better and can go off-road to overtake
+            if (dz > 0 && dz < 3000) {
+                if (Math.abs(car.offset - playerX) < (0.6 - (expFactor * 0.2))) {
+                    if (car.offset < playerX) targetOffset = playerX - (0.8 + expFactor);
+                    else targetOffset = playerX + (0.8 + expFactor);
                 }
             }
 
-            if (car.offset < targetOffset) car.offset += 0.015 * speedPercent;
-            else if (car.offset > targetOffset) car.offset -= 0.015 * speedPercent;
+            let steerSpeed = (0.015 + (expFactor * 0.05)) * speedPercent;
+            if (car.offset < targetOffset) car.offset += steerSpeed;
+            else if (car.offset > targetOffset) car.offset -= steerSpeed;
 
-            car.offset = Util.limit(car.offset, -0.85, 0.85);
+            car.offset = Util.limit(car.offset, -5, 5); // AI can also go way off-road
 
             if (oldSegment !== newSegment) {
                 let index = oldSegment.cars.indexOf(car);
