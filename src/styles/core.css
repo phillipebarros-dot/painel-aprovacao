@@ -410,7 +410,7 @@ body::before {
 [data-theme="dark"] .content .icon-btn .dot-notif { box-shadow: 0 0 0 2px var(--surface); }
 [data-theme="dark"] .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-color: var(--bg); }
 [data-theme="dark"] .content .dropdown { background: #15171C; border-color: rgba(255,255,255,0.1); }
-.topbar-om { height: 30px; width: auto; max-width: 100px; object-fit: contain; flex-shrink: 0; }
+.topbar-om { height: 38px; width: auto; max-width: 120px; object-fit: contain; flex-shrink: 0; }
 /* om-title.png é branco: no painel claro (tema claro) inverte para escuro */
 [data-theme="light"] .content .topbar-om { filter: invert(1) brightness(0.25); }
 .login-left-head .row { width: 100%; align-items: center; }
