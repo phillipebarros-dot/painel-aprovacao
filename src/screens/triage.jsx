@@ -9,6 +9,8 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
   const [anim, setAnim] = React.useState("in");
   const [assets, setAssets] = React.useState([]);
   const [loadingFiles, setLoadingFiles] = React.useState(true);
+  const [lightbox, setLightbox] = React.useState(null);
+  const [noteDraft, setNoteDraft] = React.useState("");
   const total = queue.length;
   const c = queue[idx];
 
@@ -49,7 +51,7 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
     const h = (e) => {
       if (done) { if (e.key === "Escape") onClose(); return; }
       const typing = e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT";
-      if (e.key === "Escape") { if (reasonOpen) { setReasonOpen(false); } else onClose(); return; }
+      if (e.key === "Escape") { if (lightbox) { setLightbox(null); } else if (reasonOpen) { setReasonOpen(false); } else onClose(); return; }
       if (reasonOpen) { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); doReject(); } return; }
       if (typing) return;
       const k = e.key.toLowerCase();
@@ -116,7 +118,7 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
               <div className="eyebrow" style={{ marginBottom: 10 }}>{loadingFiles ? "Carregando arquivos…" : `${c.total_arquivos} assets do Drive`}</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
                 {loadingFiles && Array.from({ length: 4 }).map((_, i) => <div key={i} className="skel" style={{ aspectRatio: "4/3", borderRadius: 11 }}/>)}
-                {assets.flatMap((g, gi) => g.files.map((f, fi) => <AssetCard key={f.id} file={f} index={fi} group={g} onOpen={() => {}}/>))}
+                {assets.flatMap((g, gi) => g.files.map((f, fi) => <AssetCard key={f.id} file={f} index={fi} group={g} onOpen={(file) => setLightbox(file)}/>))}
               </div>
               {c.observacoes && <div className="card card-pad" style={{ background: "var(--surface-2)", marginTop: 18 }}><div className="eyebrow" style={{ marginBottom: 6 }}>Observação do fornecedor</div><p style={{ margin: 0, fontSize: 13.5, color: "var(--ink-2)" }}>"{c.observacoes}"</p></div>}
             </div>
@@ -146,6 +148,13 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
                 <div className="eyebrow">Contato</div>
                 <div className="row gap-2"><Avatar user={{ nome: c.nome_contato, color: "#0E7490" }} size={26}/><div className="col" style={{ minWidth: 0 }}><span style={{ fontSize: 13, fontWeight: 500 }}>{c.nome_contato}</span><span style={{ fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis" }}>{c.email_contato}</span></div></div>
               </div>
+              <div className="hr" style={{ margin: "14px 0" }}/>
+              <div className="col gap-2">
+                <div className="eyebrow">Nota interna</div>
+                <div className="row gap-2">
+                  <input className="input" style={{ flex: 1, fontSize: 12.5 }} placeholder="Anotar observacao interna..." value={noteDraft} onChange={e => setNoteDraft(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && noteDraft.trim()) { const ckey = 'painel_notes_' + c.submission_id; const existing = JSON.parse(localStorage.getItem(ckey) || '[]'); const note = { id: Date.now(), text: noteDraft.trim(), tag: 'nota', author: currentUser?.nome || 'Equipe', color: currentUser?.color || '#0E7490', ts: Date.now() }; localStorage.setItem(ckey, JSON.stringify([note, ...existing])); window.PainelAPI?.addComment?.(c.submission_id, noteDraft.trim(), currentUser?.nome || 'Equipe').catch(() => {}); setNoteDraft(''); } }}/>
+                </div>
+              </div>
             </div>
           </div>
         ) : null}
@@ -159,6 +168,26 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
           <Button variant="ghost" size="sm" iconRight="chevron_right" onClick={skip} disabled={idx >= total - 1 && false}>Próximo</Button>
         </div>}
       </div>
+      {lightbox && (
+        <div className="triage-stage" style={{ background: "rgba(0,0,0,0.88)", zIndex: 9999 }} onClick={() => setLightbox(null)} onKeyDown={e => { if (e.key === 'Escape') setLightbox(null); }}>
+          <div style={{ position: "absolute", top: 16, right: 16 }}>
+            <button className="icon-btn" onClick={() => setLightbox(null)} style={{ color: "#fff" }}><Icon name="x" size={22}/></button>
+          </div>
+          <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", padding: 40 }} onClick={e => e.stopPropagation()}>
+            {lightbox.isImage || lightbox.thumbnailUrl ? (
+              <img src={lightbox.thumbnailUrl || lightbox.webViewLink} alt={lightbox.detalhe || ""} referrerPolicy="no-referrer" style={{ maxWidth: "90vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 8, boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }}/>
+            ) : lightbox.isVideo ? (
+              <video src={lightbox.webViewLink} controls autoPlay style={{ maxWidth: "90vw", maxHeight: "85vh", borderRadius: 8 }}/>
+            ) : (
+              <div className="col" style={{ alignItems: "center", gap: 16 }}>
+                <Icon name="pdf" size={60} style={{ color: "#fff" }}/>
+                <a href={lightbox.webViewLink} target="_blank" rel="noopener noreferrer" className="btn btn-accent">Abrir no Drive</a>
+              </div>
+            )}
+            <div style={{ color: "#fff", fontSize: 13, marginTop: 12, opacity: 0.7, textAlign: "center" }}>{lightbox.detalhe || lightbox.address || ""}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
