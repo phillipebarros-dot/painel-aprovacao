@@ -83,13 +83,18 @@ const Pill = ({ status, children, className = "" }) => {
 };
 
 const Avatar = ({ user, size = 28, online = false, ring = false }) => {
-  const u = typeof user === "string" ? { nome: user, avatar: user.split(" ").map(s => s[0]).slice(0, 2).join(""), color: "#4B4842" } : user;
+  const u = typeof user === "string" ? { nome: user, color: "#4B4842" } : user;
   const bg = u?.color || '#4B4842';
+  const avatarUrl = u?.avatar && u.avatar.startsWith("http") ? u.avatar : null;
+  const initials = (u?.nome || u?.name || '?').split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase();
+  const [imgErr, setImgErr] = React.useState(false);
   return (
     <span style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
       <span className={"avatar " + (ring ? "ring" : "")} title={u?.nome || u?.name || ''}
-        style={{ width: size, height: size, background: bg, fontSize: size <= 24 ? 9.5 : size <= 30 ? 11 : 13, fontWeight: 600, display: 'grid' }}>
-        {u?.avatar || (u?.nome || u?.name || '?').split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()}
+        style={{ width: size, height: size, background: avatarUrl && !imgErr ? "transparent" : bg, fontSize: size <= 24 ? 9.5 : size <= 30 ? 11 : 13, fontWeight: 600, display: 'grid', overflow: 'hidden' }}>
+        {avatarUrl && !imgErr
+          ? <img src={avatarUrl} alt="" referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} onError={() => setImgErr(true)}/>
+          : initials}
       </span>
       {online && <span style={{ position: "absolute", bottom: -1, right: -1, width: Math.max(8, size * 0.28), height: Math.max(8, size * 0.28), borderRadius: 99, background: "#22c55e", boxShadow: "0 0 0 2px var(--bg)" }}/>}
     </span>
