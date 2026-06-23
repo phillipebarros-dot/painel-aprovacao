@@ -14,8 +14,10 @@ function ScreenLogin({ onLogin }) {
 
   // Google Identity Services (SSO real)
   React.useEffect(() => {
+    let done = false;
     const init = () => {
-      if (!window.google?.accounts?.id || !window.PainelAPI) return;
+      if (done || !window.google?.accounts?.id || !window.PainelAPI) return;
+      done = true;
       window.google.accounts.id.initialize({
         client_id: window.PainelAPI.GOOGLE_CLIENT_ID,
         callback: async (resp) => {
@@ -30,9 +32,10 @@ function ScreenLogin({ onLogin }) {
         }
       });
     };
-    if (window.google?.accounts?.id) init();else
-    window.addEventListener("load", init);
-    window.addEventListener("painel-api-ready", init);
+    if (window.google?.accounts?.id && window.PainelAPI) init();else {
+      window.addEventListener("load", init);
+      window.addEventListener("painel-api-ready", init);
+    }
     return () => {window.removeEventListener("load", init);window.removeEventListener("painel-api-ready", init);};
   }, []);
 

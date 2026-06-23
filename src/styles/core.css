@@ -292,7 +292,9 @@ body::before {
   padding: 6px 11px; border-radius: 8px; box-shadow: var(--shadow-lg); border: 1px solid var(--rule-strong);
   opacity: 0; pointer-events: none; z-index: 60; transition: opacity 160ms var(--ease), transform 160ms var(--ease);
 }
-.rail-item:hover::after { opacity: 1; transform: translateY(-50%) translateX(0); }
+/* Tooltip so aparece no modo collapsed (quando nav-panel esta hidden) */
+.app.nav-collapsed .rail-item:hover::after { opacity: 1; transform: translateY(-50%) translateX(0); }
+.app:not(.nav-collapsed) .rail-item::after { display: none; }
 
 /* ===== Painel de navegação (camada 2) ===== */
 .nav-panel {

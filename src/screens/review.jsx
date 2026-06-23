@@ -1,19 +1,34 @@
-// screen-review.jsx -> window.ScreenReview
 function AssetCard({ file: f, index, group, onOpen, onDelete }) {
-  const typeLabel = f.isVideo ? "MP4" : f.isPdf ? "PDF" : "JPG";
+  const typeLabel = f.isVideo ? "MP4" : f.isPdf ? "PDF" : f.detalhe?.toLowerCase().includes('audio') ? "MP3" : "JPG";
   const typeClass = f.isVideo ? "video" : f.isPdf ? "pdf" : "img";
+  const id = f.id_imagem || f.id || '';
   const thumb = f.thumbnailUrl || null;
+  const driveFallback = id ? `https://drive.google.com/thumbnail?id=${id}&sz=w400` : null;
+  const [imgSrc, setImgSrc] = React.useState(thumb || driveFallback);
   const [imgError, setImgError] = React.useState(false);
-  const hue = (index * 47 + (f.id_imagem?.length || f.id?.length || 3) * 13) % 360;
+  const hue = (index * 47 + (id?.length || 3) * 13) % 360;
   const fallbackBg = `linear-gradient(135deg, hsl(${hue},22%,28%), hsl(${(hue + 40) % 360},26%,18%))`;
+
+  // Reset quando file muda
+  React.useEffect(() => { setImgSrc(thumb || driveFallback); setImgError(false); }, [f.id_imagem, f.id]);
+
+  const handleImgError = () => {
+    // Se lh3 falhou, tenta drive.google.com/thumbnail
+    if (imgSrc && imgSrc.includes('lh3.googleusercontent') && driveFallback) {
+      setImgSrc(driveFallback);
+    } else {
+      setImgError(true);
+    }
+  };
+
   return (
     <div className="asset-card" onClick={() => onOpen({ ...f, address: group.endereco })}>
-      <div className={"asset-thumb " + typeClass} style={{ background: (f.isImage && (!thumb || imgError)) ? fallbackBg : undefined, position: "relative", overflow: "hidden" }}>
-        {f.isImage && thumb && !imgError ? (
-          <img src={thumb} alt={f.detalhe} onError={() => setImgError(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" referrerPolicy="no-referrer"/>
+      <div className={"asset-thumb " + typeClass} style={{ background: (f.isImage && (!imgSrc || imgError)) ? fallbackBg : undefined, position: "relative", overflow: "hidden" }}>
+        {f.isImage && imgSrc && !imgError ? (
+          <img src={imgSrc} alt={f.detalhe} onError={handleImgError} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" referrerPolicy="no-referrer"/>
         ) : f.isVideo ? (
           <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", position: "relative" }}>
-            {thumb && !imgError ? <img src={thumb} alt="" onError={() => setImgError(true)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.4, filter: "blur(1px)" }} loading="lazy" referrerPolicy="no-referrer"/> : null}
+            {imgSrc && !imgError ? <img src={imgSrc} alt="" onError={handleImgError} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.4, filter: "blur(1px)" }} loading="lazy" referrerPolicy="no-referrer"/> : null}
             <div style={{ width: 44, height: 44, borderRadius: 99, background: "rgba(255,255,255,0.14)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.2)", zIndex: 1 }}><Icon name="play" size={18} style={{ color: "#fff", marginLeft: 2 }}/></div>
           </div>
         ) : f.isPdf ? (

@@ -101,14 +101,27 @@
     const id = f.id_imagem || f.id || f.fileId || f.file_id || '';
     const mime = (f.mimeType || f.mime_type || '').toLowerCase();
     const name = (f.nome || f.name || f.detalhe || '').toLowerCase();
-    const isImage = mime.startsWith('image/') || /\.(jpg|jpeg|png|heic|webp|gif)$/i.test(name);
-    const isVideo = mime.startsWith('video/') || /\.(mp4|mov|avi|webm)$/i.test(name);
-    const isPdf = mime === 'application/pdf' || /\.pdf$/i.test(name);
 
-    // Thumbnail: usa o existente se valido, senao gera estavel
-    let thumb = f.thumbnailUrl || f.thumbnail_url || f.thumbnailLink || null;
-    if (isImage && (!thumb || thumb.includes('googleusercontent') === false)) {
-      thumb = stableThumbnail(id) || thumb;
+    // Respeita flags do n8n se ja existem; senao detecta por MIME/extensao
+    const isVideo = f.isVideo === true || mime.startsWith('video/') || /\.(mp4|mov|avi|webm)$/i.test(name)
+      || name.includes('video') || name.includes('gravacao');
+    const isPdf = f.isPdf === true || mime === 'application/pdf' || /\.pdf$/i.test(name)
+      || name.includes('relatorio') || name.includes('pdf') || name.includes('zip');
+    const isImage = f.isImage === true || (!isVideo && !isPdf && (
+      mime.startsWith('image/') || /\.(jpg|jpeg|png|heic|webp|gif)$/i.test(name)
+      || name.includes('foto') || name.includes('perto') || name.includes('longe')
+      || name.includes('noturna') || name.includes('comprovante')
+      || (!mime && !isVideo && !isPdf) // se nenhum tipo detectado, assume imagem
+    ));
+
+    // Thumbnail: SEMPRE gera estavel se tem id (lh3 nao expira)
+    let thumb = null;
+    if (id && isImage) {
+      thumb = `https://lh3.googleusercontent.com/d/${id}=w400`;
+    }
+    // Fallback: URL do n8n (drive.google.com/thumbnail) se lh3 nao funcionar
+    if (!thumb) {
+      thumb = f.thumbnailUrl || f.thumbnail_url || f.thumbnailLink || null;
     }
 
     // webViewLink de fallback
