@@ -1,57 +1,85 @@
-// LightboxEmbed: exibe PDF/video inline via proxy do n8n (resolve 401).
-// Estrategia: proxyUrl (n8n service account) -> iframe /preview -> fallback nativo
+// LightboxEmbed: exibe PDF/video/imagem/audio inline via proxy blob do n8n.
+// Estrategia: fetchFileBlob (POST n8n, retorna blob: URL local) -> fallback card.
+// Contorna 401 do Drive e bloqueio de cookies de terceiros.
 function LightboxEmbed({ file }) {
-  const [stage, setStage] = React.useState(0); // 0=proxy, 1=Drive preview, 2=fallback nativo, 3=card
   const id = file.id_imagem || file.id || '';
-  const proxyUrl = file.proxyUrl || null;
-  const drivePreview = `https://drive.google.com/file/d/${id}/preview`;
   const viewUrl = file.viewUrl || `https://drive.google.com/file/d/${id}/view`;
-  const downloadUrl = file.downloadUrl || `https://drive.google.com/uc?id=${id}&export=download`;
 
-  const timerRef = React.useRef(null);
-  const [loaded, setLoaded] = React.useState(false);
+  // Estados: 'loading' | 'ready' | 'error'
+  const [status, setStatus] = React.useState('loading');
+  const [blobUrl, setBlobUrl] = React.useState(null);
 
   React.useEffect(() => {
-    setStage(proxyUrl ? 0 : 1);
-    setLoaded(false);
-    timerRef.current = setTimeout(() => { if (!loaded) setStage(s => Math.min(s + 1, 3)); }, 8000);
-    return () => clearTimeout(timerRef.current);
+    if (!id) { setStatus('error'); return; }
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const API = window.PainelAPI;
+        if (!API || !API.fetchFileBlob) { setStatus('error'); return; }
+        const url = await API.fetchFileBlob(id);
+        if (!cancelled && url) { setBlobUrl(url); setStatus('ready'); }
+        else if (!cancelled) { setStatus('error'); }
+      } catch (e) {
+        console.warn('[LightboxEmbed] fetch blob failed:', id, e);
+        if (!cancelled) setStatus('error');
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [id]);
 
-  const handleLoad = () => { setLoaded(true); clearTimeout(timerRef.current); };
-  const handleError = () => { clearTimeout(timerRef.current); setStage(s => Math.min(s + 1, 3)); setLoaded(false); };
+  // Loading
+  if (status === 'loading') {
+    return <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: "#888", fontSize: 13 }}>
+      <div style={{ textAlign: "center" }}>
+        <div className="spinner" style={{ width: 32, height: 32, border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }}/>
+        Carregando arquivo...
+      </div>
+    </div>;
+  }
 
-  // Stage 2+: fallback nativo (video player ou Google Docs Viewer para PDF)
-  if (stage >= 2) {
-    if (file.isVideo) {
-      return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-        <video controls style={{ maxWidth: "100%", maxHeight: "80%", borderRadius: 8 }} src={proxyUrl || downloadUrl}>
-          <source src={proxyUrl || downloadUrl}/>
-        </video>
-        <a href={viewUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "#6b7280", textDecoration: "none" }}>Abrir no Google Drive</a>
-      </div>;
-    }
-    if (file.isPdf) {
-      // Google Docs Viewer como fallback para PDF (nao precisa de auth do Drive)
-      const gdocsUrl = `https://docs.google.com/gview?url=${encodeURIComponent(proxyUrl || downloadUrl)}&embedded=true`;
-      return <iframe src={gdocsUrl} style={{ width: "100%", height: "100%", border: "none" }} title="PDF Viewer"/>;
-    }
-    // Generico: card com link
+  // Error / fallback: card com link para o Drive
+  if (status === 'error' || !blobUrl) {
     return <div style={{ textAlign: "center", color: "#b0b5be", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: 32 }}>
       <div style={{ width: 88, height: 88, borderRadius: 20, background: "rgba(255,255,255,0.06)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <Icon name={file.isPdf ? "pdf" : "video"} size={42} style={{ color: "#9ca3af" }}/>
+        <Icon name={file.isPdf ? "pdf" : file.isVideo ? "video" : file.isAudio ? "audio" : "image"} size={42} style={{ color: "#9ca3af" }}/>
       </div>
       <p style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>{file.detalhe || "Arquivo"}</p>
+      <p style={{ fontSize: 12, color: "#666", margin: 0 }}>Nao foi possivel carregar a visualizacao</p>
       <a href={viewUrl} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ fontSize: 14, padding: "10px 24px", textDecoration: "none" }}>Abrir no Google Drive</a>
     </div>;
   }
 
-  // Stage 0 = proxy iframe, Stage 1 = Drive /preview iframe
-  const src = stage === 0 ? proxyUrl : drivePreview;
-  return <>
-    <iframe src={src} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay; fullscreen" referrerPolicy="no-referrer" onLoad={handleLoad} onError={handleError}/>
-    {!loaded && <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", color: "#666", fontSize: 13 }}>Carregando visualizacao...</div>}
-  </>;
+  // Renderizar conforme tipo
+  if (file.isVideo) {
+    return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+      <video controls style={{ maxWidth: "100%", maxHeight: "85%", borderRadius: 8 }} src={blobUrl}>
+        <source src={blobUrl}/>
+      </video>
+      <a href={viewUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#6b7280", textDecoration: "none" }}>Abrir no Google Drive</a>
+    </div>;
+  }
+
+  if (file.isAudio) {
+    return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <div style={{ width: 88, height: 88, borderRadius: 20, background: "rgba(99,102,241,0.1)", display: "grid", placeItems: "center" }}>
+        <Icon name="audio" size={42} style={{ color: "#6366f1" }}/>
+      </div>
+      <p style={{ fontSize: 15, fontWeight: 500, margin: 0, color: "#ccc" }}>{file.detalhe || "Audio"}</p>
+      <audio controls src={blobUrl} style={{ width: "80%", maxWidth: 400 }}/>
+      <a href={viewUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#6b7280", textDecoration: "none" }}>Abrir no Google Drive</a>
+    </div>;
+  }
+
+  if (file.isPdf) {
+    return <iframe src={blobUrl} style={{ width: "100%", height: "100%", border: "none", borderRadius: 4 }} title="PDF Viewer"/>;
+  }
+
+  // Imagem (default)
+  return <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+    <img src={blobUrl} alt={file.detalhe || "Imagem"} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 4 }}/>
+  </div>;
 }
 
 function AssetCard({ file: f, index, group, onOpen, onDelete }) {
