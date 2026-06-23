@@ -125,7 +125,7 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
                       <div className="card card-pad" style={{ gridColumn: "1/-1", textAlign: "center", padding: 24 }}>
                         <Icon name="folder" size={28} style={{ color: "var(--ink-3)", marginBottom: 8 }}/>
                         <p style={{ margin: 0, fontSize: 13, color: "var(--ink-2)" }}>Arquivos não carregaram. Verifique no Drive:</p>
-                        <a href={c.webViewLink || `https://drive.google.com/drive/search?q=${encodeURIComponent(c.n_pi)}`} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 10 }}>Abrir pasta no Drive ↗</a>
+                        <a href={c.webViewLink || (c.drive_folder_id ? `https://drive.google.com/drive/folders/${c.drive_folder_id}` : `https://drive.google.com/drive/search?q=${encodeURIComponent(c.n_pi)}`)} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 10 }}>Abrir pasta no Drive ↗</a>
                       </div>
                     )}
                     {assets.flatMap((g, gi) => g.files.map((f, fi) => <AssetCard key={f.id_imagem || f.id || fi} file={f} index={fi} group={g} onOpen={(file) => setLightbox(file)}/>))}
@@ -187,13 +187,13 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
           </div>
           <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", padding: 40 }} onClick={e => e.stopPropagation()}>
             {lightbox.isImage || lightbox.thumbnailUrl ? (
-              <img src={lightbox.thumbnailUrl || lightbox.webViewLink} alt={lightbox.detalhe || ""} referrerPolicy="no-referrer" style={{ maxWidth: "90vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 8, boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }}/>
-            ) : lightbox.isVideo ? (
-              <video src={lightbox.webViewLink} controls autoPlay style={{ maxWidth: "90vw", maxHeight: "85vh", borderRadius: 8 }}/>
+              <img src={lightbox.id_imagem ? `https://lh3.googleusercontent.com/d/${lightbox.id_imagem}=w1200` : (lightbox.thumbnailUrl || lightbox.webViewLink)} alt={lightbox.detalhe || ""} referrerPolicy="no-referrer" style={{ maxWidth: "90vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 8, boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }} onError={(e) => { if (e.target.src.includes('lh3.googleusercontent')) { e.target.src = lightbox.thumbnailUrl || `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w800`; } else { e.target.style.display = 'none'; } }}/>
+            ) : (lightbox.isPdf || lightbox.isVideo) && (lightbox.previewUrl || lightbox.id_imagem) ? (
+              <iframe src={lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/preview`} style={{ width: "90vw", height: "85vh", border: "none", borderRadius: 8 }} allow="autoplay" referrerPolicy="no-referrer"/>
             ) : (
               <div className="col" style={{ alignItems: "center", gap: 16 }}>
-                <Icon name="pdf" size={60} style={{ color: "#fff" }}/>
-                <a href={lightbox.webViewLink} target="_blank" rel="noopener noreferrer" className="btn btn-accent">Abrir no Drive</a>
+                <Icon name={lightbox.isPdf ? "pdf" : lightbox.isVideo ? "play" : "image"} size={60} style={{ color: "#fff" }}/>
+                <a href={lightbox.viewUrl || lightbox.webViewLink || (lightbox.id_imagem ? `https://drive.google.com/file/d/${lightbox.id_imagem}/view` : '#')} target="_blank" rel="noopener noreferrer" className="btn btn-accent">Abrir no Drive</a>
               </div>
             )}
             <div style={{ color: "#fff", fontSize: 13, marginTop: 12, opacity: 0.7, textAlign: "center" }}>{lightbox.detalhe || lightbox.address || ""}</div>

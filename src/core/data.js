@@ -54,12 +54,22 @@
     let submittedAt = parseTs(c.created_at) || parseTs(c.submitted_at);
     if (!submittedAt && c.submission_id) { const n = parseInt(String(c.submission_id).split("_")[0], 10); if (!isNaN(n) && n > 1e12) submittedAt = n; }
     if (!submittedAt) submittedAt = Date.now();
+    // Normaliza webViewLink de diferentes nomes de campo possíveis
+    const webViewLink = c.webViewLink || c.web_view_link || c.drive_link || c.driveLink || c.link_pasta || '';
+    // Extrai folder_id do link se disponível
+    let drive_folder_id = c.drive_folder_id || c.folder_id || '';
+    if (webViewLink && !drive_folder_id) {
+      const m = webViewLink.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+      if (m) drive_folder_id = m[1];
+    }
     return {
       ...c, status, submittedAt,
       approvedAt: parseTs(c.approved_at),
       rejectedAt: parseTs(c.rejected_at),
       assigned_to: c.responsavel || c.assigned_to || "",
       approval_user: c.approval_user || "",
+      webViewLink,
+      drive_folder_id,
     };
   }
 
@@ -114,15 +124,23 @@
       || (!mime && !isVideo && !isPdf) // se nenhum tipo detectado, assume imagem
     ));
 
-    // Thumbnail: SEMPRE gera estavel se tem id (lh3 nao expira)
+    // Thumbnail: prioriza URL do n8n (drive.google.com/thumbnail), depois lh3
+    const n8nThumb = f.thumbnailUrl || f.thumbnail_url || f.thumbnailLink || null;
     let thumb = null;
-    if (id && isImage) {
-      thumb = `https://lh3.googleusercontent.com/d/${id}=w400`;
+    if (id) {
+      // n8n já manda thumbnailUrl formatado corretamente — usar primeiro
+      thumb = n8nThumb || `https://lh3.googleusercontent.com/d/${id}=w400`;
+    } else {
+      thumb = n8nThumb;
     }
-    // Fallback: URL do n8n (drive.google.com/thumbnail) se lh3 nao funcionar
-    if (!thumb) {
-      thumb = f.thumbnailUrl || f.thumbnail_url || f.thumbnailLink || null;
-    }
+
+    // Preview URL para iframes (PDF/vídeo) — n8n já manda
+    const previewUrl = f.previewUrl || f.preview_url
+      || (id ? `https://drive.google.com/file/d/${id}/preview` : null);
+
+    // Download URL — n8n já manda
+    const downloadUrl = f.downloadUrl || f.download_url
+      || (id ? `https://drive.google.com/uc?id=${id}&export=download` : null);
 
     // webViewLink de fallback
     const webView = f.webViewLink || f.web_view_link || f.viewUrl
@@ -132,6 +150,8 @@
       ...f,
       id, id_imagem: id,
       thumbnailUrl: thumb,
+      previewUrl,
+      downloadUrl,
       webViewLink: webView,
       viewUrl: webView,
       isImage: isImage && !isPdf && !isVideo,
@@ -150,21 +170,46 @@
       const res = await API.getFiles(submissionId);
       const files = res?.files || [];
       if (!files.length) {
-        // Fallback: se não retornou files mas checking tem webViewLink
+        // Fallback: tenta extrair dados do próprio checking
         const ck = MOCK.checkings.find(c => c.submission_id === submissionId);
-        if (ck?.webViewLink) {
-          return [{ endereco: '', files: [{ id: submissionId, id_imagem: submissionId, detalhe: 'Pasta do Drive', tag: 'DRIVE', isImage: false, isPdf: false, isVideo: false, webViewLink: ck.webViewLink, viewUrl: ck.webViewLink, thumbnailUrl: null }] }];
+        if (ck) {
+          // Extrai folder_id do webViewLink se disponível
+          if (ck.webViewLink && !ck.drive_folder_id) {
+            const folderMatch = ck.webViewLink.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+            if (folderMatch) ck.drive_folder_id = folderMatch[1];
+          }
+          // Se tem thumbnails ou IDs de arquivo no checking, constrói entries
+          if (ck.file_ids || ck.thumbnails || ck.arquivos) {
+            const fileIds = ck.file_ids || ck.arquivos || [];
+            const built = (Array.isArray(fileIds) ? fileIds : [fileIds]).map((fid, i) => {
+              const id = typeof fid === 'object' ? (fid.id || fid.fileId || '') : fid;
+              return normalizeFile({ id, id_imagem: id, detalhe: `Arquivo ${i + 1}`, tag: 'IMG', ...(typeof fid === 'object' ? fid : {}) });
+            });
+            if (built.length) {
+              MOCK.filesById[submissionId] = built;
+              return [{ endereco: '', files: built }];
+            }
+          }
+          // Último fallback: card vazio com link direto
+          if (ck.webViewLink) {
+            return [{ endereco: '', files: [{ id: submissionId, id_imagem: submissionId, detalhe: 'Pasta do Drive', tag: 'DRIVE', isImage: false, isPdf: false, isVideo: false, webViewLink: ck.webViewLink, viewUrl: ck.webViewLink, thumbnailUrl: null }] }];
+          }
         }
         return [];
       }
       MOCK.filesById[submissionId] = files;
       const byAddr = {};
       for (const raw of files) {
-        // Normaliza: gera thumbnailUrl estavel se expirado/ausente
         const f = normalizeFile(raw);
         const key = f.endereco || '_sem_endereco';
         if (!byAddr[key]) byAddr[key] = { endereco: f.endereco || '', files: [] };
         byAddr[key].files.push(f);
+      }
+      // Extrai drive_folder_id do checking para uso em links
+      const ck = MOCK.checkings.find(c => c.submission_id === submissionId);
+      if (ck && ck.webViewLink && !ck.drive_folder_id) {
+        const folderMatch = ck.webViewLink.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+        if (folderMatch) ck.drive_folder_id = folderMatch[1];
       }
       return Object.values(byAddr);
     } catch (err) {

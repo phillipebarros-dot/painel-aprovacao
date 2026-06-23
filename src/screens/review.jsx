@@ -3,22 +3,22 @@ function AssetCard({ file: f, index, group, onOpen, onDelete }) {
   const typeClass = f.isVideo ? "video" : f.isPdf ? "pdf" : "img";
   const id = f.id_imagem || f.id || '';
   const thumb = f.thumbnailUrl || null;
+  const lh3Fallback = id ? `https://lh3.googleusercontent.com/d/${id}=w400` : null;
   const driveFallback = id ? `https://drive.google.com/thumbnail?id=${id}&sz=w400` : null;
-  const [imgSrc, setImgSrc] = React.useState(thumb || driveFallback);
-  const [imgError, setImgError] = React.useState(false);
+  // Cadeia de fallback: thumb → lh3 → drive/thumbnail → gradiente
+  const sources = [thumb, lh3Fallback, driveFallback].filter((u, i, a) => u && a.indexOf(u) === i);
+  const [srcIdx, setSrcIdx] = React.useState(0);
+  const imgSrc = sources[srcIdx] || null;
+  const imgError = srcIdx >= sources.length || !imgSrc;
   const hue = (index * 47 + (id?.length || 3) * 13) % 360;
   const fallbackBg = `linear-gradient(135deg, hsl(${hue},22%,28%), hsl(${(hue + 40) % 360},26%,18%))`;
 
   // Reset quando file muda
-  React.useEffect(() => { setImgSrc(thumb || driveFallback); setImgError(false); }, [f.id_imagem, f.id]);
+  React.useEffect(() => { setSrcIdx(0); }, [f.id_imagem, f.id]);
 
   const handleImgError = () => {
-    // Se lh3 falhou, tenta drive.google.com/thumbnail
-    if (imgSrc && imgSrc.includes('lh3.googleusercontent') && driveFallback) {
-      setImgSrc(driveFallback);
-    } else {
-      setImgError(true);
-    }
+    // Avança para o próximo source na cadeia
+    setSrcIdx(prev => prev + 1);
   };
 
   return (
@@ -188,7 +188,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
         <span className="muted">/</span><span className="cell-mono" style={{ color: "var(--ink-2)" }}>{checking.n_pi}</span>
         <span className="muted">/</span><span className="muted-2">{checking.cliente}</span>
         <span className="spacer"/>
-        <a className="row gap-2 btn-quiet sm btn" href={"https://drive.google.com/drive/search?q=" + encodeURIComponent(checking.n_pi)} target="_blank" rel="noreferrer" title="Abrir a pasta deste PI no Google Drive"><Icon name="folder" size={13}/>Abrir pasta no Drive</a>
+        <a className="row gap-2 btn-quiet sm btn" href={checking.webViewLink || (checking.drive_folder_id ? `https://drive.google.com/drive/folders/${checking.drive_folder_id}` : `https://drive.google.com/drive/search?q=${encodeURIComponent(checking.n_pi)}`)} target="_blank" rel="noreferrer" title="Abrir a pasta deste PI no Google Drive"><Icon name="folder" size={13}/>Abrir pasta no Drive</a>
 
       </div>
 
@@ -596,7 +596,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
             </div>
             <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden" }}>
               {lightbox.isImage && (lightbox.thumbnailUrl || lightbox.id_imagem) ? (
-                lightbox.thumbnailUrl ? <img src={lightbox.thumbnailUrl} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer"/> : <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "var(--ink-3)", fontSize: 16 }}><span>Visualizar no Drive</span><a href={`https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 12 }}>Abrir no Drive</a></div>
+                lightbox.thumbnailUrl || lightbox.id_imagem ? <img src={lightbox.id_imagem ? `https://lh3.googleusercontent.com/d/${lightbox.id_imagem}=w1200` : lightbox.thumbnailUrl} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer" onError={(e) => { if (e.target.src.includes('lh3.googleusercontent')) { e.target.src = lightbox.thumbnailUrl || `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w800`; } else { e.target.style.display = 'none'; } }}/> : <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "var(--ink-3)", fontSize: 16 }}><span>Visualizar no Drive</span><a href={lightbox.viewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 12 }}>Abrir no Drive</a></div>
               ) : (lightbox.isPdf || lightbox.isVideo) && lightbox.id_imagem ? (
                 <iframe src={lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/preview`} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay" referrerPolicy="no-referrer"/>
               ) : (
