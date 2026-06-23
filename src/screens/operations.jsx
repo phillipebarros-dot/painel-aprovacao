@@ -1,18 +1,21 @@
 // screen-operations.jsx -> window.ScreenOperations
 function FlowNode({ node, idx, hover, onHover }) {
-  const c = {
+  const palette = {
     entry: { bg: "rgba(37,99,235,0.08)", fg: "var(--info)", border: "rgba(37,99,235,0.25)" },
     security: { bg: "rgba(124,58,237,0.08)", fg: "#7C3AED", border: "rgba(124,58,237,0.25)" },
     logic: { bg: "var(--glass-2)", fg: "var(--ink)", border: "var(--rule-strong)" },
     data: { bg: "var(--accent-soft)", fg: "var(--accent-ink)", border: "rgba(5,150,105,0.25)" },
     notify: { bg: "var(--warn-soft)", fg: "var(--warn-ink)", border: "rgba(217,119,6,0.25)" },
-  }[node.kind];
+  };
+  const kind = node.kind || (idx === 0 ? "entry" : idx >= 4 ? "notify" : "logic");
+  const c = palette[kind] || palette.logic;
   const isH = hover === node.id;
+  const desc = node.desc || node.sub || "";
   return (
     <div onMouseEnter={() => onHover(node.id)} onMouseLeave={() => onHover(null)} style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 11, padding: "13px 15px", transition: "all 220ms var(--ease)", transform: isH ? "translateY(-3px)" : "none", boxShadow: isH ? "var(--shadow-md)" : "none" }}>
-      <div className="row" style={{ justifyContent: "space-between", marginBottom: 6 }}><span style={{ fontSize: 9.5, fontFamily: "var(--font-mono)", color: c.fg, opacity: 0.8, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>{String(idx + 1).padStart(2, "0")} · {node.kind}</span></div>
+      <div className="row" style={{ justifyContent: "space-between", marginBottom: 6 }}><span style={{ fontSize: 9.5, fontFamily: "var(--font-mono)", color: c.fg, opacity: 0.8, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>{String(idx + 1).padStart(2, "0")} · {kind}</span></div>
       <div style={{ fontSize: 13, color: "var(--ink)", fontWeight: 500, marginBottom: 4 }}>{node.label}</div>
-      <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.4 }}>{node.desc}</div>
+      <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.4 }}>{desc}</div>
     </div>
   );
 }

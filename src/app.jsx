@@ -273,7 +273,7 @@ function TopBar({ route, user, onNav, onlineUsers, notifications, checkings, onO
       <button className="icon-btn" title={navCollapsed ? "Expandir menu" : "Recolher menu"} onClick={onToggleSidebar} style={{ marginLeft: -4 }}><Icon name="panel_left" size={16}/></button>
       <div className="row gap-2" style={{ alignItems: "center", minWidth: 90 }}>
         <img src="assets/img/om-title.png" alt="OM" className="topbar-om"/>
-        <div className="h2" style={{ fontSize: 14, fontWeight: 600 }}>{titles[route] || ""}</div>
+        <div className="h2" style={{ fontSize: 16, fontWeight: 600 }}>{titles[route] || ""}</div>
       </div>
       <div className="divider-v" style={{ height: 22 }}/>
       <OnlineStrip users={displayUsers}/>

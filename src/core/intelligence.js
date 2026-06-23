@@ -12,21 +12,60 @@
   function saveProfile(p) { localStorage.setItem("painel_alert_profile", JSON.stringify(p)); }
 
   // ── Co-piloto: pontua um checking de 4 a 97 (confiança para aprovar) + motivos ──
+  // Mínimo de arquivos esperados por meio (baseado nas 28 regras reais do workflow)
+  const MIN_FILES = {
+    "TV Aberta": 2,      // mapa + espelho/print
+    "TV Fechada": 2,
+    "Rádio": 2,          // mapa + roteiro
+    "Impresso": 1,        // comprovante de veiculação
+    "Revista": 1,
+    "Mídia Exterior": 3,  // foto + mapa + comprovante
+    "Digital": 2,          // print + relatório
+    "Cinema": 1,
+    "Painel": 2,
+  };
+  const CHECKS = {
+    "TV Aberta":      "Conferir mapa de horários e espelho de veiculação",
+    "TV Fechada":     "Conferir mapa de horários e print/espelho",
+    "Rádio":          "Conferir mapa de inserções e roteiro",
+    "Impresso":       "Conferir comprovante de página e edição",
+    "Revista":        "Conferir comprovante de página e edição",
+    "Mídia Exterior": "Conferir foto do painel no local + mapa",
+    "Digital":        "Conferir print da peça + relatório de entrega",
+    "Cinema":         "Conferir certificado de exibição",
+    "Painel":         "Conferir foto + mapa de localização",
+  };
+
   function copilotScore(c) {
-    let conf = 78;
+    let conf = 80;
     const reasons = [];
     const ageH = (Date.now() - c.submittedAt) / 3600000;
+    const meio = c.meio || "";
+    const minFiles = MIN_FILES[meio] || 3;
 
-    if (c.rejection_count > 0) { conf -= 20 * c.rejection_count; reasons.push({ neg: true, text: `Reincidência: ${c.rejection_count}ª devolução anterior` }); }
-    if (c.total_arquivos < 5) { conf -= 15; reasons.push({ neg: true, text: `Poucos arquivos anexados (${c.total_arquivos})` }); }
-    else if (c.total_arquivos >= 10) { conf += 6; reasons.push({ neg: false, text: `Comprovação robusta (${c.total_arquivos} arquivos)` }); }
-    else { reasons.push({ neg: false, text: `${c.total_arquivos} arquivos anexados` }); }
+    // Regra 1: Reincidência (forte penalização)
+    if (c.rejection_count > 0) { conf -= 22 * c.rejection_count; reasons.push({ neg: true, text: `Reincidência: ${c.rejection_count}ª devolução anterior` }); }
 
-    if (norm(c.status) === 'pending' && ageH > 8) { conf -= 9; reasons.push({ neg: true, text: `Em fila há ${window.H.fmtDur(ageH)} · SLA estourado` }); }
+    // Regra 2: Arquivos vs mínimo do meio
+    if (c.total_arquivos < minFiles) {
+      conf -= 12;
+      reasons.push({ neg: true, text: `Esperado pelo menos ${minFiles} arquivo(s) para ${meio || "este meio"} — enviou ${c.total_arquivos}` });
+    } else {
+      reasons.push({ neg: false, text: `${c.total_arquivos} arquivo(s) — compatível com ${meio || "o meio"}` });
+      if (c.total_arquivos >= minFiles + 3) conf += 5;
+    }
+
+    // Regra 3: SLA
+    if (norm(c.status) === 'pending' && ageH > 8) { conf -= 9; reasons.push({ neg: true, text: `Em fila há ${window.H.fmtDur(ageH)} — SLA estourado` }); }
+
+    // Regra 4: Complemento
     if (c.is_complement === 1) { conf -= 8; reasons.push({ neg: true, text: `Complemento: conferir contra a versão anterior` }); }
-    if (c.observacoes && c.observacoes.length > 10) { conf += 7; reasons.push({ neg: false, text: `Fornecedor incluiu observação descritiva` }); }
-    if (c.meio === 'Mídia Exterior') { reasons.push({ neg: false, text: `Mídia exterior: checar foto do painel no local` }); }
-    if (c.meio === 'TV Aberta' || c.meio === 'Rádio') { reasons.push({ neg: false, text: `${c.meio}: conferir mapa de horários veiculados` }); }
+
+    // Regra 5: Observações descritivas (bom sinal)
+    if (c.observacoes && c.observacoes.length > 10) { conf += 6; reasons.push({ neg: false, text: `Fornecedor incluiu observação descritiva` }); }
+
+    // Regra 6: Checagem específica do meio
+    if (CHECKS[meio]) { reasons.push({ neg: false, text: CHECKS[meio] }); }
 
     conf = Math.max(4, Math.min(97, Math.round(conf)));
     const level = conf >= 70 ? 'high' : conf >= 45 ? 'mid' : 'low';

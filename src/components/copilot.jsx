@@ -1,4 +1,4 @@
-// copilot.jsx — Co-piloto de decisão: badge, gauge e painel -> window
+// copilot.jsx — Agente Nero: badge, gauge e painel -> window
 function CopilotBadge({ checking, size = "md" }) {
   const s = React.useMemo(() => window.AI.copilotScore(checking), [checking.submission_id, checking.status, checking.rejection_count, checking.total_arquivos]);
   const color = s.level === "high" ? "var(--accent)" : s.level === "mid" ? "var(--warn)" : "var(--alert)";
@@ -103,7 +103,7 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
         <div className="row gap-2">
           <div className="copilot-spark" style={{ color }}><Icon name="bolt" size={14}/></div>
           <div className="eyebrow" style={{ color }}>
-            {useGemini ? "Co-piloto · Gemini IA" : geminiLoading ? "Co-piloto · analisando com Gemini…" : "Co-piloto · análise heurística"}
+            {useGemini ? "Nero · Gemini IA" : geminiLoading ? "Nero · analisando com Gemini…" : "Nero · análise local"}
           </div>
           {useGemini && <span className="copilot-chip" style={{ background: soft, color, padding: "1px 6px", fontSize: 9, marginLeft: "auto" }}>GEMINI</span>}
           {!useGemini && !geminiLoading && <span className="copilot-chip" style={{ background: soft, color, padding: "1px 6px", fontSize: 9, marginLeft: "auto" }}>AUTO</span>}
@@ -113,7 +113,7 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
         {geminiLoading && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 0" }}>
             <div className="spinner" style={{ width: 20, height: 20 }}/>
-            <span className="body-xs muted">Consultando Gemini 2.0 Flash — analisando PI, histórico do fornecedor e comprovantes…</span>
+            <span className="body-xs muted">Consultando Gemini — analisando PI, histórico do fornecedor e comprovantes…</span>
           </div>
         )}
         <div className="row gap-4" style={{ alignItems: "center", marginBottom: 16 }}>
@@ -128,8 +128,8 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
             <div style={{ fontSize: 15, fontWeight: 600, color }}>{rec}</div>
             <div className="body-xs" style={{ lineHeight: 1.5 }}>
               {useGemini
-                ? "Análise feita pelo Gemini com base no histórico do fornecedor, comprovantes e regras de negócio. Você decide."
-                : "Análise local baseada em regras heurísticas. Aguarde o Gemini para análise completa."}
+                ? "Análise feita pelo Gemini com base no histórico do fornecedor e regras de negócio."
+                : "Análise baseada nas regras de checagem por meio. Gemini será consultado se disponível."}
             </div>
           </div>
         </div>
@@ -138,7 +138,7 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
             <Icon name="warn" size={12}/> Gemini indisponível: {geminiError} — usando análise local
           </div>
         )}
-        <div className="eyebrow" style={{ marginBottom: 8 }}>{useGemini ? "Análise Gemini" : "Por que esse número"}</div>
+        <div className="eyebrow" style={{ marginBottom: 8 }}>{useGemini ? "Análise Gemini" : "Regras aplicadas"}</div>
         <div className="col gap-2">
           {reasons.map((rs, i) => (
             <div key={i} className="copilot-reason" style={{ animationDelay: (i * 50) + "ms" }}>
@@ -154,8 +154,8 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
           </div>
         )}
         <div className="copilot-foot">
-          {useGemini ? "Análise por Gemini 2.0 Flash · confiança " + geminiResult.confidence + " · a decisão final é sempre sua"
-                     : "Sugestão de apoio · a decisão final é sempre sua"}
+          {useGemini ? "Análise por Gemini · confiança " + geminiResult.confidence + " · a decisão final é sempre sua"
+                     : "Nero · assistente de checagem · a decisão final é sempre sua"}
         </div>
       </div>
     </div>
@@ -179,7 +179,7 @@ function AutoTriagePanel({ checkings, onStartTriage, onOpenReview, onToast }) {
       <div className="copilot-header" style={{ background: "linear-gradient(180deg, var(--accent-soft), transparent)" }}>
         <div className="row gap-2" style={{ alignItems: "center", width: "100%" }}>
           <div className="copilot-spark" style={{ color: "var(--accent)" }}><Icon name="bolt" size={14}/></div>
-          <div className="col" style={{ gap: 1 }}><div className="eyebrow" style={{ color: "var(--accent)" }}>Triagem automática por IA</div><span className="body-xs muted">{t.pending} pendentes analisados · {t.pct}% elegíveis a auto-resolução</span></div>
+          <div className="col" style={{ gap: 1 }}><div className="eyebrow" style={{ color: "var(--accent)" }}>Nero · Triagem automática</div><span className="body-xs muted">{t.pending} pendentes analisados · {t.pct}% elegíveis a auto-resolução</span></div>
           <div className="spacer"/>
           <div className="row gap-2" style={{ alignItems: "center" }}>
             <span className="tb-view-lbl">Confiança mín.</span>
@@ -210,7 +210,7 @@ function AutoTriagePanel({ checkings, onStartTriage, onOpenReview, onToast }) {
             </div>
           ))}
         </div>
-        <div className="copilot-foot" style={{ marginTop: 12 }}>A IA pré-classifica e ordena a fila. Nenhuma aprovação é feita sem a sua confirmação no lote.</div>
+        <div className="copilot-foot" style={{ marginTop: 12 }}>Nero pré-classifica e ordena a fila. Nenhuma aprovação é feita sem a sua confirmação.</div>
       </div>
     </div>
   );

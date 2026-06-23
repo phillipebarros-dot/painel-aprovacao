@@ -86,7 +86,7 @@ function ScreenLogin({ onLogin }) {
           </p>
 
           <div className="login-deck">
-            {[["approvals", "Aprovação", "fila com SLA e decisão rápida"], ["target", "Co-piloto", "recomendação com nível de confiança"], ["warn", "Alertas", "monitoramento de prazos em risco"]].map(([ic, t, d], i) =>
+            {[["approvals", "Aprovação", "fila com SLA e decisão rápida"], ["target", "Nero", "assistente de checagem por meio"], ["warn", "Alertas", "monitoramento de prazos em risco"]].map(([ic, t, d], i) =>
             <div key={t} className={"login-deck-card c" + i}>
                 <span className="login-cap-ico"><Icon name={ic} size={15} /></span>
                 <div className="col" style={{ gap: 2, minWidth: 0 }}><span className="login-cap-t">{t}</span><span className="login-cap-d">{d}</span></div>
