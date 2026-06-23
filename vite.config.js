@@ -1,15 +1,21 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Auto-injeta `import React from 'react'` em todo .jsx que não tem
+// Auto-injeta imports de React/ReactDOM em todo .jsx que usa sem import
 function injectReactImport() {
   return {
     name: 'inject-react-import',
     enforce: 'pre',
     transform(code, id) {
-      if (id.endsWith('.jsx') && !code.includes('import React')) {
-        return { code: `import React from 'react';\n${code}`, map: null };
+      if (!id.endsWith('.jsx')) return;
+      let inject = '';
+      if (!code.includes('import React') && !code.includes("import React")) {
+        inject += "import React from 'react';\n";
       }
+      if (code.includes('ReactDOM') && !code.includes('import ReactDOM')) {
+        inject += "import ReactDOM from 'react-dom/client';\n";
+      }
+      if (inject) return { code: inject + code, map: null };
     },
   };
 }
