@@ -86,8 +86,8 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
     return () => window.removeEventListener("keydown", h);
   }, [checking, decision, lightbox, isViewer]);
 
-  const totalAssets = assets.reduce((s, e) => s + e.files.length, 0);
-  const onlyPhotos = !filesLoading && totalAssets > 0 && assets.every(g => g.files.every(f => f.isImage));
+  const totalAssets = assets.reduce((s, e) => s + (e.files?.length || 0), 0);
+  const onlyPhotos = !filesLoading && totalAssets > 0 && assets.every(g => (g.files || []).every(f => f.isImage));
   const slaProfile = React.useMemo(() => (window.AI && window.AI.loadProfile) ? window.AI.loadProfile() : { slaWarnH: 4 }, []);
   const ageH = (Date.now() - checking.submittedAt) / 3600000;
   const isLate = H.norm(checking.status) === "pending" && ageH >= (slaProfile.slaWarnH || 4);
