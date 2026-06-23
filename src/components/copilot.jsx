@@ -12,35 +12,98 @@ function CopilotBadge({ checking, size = "md" }) {
 }
 
 function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
-  const s = React.useMemo(() => window.AI.copilotScore(checking), [checking.submission_id, checking.status, checking.rejection_count]);
-  const color = s.level === "high" ? "var(--accent)" : s.level === "mid" ? "var(--warn)" : "var(--alert)";
-  const soft = s.level === "high" ? "var(--accent-soft)" : s.level === "mid" ? "var(--warn-soft)" : "var(--alert-soft)";
+  // Fallback local (heurístico)
+  const localScore = React.useMemo(() => window.AI.copilotScore(checking), [checking.submission_id, checking.status, checking.rejection_count]);
+
+  // ── Estado da análise Gemini real ──
+  const [geminiResult, setGeminiResult] = React.useState(null);
+  const [geminiLoading, setGeminiLoading] = React.useState(false);
+  const [geminiError, setGeminiError] = React.useState(null);
+  const hasCalledRef = React.useRef(null);
+
+  // Auto-chamar Gemini ao abrir o painel
+  React.useEffect(() => {
+    if (!checking.submission_id || hasCalledRef.current === checking.submission_id) return;
+    hasCalledRef.current = checking.submission_id;
+    setGeminiLoading(true);
+    setGeminiError(null);
+    setGeminiResult(null);
+    window.PainelAPI.copilotAnalyze(checking.submission_id)
+      .then(r => {
+        if (r.success && r.analysis) setGeminiResult(r.analysis);
+        else setGeminiError("Sem resposta do Gemini");
+      })
+      .catch(e => setGeminiError(e.message || "Erro ao chamar Gemini"))
+      .finally(() => setGeminiLoading(false));
+  }, [checking.submission_id]);
+
+  // Escolher fonte: Gemini real ou fallback local
+  const useGemini = !!geminiResult;
+  const conf = useGemini ? geminiResult.score : localScore.conf;
+  const rec = useGemini
+    ? (geminiResult.recommendation === "APROVAR" ? "Provável aprovação" : geminiResult.recommendation === "REVISAR" ? "Requer atenção" : "Risco de reprovação")
+    : localScore.rec;
+  const levelFromScore = (sc) => sc >= 70 ? "high" : sc >= 45 ? "mid" : "low";
+  const level = useGemini ? levelFromScore(geminiResult.score) : localScore.level;
+  const color = level === "high" ? "var(--accent)" : level === "mid" ? "var(--warn)" : "var(--alert)";
+  const soft = level === "high" ? "var(--accent-soft)" : level === "mid" ? "var(--warn-soft)" : "var(--alert-soft)";
+
+  // Motivos: Gemini retorna summary + risks[], local retorna reasons[]
+  const reasons = useGemini
+    ? [
+        { neg: false, text: geminiResult.summary },
+        ...(geminiResult.risks || []).map(r => ({ neg: true, text: r })),
+      ]
+    : localScore.reasons;
+
   const size = 92, stroke = 9, r = (size - stroke) / 2, c = 2 * Math.PI * r;
   const [off, setOff] = React.useState(c);
-  React.useEffect(() => { const t = setTimeout(() => setOff(c * (1 - s.conf / 100)), 120); return () => clearTimeout(t); }, [s.conf, c]);
+  React.useEffect(() => { const t = setTimeout(() => setOff(c * (1 - conf / 100)), 120); return () => clearTimeout(t); }, [conf, c]);
 
   return (
     <div className="card copilot-card">
       <div className="copilot-header" style={{ background: `linear-gradient(180deg, ${soft}, transparent)` }}>
-        <div className="row gap-2"><div className="copilot-spark" style={{ color }}><Icon name="bolt" size={14}/></div><div className="eyebrow" style={{ color }}>Co-piloto · apoio à decisão</div></div>
+        <div className="row gap-2">
+          <div className="copilot-spark" style={{ color }}><Icon name="bolt" size={14}/></div>
+          <div className="eyebrow" style={{ color }}>
+            {useGemini ? "Co-piloto · Gemini IA" : geminiLoading ? "Co-piloto · analisando com Gemini…" : "Co-piloto · análise local"}
+          </div>
+          {useGemini && <span className="copilot-chip" style={{ background: soft, color, padding: "1px 6px", fontSize: 9, marginLeft: "auto" }}>GEMINI</span>}
+          {!useGemini && !geminiLoading && <span className="copilot-chip" style={{ background: "var(--ink-soft)", color: "var(--ink-3)", padding: "1px 6px", fontSize: 9, marginLeft: "auto" }}>OFFLINE</span>}
+        </div>
       </div>
       <div className="card-pad">
+        {geminiLoading && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 0" }}>
+            <div className="spinner" style={{ width: 20, height: 20 }}/>
+            <span className="body-xs muted">Consultando Gemini 2.0 Flash — analisando PI, histórico do fornecedor e comprovantes…</span>
+          </div>
+        )}
         <div className="row gap-4" style={{ alignItems: "center", marginBottom: 16 }}>
           <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
             <svg width={size} height={size}>
               <circle className="ring-track" cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke}/>
               <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ transition: "stroke-dashoffset 1200ms var(--ease-out)" }}/>
             </svg>
-            <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}><div style={{ textAlign: "center" }}><div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1, color }}><CountUp value={s.conf}/><span style={{ fontSize: 13 }}>%</span></div><div style={{ fontSize: 8.5, color: "var(--ink-3)", fontFamily: "var(--font-mono)", marginTop: 1 }}>CONFIANÇA</div></div></div>
+            <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}><div style={{ textAlign: "center" }}><div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1, color }}><CountUp value={conf}/><span style={{ fontSize: 13 }}>%</span></div><div style={{ fontSize: 8.5, color: "var(--ink-3)", fontFamily: "var(--font-mono)", marginTop: 1 }}>CONFIANÇA</div></div></div>
           </div>
           <div className="col" style={{ gap: 4, flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color }}>{s.rec}</div>
-            <div className="body-xs" style={{ lineHeight: 1.5 }}>Lê os arquivos anexados, o histórico de devoluções, o tempo em fila e o tipo de mídia para sugerir uma decisão. Você decide.</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color }}>{rec}</div>
+            <div className="body-xs" style={{ lineHeight: 1.5 }}>
+              {useGemini
+                ? "Análise feita pelo Gemini com base no histórico do fornecedor, comprovantes e regras de negócio. Você decide."
+                : "Análise local baseada em regras heurísticas. Aguarde o Gemini para análise completa."}
+            </div>
           </div>
         </div>
-        <div className="eyebrow" style={{ marginBottom: 8 }}>Por que esse número</div>
+        {geminiError && (
+          <div style={{ fontSize: 11.5, color: "var(--warn)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <Icon name="warn" size={12}/> Gemini indisponível: {geminiError} — usando análise local
+          </div>
+        )}
+        <div className="eyebrow" style={{ marginBottom: 8 }}>{useGemini ? "Análise Gemini" : "Por que esse número"}</div>
         <div className="col gap-2">
-          {s.reasons.map((rs, i) => (
+          {reasons.map((rs, i) => (
             <div key={i} className="copilot-reason" style={{ animationDelay: (i * 50) + "ms" }}>
               <span className="copilot-reason-ico" style={{ color: rs.neg ? "var(--alert)" : "var(--accent)" }}><Icon name={rs.neg ? "warn" : "check"} size={12} strokeWidth={2}/></span>
               <span style={{ fontSize: 12.5, color: "var(--ink-2)" }}>{rs.text}</span>
@@ -53,7 +116,10 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
             <button className="btn btn-ghost sm" style={{ flex: 1 }} onClick={onReject}><Icon name="x"/>Reprovar</button>
           </div>
         )}
-        <div className="copilot-foot">Sugestão de apoio · a decisão final é sempre sua</div>
+        <div className="copilot-foot">
+          {useGemini ? "Análise por Gemini 2.0 Flash · confiança " + geminiResult.confidence + " · a decisão final é sempre sua"
+                     : "Sugestão de apoio · a decisão final é sempre sua"}
+        </div>
       </div>
     </div>
   );
