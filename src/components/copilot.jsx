@@ -21,47 +21,55 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
   const [geminiError, setGeminiError] = React.useState(null);
   const hasCalledRef = React.useRef(null);
 
-  // Auto-chamar Gemini ao abrir o painel
+  // ── Cache global + rate limit para não estourar cota Gemini ──
+  const CACHE_KEY = "copilot_cache";
+  const RATE_KEY = "copilot_last_call";
+  const RATE_LIMIT_MS = 15000; // mínimo 15s entre chamadas
+  const cacheGet = (id) => { try { const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "{}"); return c[id]; } catch { return null; } };
+  const cacheSet = (id, result) => { try { const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "{}"); c[id] = result; sessionStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch {} };
+  const canCall = () => { const last = parseInt(sessionStorage.getItem(RATE_KEY) || "0", 10); return Date.now() - last >= RATE_LIMIT_MS; };
+  const markCall = () => sessionStorage.setItem(RATE_KEY, String(Date.now()));
+
+  // Auto-chamar Gemini ao abrir o painel (com cache + rate limit)
   React.useEffect(() => {
     if (!checking.submission_id || hasCalledRef.current === checking.submission_id) return;
     hasCalledRef.current = checking.submission_id;
-    setGeminiLoading(true);
     setGeminiError(null);
     setGeminiResult(null);
+
+    // 1. Checar cache primeiro
+    const cached = cacheGet(checking.submission_id);
+    if (cached) { setGeminiResult(cached); return; }
+
+    // 2. Checar rate limit
     const API = window.PainelAPI;
-    if (!API || !API.copilotAnalyze) {
-      setGeminiError("API não disponível");
-      setGeminiLoading(false);
+    if (!API || !API.copilotAnalyze || !canCall()) {
+      // Sem API ou rate limited: usar fallback local silenciosamente
       return;
     }
+
+    setGeminiLoading(true);
+    markCall();
     API.copilotAnalyze(checking.submission_id)
       .then(r => {
-        console.log("[Copilot] Gemini response:", r);
-        if (!r) { setGeminiError("Resposta vazia do n8n"); return; }
-        // Aceitar analysis como string JSON (parse) ou objeto
+        if (!r) return;
         let analysis = r.analysis;
         if (typeof analysis === "string") {
           try { analysis = JSON.parse(analysis); } catch { /* mantém string */ }
         }
-        // Aceitar tanto { success, analysis } quanto flat { score, recommendation }
         if (r.success && analysis && typeof analysis === "object" && analysis.score != null) {
           setGeminiResult(analysis);
+          cacheSet(checking.submission_id, analysis);
         } else if (r.score != null) {
-          // Resposta flat (sem wrapper)
           setGeminiResult(r);
-        } else if (r.message !== undefined && !r.success) {
-          // n8n retornou erro: {message: ''} ou {message: 'algum erro'}
-          console.warn("[Copilot] Pipeline Gemini falhou:", r);
-          setGeminiError(r.message ? `Gemini: ${r.message}` : "Pipeline Gemini não retornou análise — verifique as credenciais do Gemini no n8n");
+          cacheSet(checking.submission_id, r);
         } else {
-          console.warn("[Copilot] Formato inesperado:", r);
-          setGeminiError("Gemini indisponível: " + (r.error || r.message || "formato inesperado"));
+          // Gemini falhou (429, cota, erro) — fallback silencioso, sem alarme
+          console.info("[Copilot] Gemini indisponível, usando análise local:", r.message || r.error || "sem dados");
         }
       })
       .catch(e => {
-        console.error("[Copilot] Erro:", e);
-        const msg = e.name === "AbortError" ? "Timeout — Gemini demorou demais" : (e.message || "Erro de rede");
-        setGeminiError(msg);
+        console.info("[Copilot] Fallback local (rede):", e.message || "");
       })
       .finally(() => setGeminiLoading(false));
   }, [checking.submission_id]);
@@ -95,10 +103,10 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
         <div className="row gap-2">
           <div className="copilot-spark" style={{ color }}><Icon name="bolt" size={14}/></div>
           <div className="eyebrow" style={{ color }}>
-            {useGemini ? "Co-piloto · Gemini IA" : geminiLoading ? "Co-piloto · analisando com Gemini…" : "Co-piloto · análise local"}
+            {useGemini ? "Co-piloto · Gemini IA" : geminiLoading ? "Co-piloto · analisando com Gemini…" : "Co-piloto · análise heurística"}
           </div>
           {useGemini && <span className="copilot-chip" style={{ background: soft, color, padding: "1px 6px", fontSize: 9, marginLeft: "auto" }}>GEMINI</span>}
-          {!useGemini && !geminiLoading && <span className="copilot-chip" style={{ background: "var(--ink-soft)", color: "var(--ink-3)", padding: "1px 6px", fontSize: 9, marginLeft: "auto" }}>OFFLINE</span>}
+          {!useGemini && !geminiLoading && <span className="copilot-chip" style={{ background: soft, color, padding: "1px 6px", fontSize: 9, marginLeft: "auto" }}>AUTO</span>}
         </div>
       </div>
       <div className="card-pad">
