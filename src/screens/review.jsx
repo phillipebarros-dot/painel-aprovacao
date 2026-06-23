@@ -2,15 +2,25 @@
 function AssetCard({ file: f, index, group, onOpen, onDelete }) {
   const typeLabel = f.isVideo ? "MP4" : f.isPdf ? "PDF" : "JPG";
   const typeClass = f.isVideo ? "video" : f.isPdf ? "pdf" : "img";
-  const hue = (index * 47 + (f.id?.length || 3) * 13) % 360;
+  const thumb = f.thumbnailUrl || (f.id_imagem ? `https://drive.google.com/thumbnail?id=${f.id_imagem}&sz=w400` : null);
+  const [imgError, setImgError] = React.useState(false);
+  const hue = (index * 47 + (f.id_imagem?.length || f.id?.length || 3) * 13) % 360;
+  const fallbackBg = `linear-gradient(135deg, hsl(${hue},22%,28%), hsl(${(hue + 40) % 360},26%,18%))`;
   return (
     <div className="asset-card" onClick={() => onOpen({ ...f, address: group.endereco })}>
-      <div className={"asset-thumb " + typeClass} style={f.isImage ? { background: `linear-gradient(135deg, hsl(${hue},22%,28%), hsl(${(hue + 40) % 360},26%,18%))` } : undefined}>
-        <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%" }}>
-          {f.isVideo ? <div style={{ width: 44, height: 44, borderRadius: 99, background: "rgba(255,255,255,0.14)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.2)" }}><Icon name="play" size={18} style={{ color: "#fff", marginLeft: 2 }}/></div>
-            : f.isPdf ? <Icon name="pdf" size={30}/>
-            : <div style={{ fontSize: 32, fontWeight: 600, color: "rgba(255,255,255,0.5)", fontVariantNumeric: "tabular-nums" }}>{String(index + 1).padStart(2, "0")}</div>}
-        </div>
+      <div className={"asset-thumb " + typeClass} style={{ background: (f.isImage && (!thumb || imgError)) ? fallbackBg : undefined, position: "relative", overflow: "hidden" }}>
+        {f.isImage && thumb && !imgError ? (
+          <img src={thumb} alt={f.detalhe} onError={() => setImgError(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" referrerPolicy="no-referrer"/>
+        ) : f.isVideo ? (
+          <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", position: "relative" }}>
+            {thumb && !imgError ? <img src={thumb} alt="" onError={() => setImgError(true)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.4, filter: "blur(1px)" }} loading="lazy" referrerPolicy="no-referrer"/> : null}
+            <div style={{ width: 44, height: 44, borderRadius: 99, background: "rgba(255,255,255,0.14)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.2)", zIndex: 1 }}><Icon name="play" size={18} style={{ color: "#fff", marginLeft: 2 }}/></div>
+          </div>
+        ) : f.isPdf ? (
+          <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%" }}><Icon name="pdf" size={30}/></div>
+        ) : (
+          <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%" }}><div style={{ fontSize: 32, fontWeight: 600, color: "rgba(255,255,255,0.5)", fontVariantNumeric: "tabular-nums" }}>{String(index + 1).padStart(2, "0")}</div></div>
+        )}
         <span className="tag">{f.tag}</span>
         {onDelete && <button className="asset-del" title="Excluir arquivo" onClick={(e) => { e.stopPropagation(); onDelete(); }}><Icon name="x" size={13} strokeWidth={2.4}/></button>}
         <div className="asset-overlay"><span className="label">Visualizar</span></div>
@@ -19,6 +29,7 @@ function AssetCard({ file: f, index, group, onOpen, onDelete }) {
     </div>
   );
 }
+
 
 function ScreenReview({ checking, currentUser, onBack, onDecide }) {
   const H = window.H;
@@ -184,7 +195,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                 <div className="spacer"/><span className="cell-mono muted">{group.files.length} arquivos</span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
-                {group.files.map((f, fi) => <AssetCard key={f.id || fi} file={f} index={fi} group={group} onOpen={setLightbox} onDelete={!isViewer ? () => removeFile(group, f) : null}/>)}
+                {group.files.map((f, fi) => <AssetCard key={f.id_imagem || f.id || fi} file={f} index={fi} group={group} onOpen={setLightbox} onDelete={!isViewer ? () => removeFile(group, f) : null}/>)}
               </div>
             </div>
           ))}
@@ -453,15 +464,22 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
         <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1001, width: "min(1180px,94vw)", height: "min(860px,90vh)", background: "#0a0a0c", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.6)", animation: "modalIn 360ms var(--ease-out)" }}>
           <div className="row" style={{ justifyContent: "space-between", padding: "14px 18px", background: "rgba(255,255,255,0.05)" }}>
             <div><span style={{ color: "#fff", fontSize: 15, fontWeight: 500 }}>{lightbox.detalhe}</span><span style={{ color: "#999", fontSize: 12.5, marginLeft: 8 }}>{lightbox.address}</span></div>
-            <button onClick={() => setLightbox(null)} style={{ color: "#999", fontSize: 20, padding: "2px 10px" }}>✕</button>
-          </div>
-          <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)` }}>
-            <div style={{ textAlign: "center", color: "#8a8f98" }}>
-              {lightbox.isVideo ? <div style={{ width: 110, height: 110, borderRadius: 99, background: "rgba(255,255,255,0.08)", display: "grid", placeItems: "center", margin: "0 auto", border: "1px solid rgba(255,255,255,0.15)" }}><Icon name="play" size={44} style={{ color: "#fff", marginLeft: 5 }}/></div>
-                : <Icon name={lightbox.isPdf ? "pdf" : "image"} size={84}/>}
-              <p style={{ marginTop: 18, fontSize: 14 }}>Preview do arquivo · {lightbox.isVideo ? "vídeo" : lightbox.isPdf ? "PDF" : "imagem"}</p>
-              <p style={{ fontSize: 11.5, color: "#5a5f68", fontFamily: "var(--font-mono)", marginTop: 4 }}>No sistema real, carregado do Google Drive</p>
+            <div className="row gap-2">
+              <a href={lightbox.viewUrl || lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)" }}>Abrir no Drive ↗</a>
+              <button onClick={() => setLightbox(null)} style={{ color: "#999", fontSize: 20, padding: "2px 10px" }}>✕</button>
             </div>
+          </div>
+          <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden" }}>
+            {lightbox.isImage ? (
+              <img src={lightbox.thumbnailUrl || `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w1200`} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer"/>
+            ) : (lightbox.isVideo || lightbox.isPdf) ? (
+              <iframe src={lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/preview`} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay" referrerPolicy="no-referrer"/>
+            ) : (
+              <div style={{ textAlign: "center", color: "#8a8f98" }}>
+                <Icon name="image" size={84}/>
+                <p style={{ marginTop: 18, fontSize: 14 }}>Arquivo não disponível para preview</p>
+              </div>
+            )}
           </div>
         </div>
       </>)}

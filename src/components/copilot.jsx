@@ -28,12 +28,37 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
     setGeminiLoading(true);
     setGeminiError(null);
     setGeminiResult(null);
-    window.PainelAPI.copilotAnalyze(checking.submission_id)
+    const API = window.PainelAPI;
+    if (!API || !API.copilotAnalyze) {
+      setGeminiError("API não disponível");
+      setGeminiLoading(false);
+      return;
+    }
+    API.copilotAnalyze(checking.submission_id)
       .then(r => {
-        if (r.success && r.analysis) setGeminiResult(r.analysis);
-        else setGeminiError("Sem resposta do Gemini");
+        console.log("[Copilot] Gemini response:", r);
+        if (!r) { setGeminiError("Resposta vazia do n8n"); return; }
+        // Aceitar analysis como string JSON (parse) ou objeto
+        let analysis = r.analysis;
+        if (typeof analysis === "string") {
+          try { analysis = JSON.parse(analysis); } catch { /* mantém string */ }
+        }
+        // Aceitar tanto { success, analysis } quanto flat { score, recommendation }
+        if (r.success && analysis && typeof analysis === "object" && analysis.score != null) {
+          setGeminiResult(analysis);
+        } else if (r.score != null) {
+          // Resposta flat (sem wrapper)
+          setGeminiResult(r);
+        } else {
+          console.warn("[Copilot] Formato inesperado:", r);
+          setGeminiError("Gemini indisponível: " + (r.error || r.message || "formato inesperado"));
+        }
       })
-      .catch(e => setGeminiError(e.message || "Erro ao chamar Gemini"))
+      .catch(e => {
+        console.error("[Copilot] Erro:", e);
+        const msg = e.name === "AbortError" ? "Timeout — Gemini demorou demais" : (e.message || "Erro de rede");
+        setGeminiError(msg);
+      })
       .finally(() => setGeminiLoading(false));
   }, [checking.submission_id]);
 
