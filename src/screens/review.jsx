@@ -73,14 +73,48 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
     window.PainelAPI?.addComment(checking.submission_id, `[DRIVE] ${url}`, author).catch(() => {});
   };
   const addReupload = (kind, detail) => {
-    const base = { foto: "Foto reenviada", pdf: "PDF reenviado", video: "Vídeo reenviado" }[kind];
-    const label = detail ? base + " (" + detail + ")" : base;
-    const author = currentUser?.nome || currentUser?.name || "Equipe";
-    const item = { id: Date.now(), kind, label, author, ts: Date.now() };
-    const next = [item, ...links]; setLinks(next); localStorage.setItem(lkey, JSON.stringify(next));
-    // Persiste no backend
-    window.PainelAPI?.uploadSupplement(checking.submission_id, [{ kind, label }]).catch(() => {});
-    window.PainelAPI?.addComment(checking.submission_id, `[REUPLOAD] ${label}`, author).catch(() => {});
+    // Abre file picker nativo com validação MIME por tipo
+    const acceptMap = {
+      foto: ".jpg,.jpeg,.png,.heic,.webp",
+      pdf: ".pdf",
+      video: ".mp4,.mov,.avi,.webm",
+    };
+    const inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = acceptMap[kind] || "*/*";
+    inp.multiple = true;
+    inp.onchange = async () => {
+      if (!inp.files?.length) return;
+      const base = { foto: "Foto reenviada", pdf: "PDF reenviado", video: "Vídeo reenviado" }[kind];
+      const label = detail ? base + " (" + detail + ")" : base;
+      const author = currentUser?.nome || currentUser?.name || "Equipe";
+      const fileNames = Array.from(inp.files).map(f => f.name).join(", ");
+      const item = { id: Date.now(), kind, label: label + ": " + fileNames, author, ts: Date.now(), uploading: true };
+      const next = [item, ...links]; setLinks(next); localStorage.setItem(lkey, JSON.stringify(next));
+      // Upload real via FormData
+      try {
+        const fd = new FormData();
+        fd.append("action", "upload_supplement");
+        fd.append("submission_id", checking.submission_id);
+        fd.append("n_pi", checking.n_pi || "");
+        fd.append("category", kind);
+        fd.append("detail", detail || "");
+        fd.append("uploaded_by", author);
+        Array.from(inp.files).forEach(f => fd.append("files", f));
+        const uploadRes = await window.PainelAPI?.uploadSupplement?.(checking.submission_id, fd);
+        // Marca como concluído
+        const done = { ...item, uploading: false, success: true };
+        const updated = [done, ...links.filter(l => l.id !== item.id)];
+        setLinks(updated); localStorage.setItem(lkey, JSON.stringify(updated));
+      } catch (err) {
+        // Fallback: registra como comentário se endpoint não existe
+        const failed = { ...item, uploading: false, success: false };
+        const updated = [failed, ...links.filter(l => l.id !== item.id)];
+        setLinks(updated); localStorage.setItem(lkey, JSON.stringify(updated));
+      }
+      window.PainelAPI?.addComment?.(checking.submission_id, `[REUPLOAD] ${label}: ${fileNames}`, author).catch(() => {});
+    };
+    inp.click();
   };
   const delLink = (id) => { const next = links.filter(l => l.id !== id); setLinks(next); localStorage.setItem(lkey, JSON.stringify(next)); };
 
@@ -332,7 +366,10 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                       <span className="rule-ic" style={{ width: 26, height: 26, background: "var(--accent-soft)", color: "var(--accent)" }}><Icon name={l.kind === "link" ? "folder" : l.kind === "pdf" ? "pdf" : l.kind === "video" ? "play" : "image"} size={13}/></span>
                       {l.kind === "link"
                         ? <a href={l.url} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "var(--accent-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, fontFamily: "var(--font-mono)" }}>{l.url}</a>
-                        : <span style={{ fontSize: 12.5, color: "var(--ink-2)", flex: 1 }}>{l.label}</span>}
+                        : <span style={{ fontSize: 12.5, color: "var(--ink-2)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.label}</span>}
+                      {l.uploading && <span className="pill pill-blue" style={{ fontSize: 10, padding: "2px 8px" }}>enviando...</span>}
+                      {l.success === true && !l.uploading && <span style={{ color: "var(--ok)", fontSize: 13 }} title="Enviado">✓</span>}
+                      {l.success === false && !l.uploading && <span style={{ color: "var(--alert)", fontSize: 11 }} title="Falha no upload (registrado como comentario)">falhou</span>}
                       <span className="cell-time">{H.fmtRelTime(l.ts)}</span>
                       <button className="note-del" title="Remover" onClick={() => delLink(l.id)}><Icon name="x" size={12} strokeWidth={2.2}/></button>
                     </div>
