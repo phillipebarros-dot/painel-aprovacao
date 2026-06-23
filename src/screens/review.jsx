@@ -479,13 +479,13 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
           <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden" }}>
             {lightbox.isImage && (lightbox.thumbnailUrl || lightbox.id_imagem) ? (
               <img src={lightbox.thumbnailUrl || `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w1200`} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer"/>
+            ) : (lightbox.isPdf || lightbox.isVideo) && lightbox.id_imagem ? (
+              <iframe src={lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/preview`} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay" referrerPolicy="no-referrer"/>
             ) : (
               <div style={{ textAlign: "center", color: "#b0b5be", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
                 <Icon name={lightbox.isPdf ? "pdf" : lightbox.isVideo ? "play" : "image"} size={72}/>
                 <p style={{ fontSize: 16, fontWeight: 500, margin: 0 }}>{lightbox.detalhe || "Arquivo"}</p>
-                <p style={{ fontSize: 13, color: "#6e7681", margin: 0 }}>{lightbox.isPdf ? "PDF" : lightbox.isVideo ? "Vídeo MP4" : "Imagem"} · clique abaixo para visualizar no Drive</p>
                 <a href={lightbox.viewUrl || lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ marginTop: 8, fontSize: 14, padding: "10px 24px" }}><Icon name="folder" size={15}/> Abrir no Google Drive ↗</a>
-                {lightbox.downloadUrl && <a href={lightbox.downloadUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#6e7681", textDecoration: "underline" }}>Baixar arquivo</a>}
               </div>
             )}
           </div>

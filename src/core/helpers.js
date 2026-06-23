@@ -218,7 +218,7 @@
     const m = {};
     const ensure = (name) => (m[name] = m[name] || { name, demanda: 0, baixados: 0, approved: 0, rejected: 0, pendentes: 0, slaSum: 0, slaN: 0 });
     checkings.forEach(c => {
-      const who = c.assigned_to; if (!who) return;
+      const who = c.assigned_to || c.approval_user || "Sem atribuição";
       const e = ensure(who);
       e.demanda++;
       const s = norm(c.status);

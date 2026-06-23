@@ -8,6 +8,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const [divMonth, setDivMonth] = React.useState("all");
   const [divConta, setDivConta] = React.useState(null);
   const [divPage, setDivPage] = React.useState(50); // paginação virtual
+  const [customFrom, setCustomFrom] = React.useState("");
+  const [customTo, setCustomTo] = React.useState("");
   const changePeriod = (v) => { if (React.startTransition) React.startTransition(() => setPeriod(v)); else setPeriod(v); };
 
   // ── Lazy load: carregar board de produção do n8n (BigQuery) ──
@@ -27,12 +29,26 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
     if (period === "hoje") return new Date().setHours(0, 0, 0, 0);
     if (period === "semana") return now - 7 * 86400000;
     if (period === "mes") return now - 30 * 86400000;
+    if (period === "custom" && customFrom) return new Date(customFrom).getTime();
     return 0;
-  }, [period]);
+  }, [period, customFrom]);
 
-  const prod = React.useMemo(() => H.teamProductivity(checkings, sinceTs), [checkings, sinceTs]);
+  const untilTs = React.useMemo(() => {
+    if (period === "custom" && customTo) return new Date(customTo).getTime() + 86400000 - 1;
+    return Infinity;
+  }, [period, customTo]);
+
+  const filteredCheckings = React.useMemo(() => {
+    if (period !== "custom" || (!customFrom && !customTo)) return checkings;
+    return checkings.filter(c => {
+      const t = c.submittedAt || c.ingestion_time;
+      return (!customFrom || t >= sinceTs) && (!customTo || t <= untilTs);
+    });
+  }, [checkings, period, sinceTs, untilTs, customFrom, customTo]);
+
+  const prod = React.useMemo(() => H.teamProductivity(filteredCheckings, period === "custom" ? 0 : sinceTs), [filteredCheckings, sinceTs, period]);
   const maxBaixados = Math.max(1, ...prod.rows.map(r => r.baixados));
-  const periodLabel = { hoje: "hoje", semana: "últimos 7 dias", mes: "últimos 30 dias", tudo: "todo o período" }[period];
+  const periodLabel = period === "custom" ? (customFrom && customTo ? `${new Date(customFrom).toLocaleDateString("pt-BR")} – ${new Date(customTo).toLocaleDateString("pt-BR")}` : "período personalizado") : { hoje: "hoje", semana: "últimos 7 dias", mes: "últimos 30 dias", tudo: "todo o período" }[period];
 
   // colaborador: minha fila
   const myName = currentUser?.nome || currentUser?.name;
@@ -91,7 +107,14 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
           <h1 className="display-1">{isManager ? "Produção da equipe" : "Minhas tarefas"}</h1>
         </div>
         <div className="row gap-3" style={{ flex: "0 0 auto" }}>
-          <Segmented value={period} onChange={changePeriod} options={[{ value: "hoje", label: "Hoje" }, { value: "semana", label: "7d" }, { value: "mes", label: "30d" }, { value: "tudo", label: "Tudo" }]}/>
+          <Segmented value={period} onChange={changePeriod} options={[{ value: "hoje", label: "Hoje" }, { value: "semana", label: "7d" }, { value: "mes", label: "30d" }, { value: "tudo", label: "Tudo" }, { value: "custom", label: "Período" }]}/>
+          {period === "custom" && (
+            <div className="row gap-2" style={{ alignItems: "center" }}>
+              <input type="date" className="input sm" value={customFrom} onChange={e => setCustomFrom(e.target.value)} style={{ width: 140, fontSize: 12 }}/>
+              <span className="muted" style={{ fontSize: 12 }}>até</span>
+              <input type="date" className="input sm" value={customTo} onChange={e => setCustomTo(e.target.value)} style={{ width: 140, fontSize: 12 }}/>
+            </div>
+          )}
           {isManager && <Button variant="primary" icon="layers" onClick={() => setDivOpen(true)}>Dividir demanda</Button>}
         </div>
       </div>
