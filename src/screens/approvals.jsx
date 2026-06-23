@@ -241,76 +241,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
         </div>
       )}
 
-      {/* PLANILHA view — densa e color-coded como a pauta do Camilo */}
-      {view === "planilha" && (
-        <div className="card">
-          {pageRows.length === 0 ? <Empty title="Nenhum checking encontrado" hint="Ajuste os filtros" icon="search"/> : (
-            <div style={{ overflowX: "auto" }}>
-              <table className="tbl tbl-planilha">
-                <thead><tr>
-                  <th>Situação PI</th><th>Nº PI</th><th>Planilha</th><th>Meio</th><th>Cliente</th><th>Veículo</th>
-                  <th>Período</th><th style={{ textAlign: "right" }}>Líquido</th><th>Campanha</th><th>Produto</th><th>Praça</th>
-                  <th style={{ minWidth: 140 }}>Status</th><th style={{ minWidth: 180 }}>Comentário</th><th>Vencimento</th><th>Liberado</th>
-                  <th style={{ minWidth: 150 }}>Responsável</th><th style={{ minWidth: 180 }}>Observações</th>
-                </tr></thead>
-                <tbody>
-                  {pageRows.map((c, i) => {
-                    const per = c.periodo_ini && c.periodo_fim ? `${new Date(c.periodo_ini).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}–${new Date(c.periodo_fim).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}` : "—";
-                    return (
-                    <tr key={c.submission_id} className="row-action row-anim" style={{ animationDelay: (i * 12) + "ms" }} onClick={() => onRowClick(c)}>
-                      <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.situacao_pi}</td>
-                      <td className="cell-pi">{c.n_pi}</td>
-                      <td className="cell-secondary">{c.planilha}</td>
-                      <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.meio}</td>
-                      <td style={{ fontWeight: 500, whiteSpace: "nowrap" }}>{c.cliente}</td>
-                      <td className="cell-secondary" style={{ whiteSpace: "nowrap", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis" }}>{c.veiculo}</td>
-                      <td className="cell-time" style={{ whiteSpace: "nowrap" }}>{per}</td>
-                      <td className="mono" style={{ textAlign: "right", whiteSpace: "nowrap" }}>{(c.valor_liquido ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
-                      <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.campanha}</td>
-                      <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.produto}</td>
-                      <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.praca}</td>
-                      <td className="plan-edit" onClick={(e) => e.stopPropagation()}>
-                        <div className="plan-status" style={{ "--sc": CHECK_STATUS[c.statusCheck] || "var(--ink-3)" }}>
-                          {isViewer ? <span className="plan-status-tag">{c.statusCheck || "—"}</span> : (
-                            <select value={c.statusCheck || ""} onChange={(e) => { onSetCheckStatus && onSetCheckStatus(c.submission_id, e.target.value); onToast?.({ type: "success", message: `Status: ${e.target.value}` }); }}>
-                              {!c.statusCheck && <option value="">—</option>}
-                              {CHECK_STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                          )}
-                        </div>
-                      </td>
-                      <td className="plan-edit" onClick={(e) => e.stopPropagation()}>
-                        {isViewer ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.comentario || "—"}</span> : (
-                          <input className="plan-input" defaultValue={c.comentario || ""} placeholder="Comentário…" onBlur={(e) => { if (e.target.value !== (c.comentario || "")) { onSetComentario && onSetComentario(c.submission_id, e.target.value); onToast?.({ type: "success", message: "Comentário salvo." }); } }} onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}/>
-                        )}
-                      </td>
-                      <td className="cell-time" style={{ whiteSpace: "nowrap" }}>{c.vencimento ? new Date(c.vencimento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "—"}</td>
-                      <td className="cell-secondary" style={{ textAlign: "center" }}><span className={"lib-dot " + (c.liberado === "Sim" ? "lib-yes" : c.liberado === "Não" ? "lib-no" : "lib-wait")}>{c.liberado}</span></td>
-                      <td className="plan-edit" onClick={(e) => e.stopPropagation()}>
-                        {isViewer ? <span className="cell-secondary">{c.approval_user || c.assigned_to || "—"}</span> : (
-                          <select className="plan-select" value={c.assigned_to || ""} onChange={(e) => { onSetResponsavel && onSetResponsavel(c.submission_id, e.target.value); onToast?.({ type: "success", message: `Responsável: ${e.target.value}` }); }}>
-                            <option value="">— a definir —</option>
-                            {team.map(t => <option key={t} value={t}>{t}</option>)}
-                          </select>
-                        )}
-                      </td>
-                      <td className="cell-secondary" style={{ fontSize: 12, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={c.observacoes}>{c.observacoes || "—"}</td>
-                    </tr>
-                  );})}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <Pager page={page} totalPages={totalPages} filtered={filtered} perPage={perPage} setPage={setPage}/>
-          {/* Abas por conta (espelha as abas da pauta do Camilo) */}
-          <div className="plan-tabs">
-            <button className={"plan-tab " + (planAccount === "all" ? "on" : "")} onClick={() => { setPlanAccount("all"); setPage(0); }}>Todas <span className="plan-tab-n">{checkings.length}</span></button>
-            {contas.map(c => (
-              <button key={c.name} className={"plan-tab " + (planAccount === c.name ? "on" : "")} onClick={() => { setPlanAccount(c.name); setPage(0); }}>{c.name} <span className="plan-tab-n">{c.count}</span></button>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* CARDS view */}
       {view === "cards" && (

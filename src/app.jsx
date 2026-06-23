@@ -376,7 +376,7 @@ function App() {
   const toggleTheme = () => setTheme(t => { const n = t === "light" ? "dark" : "light"; localStorage.setItem("painel_theme", n); document.documentElement.setAttribute("data-theme", n); return n; });
   const VIEW_MODES = {
     dashboard: [{ value: "completo", label: "Painel" }, { value: "resumido", label: "Foco" }],
-    approvals: [{ value: "table", label: "Tabela" }, { value: "planilha", label: "Planilha" }, { value: "cards", label: "Cards" }, { value: "kanban", label: "Kanban" }],
+    approvals: [{ value: "table", label: "Tabela" }, { value: "cards", label: "Cards" }, { value: "kanban", label: "Kanban" }],
     producao: [{ value: "tabela", label: "Produtividade" }, { value: "cards", label: "Cards" }, { value: "divisao", label: "Divisão por conta" }],
     alerts: [{ value: "lista", label: "Lista" }, { value: "grupos", label: "Agrupado" }],
     users: [{ value: "cards", label: "Cards" }, { value: "lista", label: "Lista" }],

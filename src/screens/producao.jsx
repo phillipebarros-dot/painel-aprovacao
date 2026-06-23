@@ -176,33 +176,35 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                 <span className="cell-mono muted">{activeConta} · {divRows.length} PIs</span>
               </div>
             </div>
-            <div style={{ overflowX: "auto" }}>
-              <table className="tbl tbl-planilha">
+            <div>
+              <table className="tbl tbl-planilha" style={{ tableLayout: "fixed", width: "100%" }}>
+                <colgroup>
+                  <col style={{ width: "8%" }}/>
+                  <col style={{ width: "16%" }}/>
+                  <col style={{ width: "18%" }}/>
+                  <col style={{ width: "6%" }}/>
+                  <col style={{ width: "14%" }}/>
+                  <col style={{ width: "15%" }}/>
+                  <col style={{ width: "18%" }}/>
+                  <col style={{ width: "5%" }}/>
+                </colgroup>
                 <thead><tr>
-                  <th>Situação PI</th><th>Nº PI</th><th>Planilha</th><th>Meio</th><th>Cliente</th><th>Veículo</th>
-                  <th>Período</th><th style={{ textAlign: "right" }}>Líquido</th><th>Campanha</th><th>Produto</th><th>Praça</th>
-                  <th style={{ minWidth: 140 }}>Status</th><th style={{ minWidth: 180 }}>Comentário</th><th>Vencimento</th><th>Liberado</th>
-                  <th style={{ minWidth: 150 }}>Responsável</th><th style={{ minWidth: 180 }}>Observações</th>
+                  <th>Nº PI</th><th>Cliente</th><th>Veículo</th><th>Meio</th>
+                  <th>Status</th><th>Responsável</th><th>Comentário</th><th>Arq.</th>
                 </tr></thead>
                 <tbody>
                   {divRows.length === 0
-                    ? <tr><td colSpan={17}><div style={{ padding: 28 }}><Empty title="Sem PIs nesta conta/mês" hint="Troque a aba ou o mês" icon="layers"/></div></td></tr>
+                    ? <tr><td colSpan={8}><div style={{ padding: 28 }}><Empty title="Sem PIs nesta conta/mês" hint="Troque a aba ou o mês" icon="layers"/></div></td></tr>
                     : divRows.slice(0, divPage).map((c, i) => {
-                      const per = c.periodo_ini && c.periodo_fim ? `${new Date(c.periodo_ini).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}–${new Date(c.periodo_fim).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}` : "—";
                       const SC = window.CHECK_STATUS || {}; const SCL = window.CHECK_STATUS_LIST || [];
+                      const per = c.periodo_ini && c.periodo_fim ? `${new Date(c.periodo_ini).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}–${new Date(c.periodo_fim).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}` : "";
+                      const tip = [c.campanha, per, c.valor_liquido ? (c.valor_liquido).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : null, c.praca].filter(Boolean).join(" · ");
                       return (
-                      <tr key={c.submission_id} className={i < 20 ? "row-anim" : ""} style={i < 20 ? { animationDelay: (i * 12) + "ms" } : undefined}>
-                        <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.situacao_pi}</td>
+                      <tr key={c.submission_id} className={i < 20 ? "row-anim" : ""} style={i < 20 ? { animationDelay: (i * 12) + "ms" } : undefined} title={tip}>
                         <td className="cell-pi">{c.n_pi}</td>
-                        <td className="cell-secondary">{c.planilha}</td>
-                        <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.meio}</td>
-                        <td style={{ fontWeight: 500, whiteSpace: "nowrap" }}>{c.cliente}</td>
-                        <td className="cell-secondary" style={{ whiteSpace: "nowrap", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis" }}>{c.veiculo}</td>
-                        <td className="cell-time" style={{ whiteSpace: "nowrap" }}>{per}</td>
-                        <td className="mono" style={{ textAlign: "right", whiteSpace: "nowrap" }}>{(c.valor_liquido ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
-                        <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.campanha}</td>
-                        <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.produto}</td>
-                        <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.praca}</td>
+                        <td style={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cliente}</td>
+                        <td className="cell-secondary" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.veiculo}</td>
+                        <td className="cell-secondary">{c.meio}</td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
                           <div className="plan-status" style={{ "--sc": SC[c.statusCheck] || "var(--ink-3)" }}>
                             {!isManager ? <span className="plan-status-tag">{c.statusCheck || "—"}</span> : (
@@ -214,13 +216,6 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                           </div>
                         </td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
-                          {!isManager ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.comentario || "—"}</span> : (
-                            <input className="plan-input" defaultValue={c.comentario || ""} placeholder="Comentário…" onBlur={e => { if (e.target.value !== (c.comentario || "")) { onSetComentario && onSetComentario(c.submission_id, e.target.value); onToast?.({ type: "success", message: "Comentário salvo." }); } }} onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}/>
-                          )}
-                        </td>
-                        <td className="cell-time" style={{ whiteSpace: "nowrap" }}>{c.vencimento ? new Date(c.vencimento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "—"}</td>
-                        <td className="cell-secondary" style={{ textAlign: "center" }}><span className={"lib-dot " + (c.liberado === "Sim" ? "lib-yes" : c.liberado === "Não" ? "lib-no" : "lib-wait")}>{c.liberado}</span></td>
-                        <td className="plan-edit" onClick={e => e.stopPropagation()}>
                           {!isManager ? <span className="cell-secondary">{c.assigned_to || "—"}</span> : (
                             <select className="plan-resp" value={c.assigned_to || ""} onChange={e => e.target.value && assignOne(c.submission_id, e.target.value)}>
                               <option value="">— a definir —</option>
@@ -228,12 +223,17 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                             </select>
                           )}
                         </td>
-                        <td className="cell-secondary" style={{ fontSize: 12, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={c.observacoes}>{c.observacoes || "—"}</td>
+                        <td className="plan-edit" onClick={e => e.stopPropagation()}>
+                          {!isManager ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.comentario || "—"}</span> : (
+                            <input className="plan-input" defaultValue={c.comentario || ""} placeholder="Comentário…" onBlur={e => { if (e.target.value !== (c.comentario || "")) { onSetComentario && onSetComentario(c.submission_id, e.target.value); onToast?.({ type: "success", message: "Comentário salvo." }); } }} onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}/>
+                          )}
+                        </td>
+                        <td className="cell-secondary" style={{ textAlign: "center" }}>{c.total_arquivos || 0}</td>
                       </tr>
                     );})
                     }
                     {divRows.length > divPage && (
-                      <tr><td colSpan={17} style={{ textAlign: "center", padding: 12 }}>
+                      <tr><td colSpan={8} style={{ textAlign: "center", padding: 12 }}>
                         <button className="btn btn-quiet sm" onClick={() => setDivPage(p => p + 50)}>Mostrar mais {Math.min(50, divRows.length - divPage)} de {divRows.length - divPage} restantes</button>
                       </td></tr>
                     )}
