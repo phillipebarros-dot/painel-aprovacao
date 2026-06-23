@@ -91,12 +91,19 @@
   // Carrega arquivos reais (Drive) de um checking sob demanda.
   MOCK.loadFiles = async function (submissionId) {
     const API = window.PainelAPI;
-    if (!API) return [];
+    if (!API || !submissionId) return [];
     try {
       const res = await API.getFiles(submissionId);
       const files = res?.files || [];
+      if (!files.length) {
+        // Fallback: se não retornou files mas checking tem webViewLink
+        const ck = MOCK.checkings.find(c => c.submission_id === submissionId);
+        if (ck?.webViewLink) {
+          return [{ endereco: '', files: [{ id: submissionId, id_imagem: submissionId, detalhe: 'Pasta do Drive', tag: 'DRIVE', isImage: false, isPdf: false, isVideo: false, webViewLink: ck.webViewLink, viewUrl: ck.webViewLink, thumbnailUrl: null }] }];
+        }
+        return [];
+      }
       MOCK.filesById[submissionId] = files;
-      // Agrupar por endereço (review.jsx espera [{endereco, files: [...]}])
       const byAddr = {};
       for (const f of files) {
         const key = f.endereco || '_sem_endereco';
@@ -104,7 +111,10 @@
         byAddr[key].files.push(f);
       }
       return Object.values(byAddr);
-    } catch { return []; }
+    } catch (err) {
+      // loadFiles error silenciado para UX
+      return [];
+    }
   };
   // Carrega board de produção sob demanda (lazy, com cache TTL 5min)
   let _prodCache = null;

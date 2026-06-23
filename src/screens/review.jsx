@@ -91,10 +91,12 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
     return () => { alive = false; };
   }, [checking.submission_id]);
 
-  // Keyboard A / R
+  // Keyboard A / R / ESC
   React.useEffect(() => {
-    if (checking.status !== "pending" || isViewer) return;
     const h = (e) => {
+      if (e.key === "Escape" && lightbox) { setLightbox(null); return; }
+      if (e.key === "Escape" && decision) { setDecision(null); return; }
+      if (checking.status !== "pending" || isViewer) return;
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       if (decision || lightbox) return;
       if (e.key.toLowerCase() === "a") setDecision("approve");
@@ -466,31 +468,32 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
       </>)}
 
       {/* Lightbox */}
-      {lightbox && (<>
-        <div className="scrim" onClick={() => setLightbox(null)} style={{ zIndex: 1000 }}/>
-        <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1001, width: "min(1180px,94vw)", height: "min(860px,90vh)", background: "#0a0a0c", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.6)", animation: "modalIn 360ms var(--ease-out)" }}>
-          <div className="row" style={{ justifyContent: "space-between", padding: "14px 18px", background: "rgba(255,255,255,0.05)" }}>
-            <div><span style={{ color: "#fff", fontSize: 15, fontWeight: 500 }}>{lightbox.detalhe}</span><span style={{ color: "#999", fontSize: 12.5, marginLeft: 8 }}>{lightbox.address}</span></div>
-            <div className="row gap-2">
-              <a href={lightbox.viewUrl || lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)" }}>Abrir no Drive ↗</a>
-              <button onClick={() => setLightbox(null)} style={{ color: "#999", fontSize: 20, padding: "2px 10px" }}>✕</button>
+      {lightbox && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.85)", display: "grid", placeItems: "center", cursor: "pointer" }} onClick={() => setLightbox(null)}>
+          <div style={{ width: "min(1180px,94vw)", height: "min(860px,90vh)", background: "#0a0a0c", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.6)", animation: "modalIn 360ms var(--ease-out)", cursor: "default" }} onClick={e => e.stopPropagation()}>
+            <div className="row" style={{ justifyContent: "space-between", padding: "14px 18px", background: "rgba(255,255,255,0.05)" }}>
+              <div><span style={{ color: "#fff", fontSize: 15, fontWeight: 500 }}>{lightbox.detalhe}</span><span style={{ color: "#999", fontSize: 12.5, marginLeft: 8 }}>{lightbox.address}</span></div>
+              <div className="row gap-2">
+                <a href={lightbox.viewUrl || lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)" }}>Abrir no Drive ↗</a>
+                <button onClick={() => setLightbox(null)} style={{ color: "#fff", fontSize: 22, padding: "2px 12px", background: "rgba(255,255,255,0.1)", borderRadius: 8, border: "none", cursor: "pointer" }} title="Fechar (ESC)">✕</button>
+              </div>
+            </div>
+            <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden" }}>
+              {lightbox.isImage && (lightbox.thumbnailUrl || lightbox.id_imagem) ? (
+                lightbox.thumbnailUrl ? <img src={lightbox.thumbnailUrl} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer"/> : <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "var(--ink-3)", fontSize: 16 }}><span>Visualizar no Drive</span><a href={`https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 12 }}>Abrir no Drive</a></div>
+              ) : (lightbox.isPdf || lightbox.isVideo) && lightbox.id_imagem ? (
+                <iframe src={lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/preview`} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay" referrerPolicy="no-referrer"/>
+              ) : (
+                <div style={{ textAlign: "center", color: "#b0b5be", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+                  <Icon name={lightbox.isPdf ? "pdf" : lightbox.isVideo ? "play" : "image"} size={72}/>
+                  <p style={{ fontSize: 16, fontWeight: 500, margin: 0 }}>{lightbox.detalhe || "Arquivo"}</p>
+                  <a href={lightbox.viewUrl || lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ marginTop: 8, fontSize: 14, padding: "10px 24px" }}><Icon name="folder" size={15}/> Abrir no Google Drive ↗</a>
+                </div>
+              )}
             </div>
           </div>
-          <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden" }}>
-            {lightbox.isImage && (lightbox.thumbnailUrl || lightbox.id_imagem) ? (
-              lightbox.thumbnailUrl ? <img src={lightbox.thumbnailUrl} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer"/> : <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "var(--ink-3)", fontSize: 16 }}><span>Visualizar no Drive</span><a href={`https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 12 }}>Abrir no Drive</a></div>
-            ) : (lightbox.isPdf || lightbox.isVideo) && lightbox.id_imagem ? (
-              <iframe src={lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/preview`} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay" referrerPolicy="no-referrer"/>
-            ) : (
-              <div style={{ textAlign: "center", color: "#b0b5be", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-                <Icon name={lightbox.isPdf ? "pdf" : lightbox.isVideo ? "play" : "image"} size={72}/>
-                <p style={{ fontSize: 16, fontWeight: 500, margin: 0 }}>{lightbox.detalhe || "Arquivo"}</p>
-                <a href={lightbox.viewUrl || lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ marginTop: 8, fontSize: 14, padding: "10px 24px" }}><Icon name="folder" size={15}/> Abrir no Google Drive ↗</a>
-              </div>
-            )}
-          </div>
         </div>
-      </>)}
+      )}
 
     </div>
   );
