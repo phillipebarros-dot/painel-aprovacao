@@ -49,6 +49,10 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
         } else if (r.score != null) {
           // Resposta flat (sem wrapper)
           setGeminiResult(r);
+        } else if (r.message !== undefined && !r.success) {
+          // n8n retornou erro: {message: ''} ou {message: 'algum erro'}
+          console.warn("[Copilot] Pipeline Gemini falhou:", r);
+          setGeminiError(r.message ? `Gemini: ${r.message}` : "Pipeline Gemini não retornou análise — verifique as credenciais do Gemini no n8n");
         } else {
           console.warn("[Copilot] Formato inesperado:", r);
           setGeminiError("Gemini indisponível: " + (r.error || r.message || "formato inesperado"));
