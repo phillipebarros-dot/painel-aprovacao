@@ -123,7 +123,7 @@
       }
       return _prodCache || { board: [], error: res?.error };
     } catch (e) {
-      console.warn("[Data] loadProduction falhou:", e.message);
+      // loadProduction falhou — silencioso
       return _prodCache || { board: [] };
     }
   };

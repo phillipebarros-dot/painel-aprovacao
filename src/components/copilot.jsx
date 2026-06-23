@@ -24,7 +24,7 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
   // ── Cache global + rate limit para não estourar cota Gemini ──
   const CACHE_KEY = "copilot_cache";
   const RATE_KEY = "copilot_last_call";
-  const RATE_LIMIT_MS = 15000; // mínimo 15s entre chamadas
+  const RATE_LIMIT_MS = 60000; // mínimo 60s entre chamadas Gemini (evita 429)
   const cacheGet = (id) => { try { const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "{}"); return c[id]; } catch { return null; } };
   const cacheSet = (id, result) => { try { const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "{}"); c[id] = result; sessionStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch {} };
   const canCall = () => { const last = parseInt(sessionStorage.getItem(RATE_KEY) || "0", 10); return Date.now() - last >= RATE_LIMIT_MS; };
@@ -64,13 +64,10 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
           setGeminiResult(r);
           cacheSet(checking.submission_id, r);
         } else {
-          // Gemini falhou (429, cota, erro) — fallback silencioso, sem alarme
-          console.info("[Copilot] Gemini indisponível, usando análise local:", r.message || r.error || "sem dados");
+          // Gemini falhou (429, cota, erro) — fallback silencioso total
         }
       })
-      .catch(e => {
-        console.info("[Copilot] Fallback local (rede):", e.message || "");
-      })
+      .catch(() => {})
       .finally(() => setGeminiLoading(false));
   }, [checking.submission_id]);
 

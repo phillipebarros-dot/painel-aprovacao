@@ -469,4 +469,22 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+// Error Boundary: captura crashes do React (ex: extensões que alteram o DOM)
+class AppErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err) {
+    // Silenciar erros de extensões (content_script, childNodes null)
+    if (err?.message?.includes('childNodes') || err?.message?.includes('removeChild')) return;
+  }
+  render() {
+    if (this.state.hasError) return React.createElement('div', { style: { padding: 40, textAlign: 'center', color: '#b0b5be' } },
+      React.createElement('h2', null, 'Algo deu errado'),
+      React.createElement('p', null, 'Uma extensão do navegador pode ter interferido.'),
+      React.createElement('button', { onClick: () => window.location.reload(), className: 'btn btn-accent', style: { marginTop: 16 } }, 'Recarregar')
+    );
+    return this.props.children;
+  }
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AppErrorBoundary, null, React.createElement(App)));
