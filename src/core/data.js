@@ -96,7 +96,14 @@
       const res = await API.getFiles(submissionId);
       const files = res?.files || [];
       MOCK.filesById[submissionId] = files;
-      return files;
+      // Agrupar por endereço (review.jsx espera [{endereco, files: [...]}])
+      const byAddr = {};
+      for (const f of files) {
+        const key = f.endereco || '_sem_endereco';
+        if (!byAddr[key]) byAddr[key] = { endereco: f.endereco || '', files: [] };
+        byAddr[key].files.push(f);
+      }
+      return Object.values(byAddr);
     } catch { return []; }
   };
 
