@@ -2,7 +2,7 @@
 function AssetCard({ file: f, index, group, onOpen, onDelete }) {
   const typeLabel = f.isVideo ? "MP4" : f.isPdf ? "PDF" : "JPG";
   const typeClass = f.isVideo ? "video" : f.isPdf ? "pdf" : "img";
-  const thumb = f.thumbnailUrl || (f.id_imagem ? `https://drive.google.com/thumbnail?id=${f.id_imagem}&sz=w400` : null);
+  const thumb = f.thumbnailUrl || null;
   const [imgError, setImgError] = React.useState(false);
   const hue = (index * 47 + (f.id_imagem?.length || f.id?.length || 3) * 13) % 360;
   const fallbackBg = `linear-gradient(135deg, hsl(${hue},22%,28%), hsl(${(hue + 40) % 360},26%,18%))`;
@@ -478,7 +478,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
           </div>
           <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden" }}>
             {lightbox.isImage && (lightbox.thumbnailUrl || lightbox.id_imagem) ? (
-              <img src={lightbox.thumbnailUrl || `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w1200`} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer"/>
+              {lightbox.thumbnailUrl ? <img src={lightbox.thumbnailUrl} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer"/> : <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "var(--ink-3)", fontSize: 16 }}>Visualizar no Drive <a href={`https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 12 }}>Abrir no Drive</a></div>}
             ) : (lightbox.isPdf || lightbox.isVideo) && lightbox.id_imagem ? (
               <iframe src={lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/preview`} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay" referrerPolicy="no-referrer"/>
             ) : (
