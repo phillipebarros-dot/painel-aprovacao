@@ -7,6 +7,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const [divOpen, setDivOpen] = React.useState(false);
   const [divMonth, setDivMonth] = React.useState("all");
   const [divConta, setDivConta] = React.useState(null);
+  const [divPage, setDivPage] = React.useState(50); // paginação virtual
+  const changePeriod = (v) => { if (React.startTransition) React.startTransition(() => setPeriod(v)); else setPeriod(v); };
 
   const sinceTs = React.useMemo(() => {
     const now = Date.now();
@@ -77,7 +79,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
           <h1 className="display-1">{isManager ? "Produção da equipe" : "Minhas tarefas"}</h1>
         </div>
         <div className="row gap-3" style={{ flex: "0 0 auto" }}>
-          <Segmented value={period} onChange={setPeriod} options={[{ value: "hoje", label: "Hoje" }, { value: "semana", label: "7d" }, { value: "mes", label: "30d" }, { value: "tudo", label: "Tudo" }]}/>
+          <Segmented value={period} onChange={changePeriod} options={[{ value: "hoje", label: "Hoje" }, { value: "semana", label: "7d" }, { value: "mes", label: "30d" }, { value: "tudo", label: "Tudo" }]}/>
           {isManager && <Button variant="primary" icon="layers" onClick={() => setDivOpen(true)}>Dividir demanda</Button>}
         </div>
       </div>
@@ -173,11 +175,11 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                 <tbody>
                   {divRows.length === 0
                     ? <tr><td colSpan={17}><div style={{ padding: 28 }}><Empty title="Sem PIs nesta conta/mês" hint="Troque a aba ou o mês" icon="layers"/></div></td></tr>
-                    : divRows.map((c, i) => {
+                    : divRows.slice(0, divPage).map((c, i) => {
                       const per = c.periodo_ini && c.periodo_fim ? `${new Date(c.periodo_ini).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}–${new Date(c.periodo_fim).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}` : "—";
                       const SC = window.CHECK_STATUS || {}; const SCL = window.CHECK_STATUS_LIST || [];
                       return (
-                      <tr key={c.submission_id} className="row-anim" style={{ animationDelay: (i * 12) + "ms" }}>
+                      <tr key={c.submission_id} className={i < 20 ? "row-anim" : ""} style={i < 20 ? { animationDelay: (i * 12) + "ms" } : undefined}>
                         <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.situacao_pi}</td>
                         <td className="cell-pi">{c.n_pi}</td>
                         <td className="cell-secondary">{c.planilha}</td>
@@ -216,14 +218,20 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                         </td>
                         <td className="cell-secondary" style={{ fontSize: 12, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={c.observacoes}>{c.observacoes || "—"}</td>
                       </tr>
-                    );})}
+                    );})
+                    }
+                    {divRows.length > divPage && (
+                      <tr><td colSpan={17} style={{ textAlign: "center", padding: 12 }}>
+                        <button className="btn btn-quiet sm" onClick={() => setDivPage(p => p + 50)}>Mostrar mais {Math.min(50, divRows.length - divPage)} de {divRows.length - divPage} restantes</button>
+                      </td></tr>
+                    )}
                 </tbody>
               </table>
             </div>
             {/* Abas de conta no rodapé — igual às abas do Sheets */}
             <div className="plan-tabs">
               {contaAgg.map(row => (
-                <button key={row.conta} className={"plan-tab " + (activeConta === row.conta ? "on" : "")} onClick={() => setDivConta(row.conta)}>{row.conta} <span className="plan-tab-n">{row.total}</span></button>
+                <button key={row.conta} className={"plan-tab " + (activeConta === row.conta ? "on" : "")} onClick={() => { setDivConta(row.conta); setDivPage(50); }}>{row.conta} <span className="plan-tab-n">{row.total}</span></button>
               ))}
             </div>
           </div>
