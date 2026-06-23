@@ -12,7 +12,7 @@
   const fmtDate = (ts) => new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
   const fmtDateLong = (ts) => new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   const fmtNum = (n) => new Intl.NumberFormat("pt-BR").format(Math.round(n));
-  const fmtPct = (n) => `${Math.round(n * 100)}%`;
+  const fmtPct = (n) => { const v = Math.round(n * 1000) / 10; return n === 1 ? "100%" : v >= 100 ? "99.9%" : `${v}%`; };
   const fmtHours = (h) => h < 1 ? `${Math.round(h * 60)}min` : `${h.toFixed(1)}h`;
   const fmtDur = (h) => { if (h < 1) return `${Math.round(h * 60)}min`; if (h < 36) return `${h < 10 ? h.toFixed(1) : Math.round(h)}h`; return `${Math.round(h / 24)} dias`; };
   const norm = (s) => { const v = (s || '').toLowerCase().trim(); return (!v || v === 'null') ? 'pending' : v; };

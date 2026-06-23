@@ -92,7 +92,7 @@ function ScreenDashboard({ stats, checkings, auditLog, onOpenReview, onNavigate,
         <div className="kpi">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
             <div className="kpi-label">Aprovados</div>
-            <Ring pct={stats.taxaAprovacao} size={46} color="var(--accent)" stroke={5}><span style={{ color: "var(--accent)" }}>{Math.round(stats.taxaAprovacao * 100)}</span></Ring>
+            <Ring pct={stats.taxaAprovacao} size={46} color="var(--accent)" stroke={5}><span style={{ color: "var(--accent)" }}>{stats.taxaAprovacao === 1 ? 100 : Math.min(99.9, Math.round(stats.taxaAprovacao * 1000) / 10)}</span></Ring>
           </div>
           <div className="kpi-value"><CountUp value={stats.approved}/></div>
           <div className="kpi-meta"><strong>{H.fmtPct(stats.taxaAprovacao)}</strong> de taxa de aprovação</div>
@@ -102,7 +102,7 @@ function ScreenDashboard({ stats, checkings, auditLog, onOpenReview, onNavigate,
         <div className="kpi">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
             <div className="kpi-label">Reprovados</div>
-            <Ring pct={1 - stats.taxaAprovacao} size={46} color="var(--alert)" stroke={5}><span style={{ color: "var(--alert)" }}>{Math.round((1 - stats.taxaAprovacao) * 100)}</span></Ring>
+            <Ring pct={1 - stats.taxaAprovacao} size={46} color="var(--alert)" stroke={5}><span style={{ color: "var(--alert)" }}>{stats.taxaAprovacao === 0 ? 100 : Math.min(99.9, Math.round((1 - stats.taxaAprovacao) * 1000) / 10)}</span></Ring>
           </div>
           <div className="kpi-value"><CountUp value={stats.rejected}/></div>
           <div className="kpi-meta"><strong>{stats.resolved}</strong> decididos no total</div>

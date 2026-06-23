@@ -173,7 +173,7 @@ const Donut = ({ value, total, size = 120, color = "var(--accent)", label }) => 
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center" }}>
         <div>
-          <div style={{ fontSize: 32, lineHeight: 1, letterSpacing: "-0.02em", fontWeight: 600 }}><CountUp value={Math.round(pct * 100)} dur={1100}/><span style={{ fontSize: 16, color: "var(--ink-3)" }}>%</span></div>
+          <div style={{ fontSize: 32, lineHeight: 1, letterSpacing: "-0.02em", fontWeight: 600 }}><CountUp value={pct === 1 ? 100 : Math.min(99.9, Math.round(pct * 1000) / 10)} dur={1100}/><span style={{ fontSize: 16, color: "var(--ink-3)" }}>%</span></div>
           {label && <div className="eyebrow" style={{ marginTop: 4 }}>{label}</div>}
         </div>
       </div>
