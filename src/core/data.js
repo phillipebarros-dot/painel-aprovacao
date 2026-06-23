@@ -88,6 +88,47 @@
     return MOCK;
   };
 
+  // Gera thumbnail URL estavel a partir do file ID do Google Drive.
+  // O thumbnailLink da API do Drive EXPIRA em poucas horas.
+  // O lh3.googleusercontent.com/d/{id} funciona enquanto o arquivo existir.
+  function stableThumbnail(fileId) {
+    if (!fileId) return null;
+    return `https://lh3.googleusercontent.com/d/${fileId}=w400`;
+  }
+
+  // Normaliza um arquivo vindo do BigQuery/n8n para formato consistente.
+  function normalizeFile(f) {
+    const id = f.id_imagem || f.id || f.fileId || f.file_id || '';
+    const mime = (f.mimeType || f.mime_type || '').toLowerCase();
+    const name = (f.nome || f.name || f.detalhe || '').toLowerCase();
+    const isImage = mime.startsWith('image/') || /\.(jpg|jpeg|png|heic|webp|gif)$/i.test(name);
+    const isVideo = mime.startsWith('video/') || /\.(mp4|mov|avi|webm)$/i.test(name);
+    const isPdf = mime === 'application/pdf' || /\.pdf$/i.test(name);
+
+    // Thumbnail: usa o existente se valido, senao gera estavel
+    let thumb = f.thumbnailUrl || f.thumbnail_url || f.thumbnailLink || null;
+    if (isImage && (!thumb || thumb.includes('googleusercontent') === false)) {
+      thumb = stableThumbnail(id) || thumb;
+    }
+
+    // webViewLink de fallback
+    const webView = f.webViewLink || f.web_view_link || f.viewUrl
+      || (id ? `https://drive.google.com/file/d/${id}/view` : null);
+
+    return {
+      ...f,
+      id, id_imagem: id,
+      thumbnailUrl: thumb,
+      webViewLink: webView,
+      viewUrl: webView,
+      isImage: isImage && !isPdf && !isVideo,
+      isVideo,
+      isPdf,
+      detalhe: f.detalhe || f.nome || f.name || f.tag || '',
+      tag: f.tag || (isVideo ? 'VIDEO' : isPdf ? 'PDF' : 'IMG'),
+    };
+  }
+
   // Carrega arquivos reais (Drive) de um checking sob demanda.
   MOCK.loadFiles = async function (submissionId) {
     const API = window.PainelAPI;
@@ -105,7 +146,9 @@
       }
       MOCK.filesById[submissionId] = files;
       const byAddr = {};
-      for (const f of files) {
+      for (const raw of files) {
+        // Normaliza: gera thumbnailUrl estavel se expirado/ausente
+        const f = normalizeFile(raw);
         const key = f.endereco || '_sem_endereco';
         if (!byAddr[key]) byAddr[key] = { endereco: f.endereco || '', files: [] };
         byAddr[key].files.push(f);
