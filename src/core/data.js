@@ -113,15 +113,17 @@
     const name = (f.nome || f.name || f.detalhe || '').toLowerCase();
 
     // Respeita flags do n8n se ja existem; senao detecta por MIME/extensao
+    const isAudio = f.isAudio === true || mime.startsWith('audio/') || /\.(mp3|wav|ogg|aac|m4a|wma)$/i.test(name)
+      || name.includes('audio') || name.includes('spot') || name.includes('jingle');
     const isVideo = f.isVideo === true || mime.startsWith('video/') || /\.(mp4|mov|avi|webm)$/i.test(name)
       || name.includes('video') || name.includes('gravacao');
     const isPdf = f.isPdf === true || mime === 'application/pdf' || /\.pdf$/i.test(name)
       || name.includes('relatorio') || name.includes('pdf') || name.includes('zip');
-    const isImage = f.isImage === true || (!isVideo && !isPdf && (
+    const isImage = f.isImage === true || (!isVideo && !isPdf && !isAudio && (
       mime.startsWith('image/') || /\.(jpg|jpeg|png|heic|webp|gif)$/i.test(name)
       || name.includes('foto') || name.includes('perto') || name.includes('longe')
       || name.includes('noturna') || name.includes('comprovante')
-      || (!mime && !isVideo && !isPdf) // se nenhum tipo detectado, assume imagem
+      || (!mime && !isVideo && !isPdf && !isAudio) // se nenhum tipo detectado, assume imagem
     ));
 
     // Thumbnail: prioriza URL do n8n (drive.google.com/thumbnail), depois lh3
@@ -154,11 +156,12 @@
       downloadUrl,
       webViewLink: webView,
       viewUrl: webView,
-      isImage: isImage && !isPdf && !isVideo,
+      isImage: isImage && !isPdf && !isVideo && !isAudio,
       isVideo,
       isPdf,
+      isAudio,
       detalhe: f.detalhe || f.nome || f.name || f.tag || '',
-      tag: f.tag || (isVideo ? 'VIDEO' : isPdf ? 'PDF' : 'IMG'),
+      tag: f.tag || (isAudio ? 'AUDIO' : isVideo ? 'VIDEO' : isPdf ? 'PDF' : 'IMG'),
     };
   }
 

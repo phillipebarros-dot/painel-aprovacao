@@ -1,6 +1,61 @@
+// LightboxEmbed: tenta exibir PDF/video inline com fallback progressivo.
+// Estrategia: iframe /preview (funciona se "Qualquer pessoa com o link") ->
+//   Google Docs Viewer para PDF / video nativo para video ->
+//   fallback card com botao "Abrir no Drive"
+function LightboxEmbed({ file }) {
+  const [failed, setFailed] = React.useState(false);
+  const id = file.id_imagem || file.id || '';
+  const previewUrl = file.previewUrl || `https://drive.google.com/file/d/${id}/preview`;
+  const viewUrl = file.viewUrl || `https://drive.google.com/file/d/${id}/view`;
+  const downloadUrl = file.downloadUrl || `https://drive.google.com/uc?id=${id}&export=download`;
+
+  // Timeout: se o iframe nao disparar onLoad em 8s, assume falha
+  const timerRef = React.useRef(null);
+  const [loaded, setLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    setFailed(false);
+    setLoaded(false);
+    timerRef.current = setTimeout(() => { if (!loaded) setFailed(true); }, 8000);
+    return () => clearTimeout(timerRef.current);
+  }, [id]);
+
+  const handleLoad = () => { setLoaded(true); clearTimeout(timerRef.current); };
+
+  if (failed) {
+    // Fallback: para video, tenta player nativo; para PDF, Google Docs Viewer
+    if (file.isVideo) {
+      return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+        <video controls style={{ maxWidth: "100%", maxHeight: "80%", borderRadius: 8 }} src={downloadUrl} onError={() => {}}>
+          <source src={downloadUrl}/>
+        </video>
+        <a href={viewUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "#6b7280", textDecoration: "none" }}>Abrir no Google Drive</a>
+      </div>;
+    }
+    if (file.isPdf) {
+      const gdocsUrl = `https://docs.google.com/gview?url=${encodeURIComponent(downloadUrl)}&embedded=true`;
+      return <iframe src={gdocsUrl} style={{ width: "100%", height: "100%", border: "none" }} title="PDF Viewer"/>;
+    }
+    // Generico
+    return <div style={{ textAlign: "center", color: "#b0b5be", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: 32 }}>
+      <div style={{ width: 88, height: 88, borderRadius: 20, background: "rgba(255,255,255,0.06)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <Icon name={file.isPdf ? "pdf" : "video"} size={42} style={{ color: "#9ca3af" }}/>
+      </div>
+      <p style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>{file.detalhe || "Arquivo"}</p>
+      <a href={viewUrl} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ fontSize: 14, padding: "10px 24px", textDecoration: "none" }}>Abrir no Google Drive</a>
+    </div>;
+  }
+
+  return <>
+    <iframe src={previewUrl} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay; fullscreen" referrerPolicy="no-referrer" onLoad={handleLoad} onError={() => setFailed(true)}/>
+    {!loaded && <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", color: "#666", fontSize: 13 }}>Carregando visualizacao...</div>}
+  </>;
+}
+
 function AssetCard({ file: f, index, group, onOpen, onDelete }) {
-  const typeLabel = f.isVideo ? "MP4" : f.isPdf ? "PDF" : f.detalhe?.toLowerCase().includes('audio') ? "MP3" : "JPG";
-  const typeClass = f.isVideo ? "video" : f.isPdf ? "pdf" : "img";
+  const isAudio = f.isAudio || /\.(mp3|wav|ogg|aac|m4a|wma)/i.test(f.detalhe || '');
+  const typeLabel = f.isVideo ? "MP4" : f.isPdf ? "PDF" : isAudio ? "MP3" : "JPG";
+  const typeClass = f.isVideo ? "video" : f.isPdf ? "pdf" : isAudio ? "video" : "img";
   const id = f.id_imagem || f.id || '';
   const thumb = f.thumbnailUrl || null;
   const lh3Fallback = id ? `https://lh3.googleusercontent.com/d/${id}=w400` : null;
@@ -596,18 +651,39 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
             </div>
             <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden" }}>
               {lightbox.isImage && (lightbox.thumbnailUrl || lightbox.id_imagem) ? (
-                lightbox.thumbnailUrl || lightbox.id_imagem ? <img src={lightbox.id_imagem ? `https://lh3.googleusercontent.com/d/${lightbox.id_imagem}=w1200` : lightbox.thumbnailUrl} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer" onError={(e) => { if (e.target.src.includes('lh3.googleusercontent')) { const nextSrc = lightbox.thumbnailUrl || `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w800`; if (e.target.src !== nextSrc) { e.target.src = nextSrc; } else { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'flex'); } } else { e.target.style.display = 'none'; } }}/> : <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "var(--ink-3)", fontSize: 16 }}><span>Visualizar no Drive</span><a href={lightbox.viewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 12 }}>Abrir no Drive</a></div>
+                (() => {
+                  const hiRes = lightbox.id_imagem ? `https://lh3.googleusercontent.com/d/${lightbox.id_imagem}=w1200` : lightbox.thumbnailUrl;
+                  const fallback1 = lightbox.thumbnailUrl || (lightbox.id_imagem ? `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w800` : null);
+                  const fallback2 = lightbox.id_imagem ? `https://drive.google.com/uc?id=${lightbox.id_imagem}&export=view` : null;
+                  return <img src={hiRes} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer" onError={(e) => {
+                    const cur = e.target.src;
+                    if (cur.includes('lh3.googleusercontent') && fallback1 && cur !== fallback1) { e.target.src = fallback1; }
+                    else if (fallback2 && cur !== fallback2) { e.target.src = fallback2; }
+                    else { e.target.style.display = 'none'; if (e.target.parentNode) { const d = document.createElement('div'); d.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;color:#9ca3af;padding:32px'; d.innerHTML = '<p style="font-size:15px;font-weight:500;margin:0">Nao foi possivel carregar a imagem</p>'; const a = document.createElement('a'); a.href = lightbox.viewUrl || 'https://drive.google.com/file/d/' + lightbox.id_imagem + '/view'; a.target = '_blank'; a.className = 'btn btn-accent'; a.textContent = 'Abrir no Google Drive'; d.appendChild(a); e.target.parentNode.appendChild(d); } }
+                  }}/>;
+                })()
+              ) : (lightbox.isPdf || lightbox.isVideo) && lightbox.id_imagem ? (
+                <LightboxEmbed file={lightbox}/>
+              ) : (lightbox.isAudio || /\.(mp3|wav|ogg|aac|m4a|wma)/i.test(lightbox.detalhe || '')) && lightbox.id_imagem ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, padding: 40 }}>
+                  <div style={{ width: 88, height: 88, borderRadius: 20, background: "rgba(139,92,246,0.1)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <Icon name="music" size={42} style={{ color: "#a78bfa" }}/>
+                  </div>
+                  <p style={{ fontSize: 17, fontWeight: 600, margin: 0, color: "#e5e7eb" }}>{lightbox.detalhe || "Audio"}</p>
+                  <audio controls style={{ width: "min(420px, 80vw)" }} src={`https://drive.google.com/uc?id=${lightbox.id_imagem}&export=download`} onError={(e) => { e.target.style.display = 'none'; }}>Seu navegador nao suporta audio.</audio>
+                  <a href={lightbox.viewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "#6b7280", textDecoration: "none" }}>Abrir no Google Drive</a>
+                </div>
               ) : (
                 <div style={{ textAlign: "center", color: "#b0b5be", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: 32 }}>
-                  <div style={{ width: 88, height: 88, borderRadius: 20, background: lightbox.isPdf ? "rgba(239,68,68,0.1)" : lightbox.isVideo ? "rgba(37,99,235,0.1)" : "rgba(255,255,255,0.06)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <Icon name={lightbox.isPdf ? "pdf" : lightbox.isVideo ? "video" : "image"} size={42} style={{ color: lightbox.isPdf ? "#ef4444" : lightbox.isVideo ? "#3b82f6" : "#9ca3af" }}/>
+                  <div style={{ width: 88, height: 88, borderRadius: 20, background: "rgba(255,255,255,0.06)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <Icon name={lightbox.isPdf ? "pdf" : lightbox.isVideo ? "video" : "image"} size={42} style={{ color: "#9ca3af" }}/>
                   </div>
                   <div>
                     <p style={{ fontSize: 17, fontWeight: 600, margin: "0 0 6px", color: "#e5e7eb" }}>{lightbox.detalhe || "Arquivo"}</p>
-                    <p style={{ fontSize: 13, margin: 0, color: "#6b7280" }}>{lightbox.isPdf ? "Documento PDF" : lightbox.isVideo ? "Arquivo de video" : "Arquivo"} {lightbox.tag ? " \u00b7 " + lightbox.tag : ""}</p>
+                    <p style={{ fontSize: 13, margin: 0, color: "#6b7280" }}>{lightbox.tag || "Arquivo"}</p>
                   </div>
                   <a href={lightbox.viewUrl || lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ marginTop: 8, fontSize: 14, padding: "10px 24px", textDecoration: "none" }}><Icon name="external" size={15}/> Abrir no Google Drive</a>
-                  {lightbox.downloadUrl && <a href={lightbox.downloadUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "#6b7280", textDecoration: "none", marginTop: 4 }}><Icon name="download" size={12}/> Baixar arquivo</a>}
+                  {lightbox.downloadUrl && <a href={lightbox.downloadUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "#6b7280", textDecoration: "none", marginTop: 4 }}>Baixar arquivo</a>}
                 </div>
               )}
             </div>
