@@ -182,14 +182,32 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
       </div>
       {lightbox && (
         <div className="triage-stage" style={{ background: "rgba(0,0,0,0.88)", zIndex: 9999 }} onClick={() => setLightbox(null)} onKeyDown={e => { if (e.key === 'Escape') setLightbox(null); }}>
-          <div style={{ position: "absolute", top: 16, right: 16 }}>
+          <div style={{ position: "absolute", top: 16, right: 16, zIndex: 2 }}>
             <button className="icon-btn" onClick={() => setLightbox(null)} style={{ color: "#fff" }}><Icon name="x" size={22}/></button>
           </div>
+          <div style={{ position: "absolute", top: 16, left: 16, zIndex: 2 }}>
+            <a href={lightbox.viewUrl || lightbox.webViewLink || (lightbox.id_imagem ? `https://drive.google.com/file/d/${lightbox.id_imagem}/view` : '#')} target="_blank" rel="noreferrer" style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.4)" }}>Abrir no Drive</a>
+          </div>
           <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", padding: 40 }} onClick={e => e.stopPropagation()}>
-            {lightbox.isImage || lightbox.thumbnailUrl ? (
-              <img src={lightbox.id_imagem ? `https://lh3.googleusercontent.com/d/${lightbox.id_imagem}=w1200` : (lightbox.thumbnailUrl || lightbox.webViewLink)} alt={lightbox.detalhe || ""} referrerPolicy="no-referrer" style={{ maxWidth: "90vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 8, boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }} onError={(e) => { if (e.target.src.includes('lh3.googleusercontent')) { e.target.src = lightbox.thumbnailUrl || `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w800`; } else { e.target.style.display = 'none'; } }}/>
-            ) : (lightbox.isPdf || lightbox.isVideo) && (lightbox.previewUrl || lightbox.id_imagem) ? (
-              <iframe src={lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/preview`} style={{ width: "90vw", height: "85vh", border: "none", borderRadius: 8 }} allow="autoplay" referrerPolicy="no-referrer"/>
+            {lightbox.isImage ? (
+              <img src={lightbox.proxyUrl || lightbox.thumbnailUrl || (lightbox.id_imagem ? `https://lh3.googleusercontent.com/d/${lightbox.id_imagem}=w1200` : '')} alt={lightbox.detalhe || ""} referrerPolicy="no-referrer" style={{ maxWidth: "90vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 8, boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }} onError={(e) => {
+                const cur = e.target.src;
+                const fb1 = lightbox.thumbnailUrl;
+                const fb2 = lightbox.id_imagem ? `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w800` : null;
+                const fb3 = lightbox.id_imagem ? `https://drive.google.com/uc?id=${lightbox.id_imagem}&export=view` : null;
+                if (fb1 && cur !== fb1) { e.target.src = fb1; }
+                else if (fb2 && cur !== fb2) { e.target.src = fb2; }
+                else if (fb3 && cur !== fb3) { e.target.src = fb3; }
+                else { e.target.style.display = 'none'; }
+              }}/>
+            ) : (lightbox.isPdf || lightbox.isVideo) && lightbox.id_imagem ? (
+              <div style={{ width: "90vw", height: "85vh" }}><LightboxEmbed file={lightbox}/></div>
+            ) : (lightbox.isAudio || /\.(mp3|wav|ogg|aac|m4a)/i.test(lightbox.detalhe || '')) && lightbox.id_imagem ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+                <div style={{ width: 72, height: 72, borderRadius: 16, background: "rgba(139,92,246,0.15)", display: "grid", placeItems: "center" }}><Icon name="music" size={36} style={{ color: "#a78bfa" }}/></div>
+                <p style={{ fontSize: 15, fontWeight: 500, margin: 0, color: "#e5e7eb" }}>{lightbox.detalhe || "Audio"}</p>
+                <audio controls style={{ width: "min(400px, 80vw)" }} src={lightbox.proxyUrl || lightbox.downloadUrl || `https://drive.google.com/uc?id=${lightbox.id_imagem}&export=download`}>Seu navegador nao suporta audio.</audio>
+              </div>
             ) : (
               <div className="col" style={{ alignItems: "center", gap: 16 }}>
                 <Icon name={lightbox.isPdf ? "pdf" : lightbox.isVideo ? "play" : "image"} size={60} style={{ color: "#fff" }}/>

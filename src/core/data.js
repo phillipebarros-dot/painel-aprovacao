@@ -126,25 +126,29 @@
       || (!mime && !isVideo && !isPdf && !isAudio) // se nenhum tipo detectado, assume imagem
     ));
 
-    // Thumbnail: prioriza URL do n8n (drive.google.com/thumbnail), depois lh3
+    // Proxy URL via n8n backend (resolve 401 de cookies de terceiros).
+    // O n8n tem service account do Drive e serve o binario direto.
+    const proxy = window.PainelAPI?.fileProxyUrl;
+    const proxyUrl = (proxy && id) ? proxy(id) : null;
+
+    // Thumbnail: proxy > n8n thumb > lh3 (fallback publico)
     const n8nThumb = f.thumbnailUrl || f.thumbnail_url || f.thumbnailLink || null;
     let thumb = null;
     if (id) {
-      // n8n já manda thumbnailUrl formatado corretamente — usar primeiro
-      thumb = n8nThumb || `https://lh3.googleusercontent.com/d/${id}=w400`;
+      thumb = proxyUrl || n8nThumb || `https://lh3.googleusercontent.com/d/${id}=w400`;
     } else {
       thumb = n8nThumb;
     }
 
-    // Preview URL para iframes (PDF/vídeo) — n8n já manda
-    const previewUrl = f.previewUrl || f.preview_url
+    // Preview URL para iframes (PDF/video): proxy > n8n > Drive /preview
+    const previewUrl = proxyUrl || f.previewUrl || f.preview_url
       || (id ? `https://drive.google.com/file/d/${id}/preview` : null);
 
-    // Download URL — n8n já manda
-    const downloadUrl = f.downloadUrl || f.download_url
+    // Download URL: proxy > n8n > Drive uc?export
+    const downloadUrl = proxyUrl || f.downloadUrl || f.download_url
       || (id ? `https://drive.google.com/uc?id=${id}&export=download` : null);
 
-    // webViewLink de fallback
+    // webViewLink (sempre Drive, para abrir em nova aba)
     const webView = f.webViewLink || f.web_view_link || f.viewUrl
       || (id ? `https://drive.google.com/file/d/${id}/view` : null);
 
@@ -152,6 +156,7 @@
       ...f,
       id, id_imagem: id,
       thumbnailUrl: thumb,
+      proxyUrl,
       previewUrl,
       downloadUrl,
       webViewLink: webView,

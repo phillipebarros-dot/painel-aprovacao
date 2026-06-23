@@ -1,42 +1,42 @@
-// LightboxEmbed: tenta exibir PDF/video inline com fallback progressivo.
-// Estrategia: iframe /preview (funciona se "Qualquer pessoa com o link") ->
-//   Google Docs Viewer para PDF / video nativo para video ->
-//   fallback card com botao "Abrir no Drive"
+// LightboxEmbed: exibe PDF/video inline via proxy do n8n (resolve 401).
+// Estrategia: proxyUrl (n8n service account) -> iframe /preview -> fallback nativo
 function LightboxEmbed({ file }) {
-  const [failed, setFailed] = React.useState(false);
+  const [stage, setStage] = React.useState(0); // 0=proxy, 1=Drive preview, 2=fallback nativo, 3=card
   const id = file.id_imagem || file.id || '';
-  const previewUrl = file.previewUrl || `https://drive.google.com/file/d/${id}/preview`;
+  const proxyUrl = file.proxyUrl || null;
+  const drivePreview = `https://drive.google.com/file/d/${id}/preview`;
   const viewUrl = file.viewUrl || `https://drive.google.com/file/d/${id}/view`;
   const downloadUrl = file.downloadUrl || `https://drive.google.com/uc?id=${id}&export=download`;
 
-  // Timeout: se o iframe nao disparar onLoad em 8s, assume falha
   const timerRef = React.useRef(null);
   const [loaded, setLoaded] = React.useState(false);
 
   React.useEffect(() => {
-    setFailed(false);
+    setStage(proxyUrl ? 0 : 1);
     setLoaded(false);
-    timerRef.current = setTimeout(() => { if (!loaded) setFailed(true); }, 8000);
+    timerRef.current = setTimeout(() => { if (!loaded) setStage(s => Math.min(s + 1, 3)); }, 8000);
     return () => clearTimeout(timerRef.current);
   }, [id]);
 
   const handleLoad = () => { setLoaded(true); clearTimeout(timerRef.current); };
+  const handleError = () => { clearTimeout(timerRef.current); setStage(s => Math.min(s + 1, 3)); setLoaded(false); };
 
-  if (failed) {
-    // Fallback: para video, tenta player nativo; para PDF, Google Docs Viewer
+  // Stage 2+: fallback nativo (video player ou Google Docs Viewer para PDF)
+  if (stage >= 2) {
     if (file.isVideo) {
       return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-        <video controls style={{ maxWidth: "100%", maxHeight: "80%", borderRadius: 8 }} src={downloadUrl} onError={() => {}}>
-          <source src={downloadUrl}/>
+        <video controls style={{ maxWidth: "100%", maxHeight: "80%", borderRadius: 8 }} src={proxyUrl || downloadUrl}>
+          <source src={proxyUrl || downloadUrl}/>
         </video>
         <a href={viewUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "#6b7280", textDecoration: "none" }}>Abrir no Google Drive</a>
       </div>;
     }
     if (file.isPdf) {
-      const gdocsUrl = `https://docs.google.com/gview?url=${encodeURIComponent(downloadUrl)}&embedded=true`;
+      // Google Docs Viewer como fallback para PDF (nao precisa de auth do Drive)
+      const gdocsUrl = `https://docs.google.com/gview?url=${encodeURIComponent(proxyUrl || downloadUrl)}&embedded=true`;
       return <iframe src={gdocsUrl} style={{ width: "100%", height: "100%", border: "none" }} title="PDF Viewer"/>;
     }
-    // Generico
+    // Generico: card com link
     return <div style={{ textAlign: "center", color: "#b0b5be", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: 32 }}>
       <div style={{ width: 88, height: 88, borderRadius: 20, background: "rgba(255,255,255,0.06)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
         <Icon name={file.isPdf ? "pdf" : "video"} size={42} style={{ color: "#9ca3af" }}/>
@@ -46,8 +46,10 @@ function LightboxEmbed({ file }) {
     </div>;
   }
 
+  // Stage 0 = proxy iframe, Stage 1 = Drive /preview iframe
+  const src = stage === 0 ? proxyUrl : drivePreview;
   return <>
-    <iframe src={previewUrl} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay; fullscreen" referrerPolicy="no-referrer" onLoad={handleLoad} onError={() => setFailed(true)}/>
+    <iframe src={src} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay; fullscreen" referrerPolicy="no-referrer" onLoad={handleLoad} onError={handleError}/>
     {!loaded && <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", color: "#666", fontSize: 13 }}>Carregando visualizacao...</div>}
   </>;
 }
