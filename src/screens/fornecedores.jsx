@@ -98,12 +98,15 @@ function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast, p
   const all = React.useMemo(() => preSuppliers && preSuppliers.length ? preSuppliers : aggregateSuppliers(checkings), [checkings, preSuppliers]);
   const filtered = React.useMemo(() => {
     let r = all.filter(s => !search || s.veiculo.toLowerCase().includes(search.toLowerCase()));
-    const cmp = { stars: (a, b) => b.stars - a.stars, volume: (a, b) => b.total - a.total, reinc: (a, b) => b.rej - a.rej, sla: (a, b) => b.avgSla - a.avgSla, nome: (a, b) => a.veiculo.localeCompare(b.veiculo) };
+    // Bug 1.1 fix: ordenacao por stars joga null para o fim
+    const cmp = { stars: (a, b) => (b.stars ?? -1) - (a.stars ?? -1), volume: (a, b) => b.total - a.total, reinc: (a, b) => b.rej - a.rej, sla: (a, b) => b.avgSla - a.avgSla, nome: (a, b) => a.veiculo.localeCompare(b.veiculo) };
     return r.sort(cmp[sort] || cmp.stars);
   }, [all, search, sort]);
-  const avg = all.length ? all.reduce((s, x) => s + x.stars, 0) / all.length : 0;
-  const top = all.length ? [...all].sort((a, b) => b.stars - a.stars)[0] : null;
-  const risk = all.filter(s => s.stars < 3).length;
+  // Bug 1.1 fix: media e contagens so consideram fornecedores com nota real
+  const rated = all.filter(s => s.stars != null);
+  const avg = rated.length ? rated.reduce((s, x) => s + x.stars, 0) / rated.length : null;
+  const top = rated.length ? rated.sort((a, b) => b.stars - a.stars)[0] : null;
+  const risk = all.filter(s => s.stars != null && s.stars < 3).length;
 
   return (
     <div className="page fade-in">
@@ -116,7 +119,7 @@ function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast, p
 
       <div className="grid-cols-4 stagger" style={{ marginBottom: "var(--gap)" }}>
         <div className="kpi"><div className="kpi-label">Fornecedores ativos</div><div className="kpi-value"><CountUp value={all.length}/></div><div className="kpi-meta">veículos com PIs no período</div></div>
-        <div className="kpi"><div className="kpi-label">Nota média</div><div className="kpi-value">{avg.toFixed(1)}<span className="unit">/5</span></div><div className="kpi-meta"><Stars value={avg} size={12}/></div></div>
+        <div className="kpi"><div className="kpi-label">Nota média</div><div className="kpi-value">{avg != null ? avg.toFixed(1) : "--"}<span className="unit">{avg != null ? "/5" : ""}</span></div><div className="kpi-meta">{avg != null ? <Stars value={avg} size={12}/> : <span style={{ fontSize: 11, color: "var(--ink-4)", fontStyle: "italic" }}>Sem avaliacoes</span>}</div></div>
         <div className="kpi"><div className="kpi-label">Melhor avaliado</div><div className="kpi-value" style={{ fontSize: 18, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{top ? top.veiculo : "·"}</div><div className="kpi-meta">{top && top.stars != null ? top.stars.toFixed(1) + " estrelas" : ""}</div></div>
         <div className="kpi"><div className="kpi-label">Em atenção</div><div className="kpi-value" style={{ color: risk ? "var(--warn)" : "var(--ink)" }}><CountUp value={risk}/></div><div className="kpi-meta">abaixo de 3 estrelas</div></div>
       </div>
@@ -138,7 +141,7 @@ function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast, p
               {filtered.map((s, i) => (
                 <tr key={s.veiculo} className="row-action row-anim" style={{ animationDelay: (i * 22) + "ms" }} onClick={() => setDetail(s)}>
                   <td><div className="row gap-2"><span className="sup-logo">{s.veiculo.slice(0, 2).toUpperCase()}</span><span style={{ fontWeight: 500 }}>{s.veiculo}</span></div></td>
-                  <td><div className="row gap-2" style={{ alignItems: "center" }}><Stars value={s.stars}/><span className="cell-mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>{s.stars.toFixed(1)}</span></div></td>
+                  <td><div className="row gap-2" style={{ alignItems: "center" }}><Stars value={s.stars}/>{s.stars != null && <span className="cell-mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>{s.stars.toFixed(1)}</span>}</div></td>
                   <td className="cell-mono" style={{ textAlign: "right" }}>{s.total}</td>
                   <td className="cell-mono" style={{ textAlign: "right", color: s.pending ? "var(--warn)" : "var(--ink-3)" }}>{s.pending}</td>
                   <td className="cell-mono" style={{ textAlign: "right", color: s.rej ? "var(--alert)" : "var(--ink-3)" }}>{s.rej}</td>
@@ -163,7 +166,7 @@ function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast, p
                     <span style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.veiculo}</span>
                     <div className="row gap-2" style={{ alignItems: "center" }}><Stars value={s.stars}/>{s.stars != null && <span className="cell-mono" style={{ fontSize: 11.5, color: "var(--ink-3)" }}>{s.stars.toFixed(1)}</span>}</div>
                   </div>
-                  {s.stars < 3 && <span className="pill pill-warn" style={{ flexShrink: 0 }}>atenção</span>}
+                  {s.stars != null && s.stars < 3 && <span className="pill pill-warn" style={{ flexShrink: 0 }}>atenção</span>}
                 </div>
                 <div className="sup-meter" style={{ marginTop: 14 }}><span style={{ width: (s.appRate != null ? s.appRate * 100 : 0) + "%" }}/></div>
                 <div className="row gap-2" style={{ justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "var(--ink-3)" }}><span>aprovação</span><span className="cell-mono">{s.appRate != null ? Math.round(s.appRate * 100) + "%" : "–"}</span></div>

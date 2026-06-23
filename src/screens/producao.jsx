@@ -52,7 +52,15 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
 
   // colaborador: minha fila
   const myName = currentUser?.nome || currentUser?.name;
-  const mine = React.useMemo(() => checkings.filter(c => c.assigned_to === myName), [checkings, myName]);
+  // Bug 4.11 fix: normalizar comparacao (trim, lowercase) e casar por nome ou email
+  const mine = React.useMemo(() => {
+    const nm = (myName || '').trim().toLowerCase();
+    const em = (currentUser?.email || '').trim().toLowerCase();
+    return checkings.filter(c => {
+      const a = (c.assigned_to || '').trim().toLowerCase();
+      return a && (a === nm || (em && a === em));
+    });
+  }, [checkings, myName, currentUser]);
   const myStats = prod.rows.find(r => r.name === myName);
   const myPending = mine.filter(c => H.norm(c.status) === "pending").sort((a, b) => a.submittedAt - b.submittedAt);
   // dashboard pessoal do analista

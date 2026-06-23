@@ -331,10 +331,11 @@ body::before {
   --rule:        rgba(0, 0, 0, 0.08);
   --rule-strong: rgba(0, 0, 0, 0.14);
   --rule-bright: rgba(0, 0, 0, 0.22);
-  --accent:      #059669;
-  --accent-ink:  #065F46;
-  --accent-soft: rgba(5, 150, 105, 0.1);
-  --accent-2:    #10B981;
+  /* Bug 3.1 fix: accent unificado na familia teal (era #059669 emerald) */
+  --accent:      #009d93;
+  --accent-ink:  #007a70;
+  --accent-soft: rgba(0, 157, 147, 0.10);
+  --accent-2:    #00b6aa;
   --alert:       #DC2626;
   --alert-ink:   #991B1B;
   --alert-soft:  rgba(220, 38, 38, 0.08);
@@ -346,7 +347,7 @@ body::before {
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 16px 48px -12px rgba(0, 0, 0, 0.15), 0 4px 12px -4px rgba(0, 0, 0, 0.08);
-  --shadow-glow-accent: 0 0 0 1px rgba(5,150,105,0.2), 0 8px 24px -8px rgba(5,150,105,0.3);
+  --shadow-glow-accent: 0 0 0 1px rgba(0,157,147,0.2), 0 8px 24px -8px rgba(0,157,147,0.3);
   background: var(--bg); color: var(--ink); color-scheme: light;
   overflow: hidden auto; position: relative; display: flex; flex-direction: column;
   margin: 10px; border-radius: 18px;
@@ -356,7 +357,7 @@ body::before {
 .content::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background-image:
-    radial-gradient(ellipse 900px 500px at 100% -5%, rgba(5,150,105,0.035), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 100% -5%, rgba(0,157,147,0.035), transparent 60%),
     radial-gradient(ellipse 700px 500px at 0% 8%, rgba(37,99,235,0.025), transparent 70%);
 }
 .content > * { position: relative; z-index: 1; }
@@ -751,7 +752,7 @@ body:has(.login-split)::before { display: none; }
 .login-input.has-trail { padding-right: 44px; }
 .login-trail { position: absolute; right: 6px; width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; color: #9CA3AF; transition: color 160ms, background 160ms; }
 .login-trail:hover { color: #444; background: rgba(0,0,0,0.05); }
-.login-valid-check { position: absolute; right: 14px; color: #059669; display: grid; place-items: center; animation: chipIn 240ms var(--spring); pointer-events: none; }
+.login-valid-check { position: absolute; right: 14px; color: var(--accent); display: grid; place-items: center; animation: chipIn 240ms var(--spring); pointer-events: none; }
 .caps-warn { display: flex; align-items: center; gap: 6px; margin-top: 7px; font-size: 11.5px; color: #B45309; animation: chipIn 200ms var(--spring); }
 .login-quick { display: flex; gap: 9px; margin-bottom: 6px; }
 .login-quick-btn { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 11px 8px 9px; border: 1px solid #e5e2d8; border-radius: 13px; background: #fff; flex: 1; transition: all 180ms var(--ease); }

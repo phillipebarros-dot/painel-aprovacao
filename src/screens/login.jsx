@@ -10,7 +10,9 @@ function ScreenLogin({ onLogin }) {
   const [error, setError] = React.useState("");
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const STATS = { total: window.MOCK.checkings.length, sla: "-", veic: H.extractList(window.MOCK.checkings, "veiculo").length };
+  // Bug 4.7 fix: STATS protegido contra MOCK vazio antes do login
+  const ckLen = (window.MOCK?.checkings || []).length;
+  const STATS = { total: ckLen, sla: "-", veic: ckLen ? H.extractList(window.MOCK.checkings, "veiculo").length : 0 };
 
   // Google Identity Services (SSO real)
   React.useEffect(() => {
@@ -119,7 +121,8 @@ function ScreenLogin({ onLogin }) {
       <div className="login-right">
         <div className="login-form-container">
           <div style={{ marginBottom: 24 }}>
-            <div className="eyebrow" style={{ color: "#999", marginBottom: 12 }}>// Acesso</div>
+            {/* Bug 3.2 fix: substituir hex avulsos por tokens */}
+            <div className="eyebrow" style={{ color: "var(--ink-3)", marginBottom: 12 }}>// Acesso</div>
             <h2 className="login-title">Bem-vindo<br />de volta.</h2>
           </div>
 
@@ -129,9 +132,9 @@ function ScreenLogin({ onLogin }) {
             </button>
 
             <div className="row" style={{ gap: 16, margin: "8px 0" }}>
-              <div style={{ flex: 1, height: 1, background: "#e5e5e5" }} />
-              <span style={{ fontSize: 11, color: "#999", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.06em" }}>ou com email</span>
-              <div style={{ flex: 1, height: 1, background: "#e5e5e5" }} />
+              <div style={{ flex: 1, height: 1, background: "var(--rule)" }} />
+              <span style={{ fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.06em" }}>ou com email</span>
+              <div style={{ flex: 1, height: 1, background: "var(--rule)" }} />
             </div>
 
             <div className="col" style={{ gap: 6 }}>
@@ -145,7 +148,7 @@ function ScreenLogin({ onLogin }) {
             <div className="col" style={{ gap: 6 }}>
               <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
                 <label className="login-label">Senha</label>
-                <a style={{ fontSize: 11, color: "#999", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.04em", cursor: "pointer" }}>Esqueci</a>
+                <a style={{ fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.04em", cursor: "pointer" }}>Esqueci</a>
               </div>
               <div className="login-input-wrap">
                 <input className="login-input has-trail" value={password} onChange={(e) => setPassword(e.target.value)} onKeyUp={onPwKey} onKeyDown={onPwKey} type={showPw ? "text" : "password"} placeholder="••••••••" autoComplete="current-password" />
@@ -165,10 +168,10 @@ function ScreenLogin({ onLogin }) {
               {loading ? <><span className="btn-spinner" style={{ borderColor: "rgba(255,255,255,0.5)", borderRightColor: "transparent" }} /> Autenticando…</> : <>Entrar <span className="arr">→</span></>}
             </button>
 
-            {error && <div style={{ padding: "12px 14px", background: "#FEF2F2", color: "#DC2626", borderRadius: 11, fontSize: 13, display: "flex", gap: 8, alignItems: "center", border: "1px solid #FECACA" }}><Icon name="warn" size={14} /> {error}</div>}
+            {error && <div style={{ padding: "12px 14px", background: "var(--alert-soft)", color: "var(--alert)", borderRadius: 11, fontSize: 13, display: "flex", gap: 8, alignItems: "center", border: "1px solid var(--alert-soft)" }}><Icon name="warn" size={14} /> {error}</div>}
           </form>
 
-          <div className="row gap-2" style={{ marginTop: 20, paddingTop: 16, borderTop: "1px dashed #e0ddd4", justifyContent: "center", color: "#999", fontSize: 11.5 }}>
+          <div className="row gap-2" style={{ marginTop: 20, paddingTop: 16, borderTop: "1px dashed var(--rule)", justifyContent: "center", color: "var(--ink-3)", fontSize: 11.5 }}>
             <Icon name="shield_check" size={13} /> Conexão segura · SSO Google Workspace
           </div>
         </div>

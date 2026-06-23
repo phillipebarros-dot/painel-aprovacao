@@ -34,14 +34,17 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
   const supRating = React.useMemo(() => H.supplierRating(periodCheckings, 6), [periodCheckings]);
   const aging = React.useMemo(() => H.agingBuckets(checkings), [checkings]);
   const distMeio = React.useMemo(() => H.distribution(periodCheckings, "meio", 5), [periodCheckings]);
-  const pendingRecent = React.useMemo(() => checkings.filter(c => c.status === "pending").slice(0, 6), [checkings]);
+  const pendingRecent = React.useMemo(() => checkings.filter(c => H.norm(c.status) === "pending").slice(0, 6), [checkings]);
   const heat = React.useMemo(() => H.slaHeatmap(periodCheckings), [periodCheckings]);
   const funnel = React.useMemo(() => H.funnelData(periodCheckings), [periodCheckings]);
 
   const exportCsv = () => {
+    // Bug 4.3 fix: escapar aspas internas (duplicando) e adicionar BOM UTF-8 para Excel
+    const esc = (v) => String(v == null ? '' : v).replace(/"/g, '""');
     const header = "Status,Cliente,PI,Veículo,Meio,Praça,Arquivos,Recebido,Aprovador\n";
-    const rows = checkings.map(c => `"${c.status}","${c.cliente}","${c.n_pi}","${c.veiculo}","${c.meio}","${c.praca}","${c.total_arquivos}","${new Date(c.submittedAt).toLocaleString("pt-BR")}","${c.approval_user}"`).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const rows = checkings.map(c => `"${esc(c.status)}","${esc(c.cliente)}","${esc(c.n_pi)}","${esc(c.veiculo)}","${esc(c.meio)}","${esc(c.praca)}","${esc(c.total_arquivos)}","${esc(new Date(c.submittedAt).toLocaleString("pt-BR"))}","${esc(c.approval_user)}"`).join("\n");
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + header + rows], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `dashboard_${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
   };
 
@@ -99,6 +102,8 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
             <span style={{ width: 4, height: 4, borderRadius: 99, background: "rgba(245,244,239,0.3)" }}/>
             <span style={{ fontSize: 12.5, whiteSpace: "nowrap" }}><b style={{ color: "#fff" }}>{stats.recebidosHoje}</b> hoje</span>
           </div>
+          {/* Bug 4.5 fix: total historico (nao depende do filtro de periodo) */}
+          <div style={{ marginTop: 8, fontSize: 11.5, color: "rgba(245,244,239,0.5)" }}>Total historico: <b style={{ color: "rgba(245,244,239,0.8)" }}>{H.fmtNum(checkings.length)}</b> PIs</div>
           <div style={{ marginTop: 14 }}><AreaSpark data={sparkPen} height={46} color="#5DD9A1" animKey={period}/></div>
           <div className="eyebrow" style={{ color: "rgba(245,244,239,0.4)", marginTop: 6 }}>volume · {periodLabel}</div>
         </div>

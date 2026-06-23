@@ -191,35 +191,36 @@ function SearchPalette({ checkings, onSelect, onNav, onClose }) {
     if (e.key === "ArrowUp") { e.preventDefault(); setSel(s => Math.max(s - 1, 0)); }
     if (e.key === "Enter" && flat[sel]) choose(flat[sel]);
   };
-  aUseEffect(() => { const el = listRef.current?.children[sel]; if (el) el.scrollIntoView({ block: "nearest" }); }, [sel]);
+  // Bug 4.15 fix: ajuste manual de scrollTop em vez de scrollIntoView que causa saltos
+  aUseEffect(() => { const list = listRef.current; const el = list?.children[sel]; if (el && list) { const et = el.offsetTop, eh = el.offsetHeight, lt = list.scrollTop, lh = list.clientHeight; if (et < lt) list.scrollTop = et; else if (et + eh > lt + lh) list.scrollTop = et + eh - lh; } }, [sel]);
   const dot = (s) => s === "approved" ? "var(--accent)" : s === "rejected" ? "var(--alert)" : "var(--warn)";
   let idx = -1;
   return (
     <div ref={backdropRef} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "14vh", backdropFilter: "blur(6px)" }}>
-      <div style={{ width: "100%", maxWidth: 580, background: "#FFFFFF", borderRadius: 16, boxShadow: "0 24px 72px -24px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.08)", overflow: "hidden", animation: "modalIn 280ms var(--ease-out)" }}>
-        <div className="row gap-3" style={{ padding: "15px 18px", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-          <Icon name="search" size={16} style={{ color: "#9CA3AF", flexShrink: 0 }}/>
-          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey} placeholder="Buscar checking ou navegar…" style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 15, color: "#111827", fontFamily: "var(--font-sans)" }}/>
-          <span className="kbd" style={{ borderColor: "rgba(0,0,0,0.12)", color: "#9CA3AF" }}>ESC</span>
+      <div style={{ width: "100%", maxWidth: 580, background: "var(--surface)", borderRadius: 16, boxShadow: "var(--shadow-lg)", overflow: "hidden", animation: "modalIn 280ms var(--ease-out)" }}>
+        <div className="row gap-3" style={{ padding: "15px 18px", borderBottom: "1px solid var(--rule)" }}>
+          <Icon name="search" size={16} style={{ color: "var(--ink-3)", flexShrink: 0 }}/>
+          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey} placeholder="Buscar checking ou navegar…" style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 15, color: "var(--ink)", fontFamily: "var(--font-sans)" }}/>
+          <span className="kbd" style={{ borderColor: "var(--rule-strong)", color: "var(--ink-3)" }}>ESC</span>
         </div>
         <div ref={listRef} style={{ maxHeight: 420, overflowY: "auto", padding: "6px 0" }}>
-          {flat.length === 0 && <div style={{ padding: "24px 18px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>Nenhum resultado</div>}
-          {results.nav.length > 0 && <div style={{ padding: "6px 18px 2px", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9CA3AF", fontWeight: 600 }}>Navegação</div>}
+          {flat.length === 0 && <div style={{ padding: "24px 18px", textAlign: "center", color: "var(--ink-3)", fontSize: 13 }}>Nenhum resultado</div>}
+          {results.nav.length > 0 && <div style={{ padding: "6px 18px 2px", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)", fontWeight: 600 }}>Navegação</div>}
           {results.nav.map(n => { idx++; const i = idx; return (
-            <div key={n.r} onMouseEnter={() => setSel(i)} onClick={() => choose({ kind: "nav", ...n })} className="row gap-3" style={{ padding: "9px 18px", cursor: "pointer", background: sel === i ? "rgba(0,0,0,0.04)" : "transparent", color: "#374151" }}>
-              <Icon name={n.i} size={15} style={{ color: "#6B7280" }}/><span style={{ fontSize: 13.5 }}>{n.t}</span>
+            <div key={n.r} onMouseEnter={() => setSel(i)} onClick={() => choose({ kind: "nav", ...n })} className="row gap-3" style={{ padding: "9px 18px", cursor: "pointer", background: sel === i ? "var(--glass-strong)" : "transparent", color: "var(--ink-2)" }}>
+              <Icon name={n.i} size={15} style={{ color: "var(--ink-3)" }}/><span style={{ fontSize: 13.5 }}>{n.t}</span>
             </div>
           ); })}
-          {results.checks.length > 0 && <div style={{ padding: "8px 18px 2px", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9CA3AF", fontWeight: 600 }}>Checkings</div>}
+          {results.checks.length > 0 && <div style={{ padding: "8px 18px 2px", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)", fontWeight: 600 }}>Checkings</div>}
           {results.checks.map(c => { idx++; const i = idx; return (
-            <div key={c.submission_id} onMouseEnter={() => setSel(i)} onClick={() => choose({ kind: "check", c })} className="row gap-3" style={{ padding: "10px 18px", cursor: "pointer", background: sel === i ? "rgba(0,0,0,0.04)" : "transparent" }}>
+            <div key={c.submission_id} onMouseEnter={() => setSel(i)} onClick={() => choose({ kind: "check", c })} className="row gap-3" style={{ padding: "10px 18px", cursor: "pointer", background: sel === i ? "var(--glass-strong)" : "transparent" }}>
               <span style={{ width: 8, height: 8, borderRadius: 99, background: dot(c.status), flexShrink: 0 }}/>
-              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 500, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cliente}</div><div className="row gap-2" style={{ fontSize: 12, color: "#6B7280", marginTop: 3 }}><span className="pi-strong">{c.n_pi}</span><span>·</span><span>{c.veiculo}</span></div></div>
-              <span style={{ fontSize: 11, color: "#9CA3AF", fontFamily: "var(--font-mono)" }}>{c.status === "pending" ? "pendente" : c.status === "approved" ? "aprovado" : "reprovado"}</span>
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cliente}</div><div className="row gap-2" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 3 }}><span className="pi-strong">{c.n_pi}</span><span>·</span><span>{c.veiculo}</span></div></div>
+              <span style={{ fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)" }}>{c.status === "pending" ? "pendente" : c.status === "approved" ? "aprovado" : "reprovado"}</span>
             </div>
           ); })}
         </div>
-        <div className="row gap-4" style={{ padding: "9px 18px", borderTop: "1px solid rgba(0,0,0,0.06)", fontSize: 11, color: "#9CA3AF" }}><span>↑↓ navegar</span><span>↵ abrir</span><span>esc fechar</span></div>
+        <div className="row gap-4" style={{ padding: "9px 18px", borderTop: "1px solid var(--rule)", fontSize: 11, color: "var(--ink-3)" }}><span>↑↓ navegar</span><span>↵ abrir</span><span>esc fechar</span></div>
       </div>
     </div>
   );

@@ -213,7 +213,8 @@
       }
       return Object.values(byAddr);
     } catch (err) {
-      // loadFiles error silenciado para UX
+      // Bug 4.4 fix: registrar erro em vez de engolir silenciosamente
+      console.warn('[loadFiles] Falha ao carregar arquivos:', err?.message || err);
       return [];
     }
   };

@@ -16,6 +16,8 @@
   const fmtHours = (h) => h < 1 ? `${Math.round(h * 60)}min` : `${h.toFixed(1)}h`;
   const fmtDur = (h) => { if (h < 1) return `${Math.round(h * 60)}min`; if (h < 36) return `${h < 10 ? h.toFixed(1) : Math.round(h)}h`; return `${Math.round(h / 24)} dias`; };
   const norm = (s) => { const v = (s || '').toLowerCase().trim(); return (!v || v === 'null') ? 'pending' : v; };
+  // Bug 1.2 fix: chave de data em horario LOCAL (nao UTC) para evitar troca de dia a noite
+  const localDateKey = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
   function computeStats(checkings) {
     const total = checkings.length;
@@ -44,10 +46,11 @@
     const map = {};
     for (let d = 0; d < days; d++) {
       const ts = start + d * 86400000;
-      map[new Date(ts).toISOString().slice(0, 10)] = { ts, approved: 0, rejected: 0, pending: 0, total: 0 };
+      // Bug 1.2 fix: usar chave local em vez de toISOString (UTC)
+      map[localDateKey(ts)] = { ts, approved: 0, rejected: 0, pending: 0, total: 0 };
     }
     checkings.forEach(c => {
-      const key = new Date(c.submittedAt).toISOString().slice(0, 10);
+      const key = localDateKey(c.submittedAt);
       if (map[key]) {
         const s = norm(c.status);
         if (s === 'approved') map[key].approved++;
@@ -66,10 +69,11 @@
     const map = {};
     for (let d = 1; d <= daysInMonth; d++) {
       const ts = new Date(y, m - 1, d).setHours(0, 0, 0, 0);
-      map[new Date(ts).toISOString().slice(0, 10)] = { ts, approved: 0, rejected: 0, pending: 0, total: 0 };
+      // Bug 1.2 fix: usar chave local em vez de toISOString (UTC)
+      map[localDateKey(ts)] = { ts, approved: 0, rejected: 0, pending: 0, total: 0 };
     }
     checkings.forEach(c => {
-      const key = new Date(c.submittedAt).toISOString().slice(0, 10);
+      const key = localDateKey(c.submittedAt);
       if (map[key]) {
         const s = norm(c.status);
         if (s === 'approved') map[key].approved++;
@@ -139,6 +143,14 @@
   // Ranking de fornecedores — estrelas só aparecem se alguém avaliou manualmente
   function supplierRating(checkings, limit = 20) {
     const m = {};
+    // Bug 2.1 fix: pre-cachear ratings do localStorage UMA vez (nao por checking)
+    const ratingCache = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("painel_rating_")) ratingCache[k] = Number(localStorage.getItem(k) || 0);
+      }
+    } catch (e) {}
     checkings.forEach(c => {
       const k = c.veiculo; if (!k) return;
       const s = m[k] || (m[k] = { label: k, total: 0, approved: 0, rejected: 0, rej: 0, manual: 0, manualN: 0 });
@@ -147,7 +159,9 @@
       if (st === "approved") s.approved++;
       if (st === "rejected") s.rejected++;
       s.rej += (c.rejection_count || 0);
-      try { const r = Number(localStorage.getItem("painel_rating_" + (c.email_contato || c.nome_contato || "x")) || 0); if (r) { s.manual += r; s.manualN++; } } catch (e) {}
+      const rkey = "painel_rating_" + (c.email_contato || c.nome_contato || "x");
+      const r = ratingCache[rkey] || 0;
+      if (r) { s.manual += r; s.manualN++; }
     });
     return Object.values(m).map(s => {
       const stars = s.manualN > 0 ? Math.round((s.manual / s.manualN) * 10) / 10 : null;
@@ -197,9 +211,9 @@
     const total = checkings.length;
     const resolved = checkings.filter(c => c.approvedAt || c.rejectedAt).length;
     const approved = checkings.filter(c => norm(c.status) === 'approved').length;
+    // Bug 1.3 fix: funil estritamente decrescente, sem etapa duplicada
     return [
       { label: "Recebidos", v: total, color: "var(--info)" },
-      { label: "Em análise + decididos", v: total, color: "var(--ink-3)" },
       { label: "Decididos", v: resolved, color: "var(--warn)" },
       { label: "Aprovados", v: approved, color: "var(--accent)" },
     ];

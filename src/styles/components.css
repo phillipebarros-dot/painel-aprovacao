@@ -33,9 +33,9 @@
 .btn-accent {
   background: linear-gradient(180deg, var(--accent-2) 0%, var(--accent) 100%);
   color: #06251A; border-color: var(--accent); font-weight: 650;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset, 0 4px 16px -6px rgba(5,150,105,0.5);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset, 0 4px 16px -6px rgba(0,157,147,0.5);
 }
-.btn-accent:hover { transform: translateY(-1.5px); box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 12px 30px -8px rgba(5,150,105,0.6); filter: brightness(1.03); }
+.btn-accent:hover { transform: translateY(-1.5px); box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 12px 30px -8px rgba(0,157,147,0.6); filter: brightness(1.03); }
 .btn-danger {
   background: linear-gradient(180deg, color-mix(in srgb, var(--alert) 110%, #fff) 0%, var(--alert) 100%);
   color: white; border-color: var(--alert); font-weight: 650;

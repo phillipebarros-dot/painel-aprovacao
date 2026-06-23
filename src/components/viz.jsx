@@ -29,7 +29,8 @@ const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 })
   const pts = data.map((d, i) => `${(i * stepX).toFixed(1)},${yOf(d.v).toFixed(1)}`).join(" ");
   const area = `M 0,${height} L ${pts} L ${w},${height} Z`;
   const len = w * 1.4;
-  const gid = "ag" + Math.abs(color.length * 31 + height);
+  // Bug 4.2 fix: gerar id unico por instancia (evita colisao de gradientes)
+  const gid = (React.useId || (() => "ag" + Math.random().toString(36).slice(2)))();
   return (
     <div ref={ref} style={{ width: "100%", height }}>
       <svg width={w} height={height} className="spark">

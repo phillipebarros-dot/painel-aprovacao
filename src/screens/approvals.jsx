@@ -29,7 +29,8 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
 
   const filtered = React.useMemo(() => {
     let rows = checkings.slice();
-    if (tab !== "all") rows = rows.filter(r => r.status === tab);
+    // Bug 4.8 fix: usar H.norm em vez de status cru no filtro de abas
+    if (tab !== "all") rows = rows.filter(r => H.norm(r.status) === tab);
     if (search) { const q = search.toLowerCase(); rows = rows.filter(r => r.cliente?.toLowerCase().includes(q) || r.n_pi?.toLowerCase().includes(q) || r.veiculo?.toLowerCase().includes(q) || r.praca?.toLowerCase().includes(q)); }
     if (filterClient !== "all") rows = rows.filter(r => r.cliente === filterClient);
     if (filterMeio !== "all") rows = rows.filter(r => r.meio === filterMeio);
@@ -78,19 +79,25 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
   const applyFilter = (f) => { setTab(f.tab); setFilterClient(f.filterClient); setFilterMeio(f.filterMeio); setSearch(f.search || ""); };
   const delFilter = (id) => { const next = saved.filter(f => f.id !== id); setSaved(next); localStorage.setItem("painel_saved_filters", JSON.stringify(next)); };
 
-  const bulkApprove = () => {
+  const bulkApprove = async () => {
     const who = currentUser.nome || currentUser.name;
     const ids = [...selected];
-    ids.forEach(id => window.PainelAPI?.approve(id, who).catch(e => onToast?.({ type: "error", message: `Falha ao aprovar ${id}: ${e.message || ""}` })));
-    onToast?.({ type: "success", message: `${ids.length} checkings aprovados em lote.` });
+    const results = await Promise.allSettled(ids.map(id => window.PainelAPI?.approve(id, who)));
+    const ok = results.filter(r => r.status === 'fulfilled').length;
+    const fail = results.filter(r => r.status === 'rejected').length;
+    if (ok > 0) onToast?.({ type: "success", message: `${ok} checkings aprovados em lote.` });
+    if (fail > 0) onToast?.({ type: "error", message: `${fail} falharam ao aprovar.` });
     setSelected(new Set()); onRefresh?.();
   };
-  const bulkReject = () => {
+  const bulkReject = async () => {
     const r = prompt("Motivo da reprovação em lote:"); if (!r) return;
     const who = currentUser.nome || currentUser.name;
     const ids = [...selected];
-    ids.forEach(id => window.PainelAPI?.reject(id, who, r).catch(e => onToast?.({ type: "error", message: `Falha ao reprovar ${id}: ${e.message || ""}` })));
-    onToast?.({ type: "success", message: `${ids.length} checkings reprovados.` });
+    const results = await Promise.allSettled(ids.map(id => window.PainelAPI?.reject(id, who, r)));
+    const ok = results.filter(res => res.status === 'fulfilled').length;
+    const fail = results.filter(res => res.status === 'rejected').length;
+    if (ok > 0) onToast?.({ type: "success", message: `${ok} checkings reprovados.` });
+    if (fail > 0) onToast?.({ type: "error", message: `${fail} falharam ao reprovar.` });
     setSelected(new Set()); onRefresh?.();
   };
 
@@ -286,7 +293,8 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
       {view === "kanban" && (
         <div className="kanban">
           {[["pending", "Pendentes", "var(--warn)"], ["approved", "Aprovados", "var(--accent)"], ["rejected", "Reprovados", "var(--alert)"]].map(([st, label, col]) => {
-            const colRows = filtered.filter(c => c.status === st);
+            // Bug 4.8 fix: Kanban filtra por status normalizado
+            const colRows = filtered.filter(c => H.norm(c.status) === st);
             return (
               <div key={st} className="kanban-col" onDragOver={(e) => { if (!isViewer) { e.preventDefault(); e.currentTarget.classList.add("kanban-over"); } }} onDragLeave={(e) => e.currentTarget.classList.remove("kanban-over")} onDrop={(e) => {
                 e.preventDefault(); e.currentTarget.classList.remove("kanban-over");
