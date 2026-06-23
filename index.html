@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-density="regular">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel de Aprovação · Grupo OM</title>
+  <meta name="description" content="Painel de Aprovação de Checking — Grupo OM. Auditoria de mídia."/>
+  <link rel="icon" href="assets/img/favicon.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="src/styles/core.css"/>
+  <link rel="stylesheet" href="src/styles/components.css"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Cliente da API real (n8n) exposto em window.PainelAPI -->
+  <script type="module">
+    import PainelAPI from './lib/api.js';
+    window.PainelAPI = PainelAPI;
+    window.dispatchEvent(new Event('painel-api-ready'));
+  </script>
+  <script src="https://accounts.google.com/gsi/client" async></script>
+
+  <!-- Núcleo: dados + lógica (vazio até o login carregar do BigQuery) -->
+  <script src="src/core/data.js"></script>
+  <script src="src/core/helpers.js"></script>
+  <script src="src/core/intelligence.js"></script>
+  <script src="src/core/rules.js"></script>
+  <script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
+
+  <!-- Componentes de UI (Babel) -->
+  <script type="text/babel" src="src/components/ui.jsx"></script>
+  <script type="text/babel" src="src/components/viz.jsx"></script>
+  <script type="text/babel" src="src/components/copilot.jsx"></script>
+  <script type="text/babel" src="src/components/shader-login.jsx"></script>
+
+  <!-- Telas (Babel) -->
+  <script type="text/babel" src="src/screens/login.jsx"></script>
+  <script type="text/babel" src="src/screens/dashboard.jsx"></script>
+  <script type="text/babel" src="src/screens/approvals.jsx"></script>
+  <script type="text/babel" src="src/screens/producao.jsx"></script>
+  <script type="text/babel" src="src/screens/review.jsx"></script>
+  <script type="text/babel" src="src/screens/comprovante.jsx"></script>
+  <script type="text/babel" src="src/screens/game.jsx"></script>
+  <script type="text/babel" src="src/screens/triage.jsx"></script>
+  <script type="text/babel" src="src/screens/alerts.jsx"></script>
+  <script type="text/babel" src="src/screens/reports.jsx"></script>
+  <script type="text/babel" src="src/screens/users.jsx"></script>
+  <script type="text/babel" src="src/screens/operations.jsx"></script>
+  <script type="text/babel" src="src/screens/fornecedores.jsx"></script>
+  <script type="text/babel" src="src/screens/automacoes.jsx"></script>
+
+  <!-- Shell raiz (Babel) -->
+  <script type="text/babel" src="src/app.jsx"></script>
+</body>
+</html>
