@@ -1,0 +1,246 @@
+{
+  "name": "Painel Checking - Nodes 2a Fase (importar e ligar ao Switch)",
+  "nodes": [
+    {
+      "parameters": {
+        "projectId": { "__rl": true, "value": "checking-grupoom", "mode": "list" },
+        "sqlQuery": "MERGE `checking-grupoom.form_checking.pi_responsaveis` T\nUSING (SELECT '{{ $json.body.n_pi }}' AS n_pi, '{{ $json.body.mes_referencia }}' AS mes_referencia) S\nON T.n_pi = S.n_pi AND T.mes_referencia = S.mes_referencia\nWHEN MATCHED THEN UPDATE SET\n  responsavel = '{{ $json.body.responsavel }}',\n  responsavel_nome = '{{ $json.body.responsavel_nome || \"\" }}',\n  conta = '{{ $json.body.conta || \"\" }}',\n  atribuido_por = '{{ $json.authenticatedUser?.email || \"sistema\" }}',\n  atribuido_em = CURRENT_TIMESTAMP()\nWHEN NOT MATCHED THEN INSERT\n  (n_pi, responsavel, responsavel_nome, mes_referencia, conta, atribuido_por, atribuido_em)\nVALUES\n  ('{{ $json.body.n_pi }}', '{{ $json.body.responsavel }}', '{{ $json.body.responsavel_nome || \"\" }}', '{{ $json.body.mes_referencia }}', '{{ $json.body.conta || \"\" }}', '{{ $json.authenticatedUser?.email || \"sistema\" }}', CURRENT_TIMESTAMP())",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "node-assign-responsible",
+      "name": "BigQuery - Atribuir Responsavel",
+      "onError": "continueErrorOutput",
+      "credentials": { "googleBigQueryOAuth2Api": { "id": "hxvtFcUvIi35sayG", "name": "Painel Cliente - Painel de Aprovação - Formulario" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Responsavel atribuido' } }}",
+        "options": { "responseHeaders": { "entries": [ { "name": "Access-Control-Allow-Origin", "value": "https://painelchecking.grupoom.com.br" } ] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [220, 0],
+      "id": "resp-assign-responsible",
+      "name": "Responder Atribuir Responsavel"
+    },
+    {
+      "parameters": {
+        "projectId": { "__rl": true, "value": "checking-grupoom", "mode": "list" },
+        "sqlQuery": "SELECT n_pi, responsavel, responsavel_nome, conta, mes_referencia,\n  FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', atribuido_em) AS atribuido_em\nFROM `checking-grupoom.form_checking.pi_responsaveis`\nWHERE ('{{ $json.body.mes_referencia || \"\" }}' = '' OR mes_referencia = '{{ $json.body.mes_referencia }}')\nORDER BY conta, n_pi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [0, 160],
+      "id": "node-get-responsaveis",
+      "name": "BigQuery - Listar Responsaveis",
+      "credentials": { "googleBigQueryOAuth2Api": { "id": "hxvtFcUvIi35sayG", "name": "Painel Cliente - Painel de Aprovação - Formulario" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, responsaveis: $input.all().map(i => i.json) } }}",
+        "options": { "responseHeaders": { "entries": [ { "name": "Access-Control-Allow-Origin", "value": "https://painelchecking.grupoom.com.br" } ] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [220, 160],
+      "id": "resp-get-responsaveis",
+      "name": "Responder Responsaveis"
+    },
+    {
+      "parameters": {
+        "projectId": { "__rl": true, "value": "checking-grupoom", "mode": "list" },
+        "sqlQuery": "INSERT INTO `checking-grupoom.form_checking.checking_comments`\n(id, submission_id, n_pi, comentario, tipo, autor, autor_nome, created_at)\nVALUES (\n  GENERATE_UUID(),\n  '{{ $json.body.submission_id }}',\n  '{{ $json.body.n_pi || \"\" }}',\n  '''{{ ($json.body.comentario || \"\").replace(/'/g, \"\") }}''',\n  '{{ $json.body.tipo || \"nota\" }}',\n  '{{ $json.authenticatedUser?.email || $json.body.autor || \"sistema\" }}',\n  '{{ $json.authenticatedUser?.name || \"\" }}',\n  CURRENT_TIMESTAMP()\n)",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [0, 320],
+      "id": "node-add-comment",
+      "name": "BigQuery - Adicionar Comentario",
+      "onError": "continueErrorOutput",
+      "credentials": { "googleBigQueryOAuth2Api": { "id": "hxvtFcUvIi35sayG", "name": "Painel Cliente - Painel de Aprovação - Formulario" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Comentario adicionado' } }}",
+        "options": { "responseHeaders": { "entries": [ { "name": "Access-Control-Allow-Origin", "value": "https://painelchecking.grupoom.com.br" } ] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [220, 320],
+      "id": "resp-add-comment",
+      "name": "Responder Comentario"
+    },
+    {
+      "parameters": {
+        "projectId": { "__rl": true, "value": "checking-grupoom", "mode": "list" },
+        "sqlQuery": "SELECT id, comentario, tipo, autor, autor_nome,\n  FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', created_at) AS created_at\nFROM `checking-grupoom.form_checking.checking_comments`\nWHERE submission_id = '{{ $json.body.submission_id }}'\nORDER BY created_at DESC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [0, 480],
+      "id": "node-get-history",
+      "name": "BigQuery - Historico do PI",
+      "credentials": { "googleBigQueryOAuth2Api": { "id": "hxvtFcUvIi35sayG", "name": "Painel Cliente - Painel de Aprovação - Formulario" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, history: $input.all().map(i => i.json) } }}",
+        "options": { "responseHeaders": { "entries": [ { "name": "Access-Control-Allow-Origin", "value": "https://painelchecking.grupoom.com.br" } ] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [220, 480],
+      "id": "resp-get-history",
+      "name": "Responder Historico"
+    },
+    {
+      "parameters": {
+        "projectId": { "__rl": true, "value": "checking-grupoom", "mode": "list" },
+        "sqlQuery": "MERGE `checking-grupoom.form_checking.suppliers` T\nUSING (SELECT '{{ $json.body.veiculo }}' AS veiculo) S\nON T.veiculo = S.veiculo\nWHEN MATCHED THEN UPDATE SET rating = {{ Number($json.body.rating) || 0 }}, updated_by = '{{ $json.authenticatedUser?.email || \"\" }}', updated_at = CURRENT_TIMESTAMP()\nWHEN NOT MATCHED THEN INSERT (veiculo, rating, updated_by, updated_at) VALUES ('{{ $json.body.veiculo }}', {{ Number($json.body.rating) || 0 }}, '{{ $json.authenticatedUser?.email || \"\" }}', CURRENT_TIMESTAMP())",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [0, 640],
+      "id": "node-set-rating",
+      "name": "BigQuery - Classificar Fornecedor",
+      "onError": "continueErrorOutput",
+      "credentials": { "googleBigQueryOAuth2Api": { "id": "hxvtFcUvIi35sayG", "name": "Painel Cliente - Painel de Aprovação - Formulario" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true } }}",
+        "options": { "responseHeaders": { "entries": [ { "name": "Access-Control-Allow-Origin", "value": "https://painelchecking.grupoom.com.br" } ] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [220, 640],
+      "id": "resp-set-rating",
+      "name": "Responder Classificacao"
+    },
+    {
+      "parameters": {
+        "projectId": { "__rl": true, "value": "checking-grupoom", "mode": "list" },
+        "sqlQuery": "SELECT veiculo, rating, observacao FROM `checking-grupoom.form_checking.suppliers` ORDER BY rating DESC, veiculo",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [0, 800],
+      "id": "node-get-suppliers",
+      "name": "BigQuery - Listar Fornecedores",
+      "credentials": { "googleBigQueryOAuth2Api": { "id": "hxvtFcUvIi35sayG", "name": "Painel Cliente - Painel de Aprovação - Formulario" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, suppliers: $input.all().map(i => i.json) } }}",
+        "options": { "responseHeaders": { "entries": [ { "name": "Access-Control-Allow-Origin", "value": "https://painelchecking.grupoom.com.br" } ] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [220, 800],
+      "id": "resp-get-suppliers",
+      "name": "Responder Fornecedores"
+    },
+    {
+      "parameters": {
+        "projectId": { "__rl": true, "value": "checking-grupoom", "mode": "list" },
+        "sqlQuery": "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET status = '{{ $json.body.status }}',\n    approval_user = '{{ $json.body.approval_user || $json.authenticatedUser?.email || \"\" }}',\n    approved_at = CASE WHEN '{{ $json.body.status }}' = 'approved' THEN CURRENT_TIMESTAMP() ELSE approved_at END,\n    rejected_at = CASE WHEN '{{ $json.body.status }}' = 'rejected' THEN CURRENT_TIMESTAMP() ELSE rejected_at END\nWHERE submission_id = '{{ $json.body.id }}'",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [0, 960],
+      "id": "node-update-status",
+      "name": "BigQuery - Atualizar Status Checking",
+      "onError": "continueErrorOutput",
+      "credentials": { "googleBigQueryOAuth2Api": { "id": "hxvtFcUvIi35sayG", "name": "Painel Cliente - Painel de Aprovação - Formulario" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Status atualizado' } }}",
+        "options": { "responseHeaders": { "entries": [ { "name": "Access-Control-Allow-Origin", "value": "https://painelchecking.grupoom.com.br" } ] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [220, 960],
+      "id": "resp-update-status",
+      "name": "Responder Atualizar Status"
+    },
+    {
+      "parameters": {
+        "projectId": { "__rl": true, "value": "checking-grupoom", "mode": "list" },
+        "sqlQuery": "MERGE `checking-grupoom.form_checking.sla_config` T\nUSING (SELECT 'global' AS id) S ON T.id = S.id\nWHEN MATCHED THEN UPDATE SET horas_atencao = {{ Number($json.body.horas_atencao) || 5 }}, horas_risco = {{ Number($json.body.horas_risco) || 12 }}, updated_by = '{{ $json.authenticatedUser?.email || \"\" }}', updated_at = CURRENT_TIMESTAMP()\nWHEN NOT MATCHED THEN INSERT (id, horas_atencao, horas_risco) VALUES ('global', {{ Number($json.body.horas_atencao) || 5 }}, {{ Number($json.body.horas_risco) || 12 }})",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [0, 1120],
+      "id": "node-save-sla",
+      "name": "BigQuery - Salvar SLA Config",
+      "onError": "continueErrorOutput",
+      "credentials": { "googleBigQueryOAuth2Api": { "id": "hxvtFcUvIi35sayG", "name": "Painel Cliente - Painel de Aprovação - Formulario" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true } }}",
+        "options": { "responseHeaders": { "entries": [ { "name": "Access-Control-Allow-Origin", "value": "https://painelchecking.grupoom.com.br" } ] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [220, 1120],
+      "id": "resp-save-sla",
+      "name": "Responder SLA"
+    },
+    {
+      "parameters": {
+        "projectId": { "__rl": true, "value": "checking-grupoom", "mode": "list" },
+        "sqlQuery": "SELECT horas_atencao, horas_risco FROM `checking-grupoom.form_checking.sla_config` WHERE id = 'global' LIMIT 1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [0, 1280],
+      "id": "node-get-sla",
+      "name": "BigQuery - Ler SLA Config",
+      "credentials": { "googleBigQueryOAuth2Api": { "id": "hxvtFcUvIi35sayG", "name": "Painel Cliente - Painel de Aprovação - Formulario" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, sla: $input.first().json } }}",
+        "options": { "responseHeaders": { "entries": [ { "name": "Access-Control-Allow-Origin", "value": "https://painelchecking.grupoom.com.br" } ] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [220, 1280],
+      "id": "resp-get-sla",
+      "name": "Responder Ler SLA"
+    }
+  ],
+  "connections": {
+    "BigQuery - Atribuir Responsavel": { "main": [ [ { "node": "Responder Atribuir Responsavel", "type": "main", "index": 0 } ] ] },
+    "BigQuery - Listar Responsaveis": { "main": [ [ { "node": "Responder Responsaveis", "type": "main", "index": 0 } ] ] },
+    "BigQuery - Adicionar Comentario": { "main": [ [ { "node": "Responder Comentario", "type": "main", "index": 0 } ] ] },
+    "BigQuery - Historico do PI": { "main": [ [ { "node": "Responder Historico", "type": "main", "index": 0 } ] ] },
+    "BigQuery - Classificar Fornecedor": { "main": [ [ { "node": "Responder Classificacao", "type": "main", "index": 0 } ] ] },
+    "BigQuery - Listar Fornecedores": { "main": [ [ { "node": "Responder Fornecedores", "type": "main", "index": 0 } ] ] },
+    "BigQuery - Atualizar Status Checking": { "main": [ [ { "node": "Responder Atualizar Status", "type": "main", "index": 0 } ] ] },
+    "BigQuery - Salvar SLA Config": { "main": [ [ { "node": "Responder SLA", "type": "main", "index": 0 } ] ] },
+    "BigQuery - Ler SLA Config": { "main": [ [ { "node": "Responder Ler SLA", "type": "main", "index": 0 } ] ] }
+  }
+}
