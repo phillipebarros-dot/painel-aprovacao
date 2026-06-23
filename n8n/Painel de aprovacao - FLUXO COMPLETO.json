@@ -1,4 +1,4 @@
-﻿{
+{
     "name":  "Painel de aprovacao l TESTE - FLUXO COMPLETO",
     "nodes":  [
                   {
@@ -3552,7 +3552,32 @@
                                                                                          },
                                                                           "renameOutput":  true,
                                                                           "outputKey":  "get_sla_config"
-                                                                      }
+                                                                      },
+                                                                       {
+                                                                           "conditions":  {
+                                                                                              "options":  {
+                                                                                                              "caseSensitive":  true,
+                                                                                                              "leftValue":  "",
+                                                                                                              "typeValidation":  "strict",
+                                                                                                              "version":  1
+                                                                                                          },
+                                                                                              "conditions":  [
+                                                                                                                 {
+                                                                                                                     "id":  "b1e2f3a4-5678-90ab-cdef-proxy00file",
+                                                                                                                     "leftValue":  "={{ $json.action }}",
+                                                                                                                     "rightValue":  "proxy_file",
+                                                                                                                     "operator":  {
+                                                                                                                                      "type":  "string",
+                                                                                                                                      "operation":  "equals",
+                                                                                                                                      "name":  "filter.operator.equals"
+                                                                                                                                  }
+                                                                                                                 }
+                                                                                                             ],
+                                                                                              "combinator":  "and"
+                                                                                          },
+                                                                           "renameOutput":  true,
+                                                                           "outputKey":  "proxy_file"
+                                                                       }
                                                                   ]
                                                    },
                                          "options":  {
@@ -3570,7 +3595,7 @@
                   },
                   {
                       "parameters":  {
-                                         "jsCode":  "// ============================================================\n// VALIDAR DADOS - Schema de validacao + RBAC + VIEWER BLOCK\n// ============================================================\nconst item = $input.first().json;\nconst { action, body } = item;\nconst authenticatedUser = item._auth || null;\n\n// ============================================================\n// FIX C: Guard anti-rej_\n// ============================================================\nconst actionsThatUseId = [\u0027approve\u0027, \u0027reject\u0027, \u0027resubmit_checking\u0027];\nif (actionsThatUseId.includes(action)) {\n  const targetId = body.id || body.submission_id || \u0027\u0027;\n  if (String(targetId).startsWith(\u0027rej_\u0027)) {\n    throw new Error(\u0027INVALID_ID: Operação não permitida em registros de log de rejeição (rej_)\u0027);\n  }\n}\n\n// ============================================================\n// RBAC: Acoes bloqueadas para viewers (setor Midia)\n// Viewers podem apenas visualizar — NUNCA aprovar/rejeitar\n// ============================================================\nconst VIEWER_BLOCKED_ACTIONS = [\u0027approve\u0027, \u0027reject\u0027, \u0027resubmit_checking\u0027, \u0027register_user\u0027, \u0027update_user_role\u0027, \u0027update_user_status\u0027];\nif (VIEWER_BLOCKED_ACTIONS.includes(action) \u0026\u0026 authenticatedUser \u0026\u0026 authenticatedUser.role === \u0027viewer\u0027) {\n  throw new Error(\u0027FORBIDDEN: Viewers do setor Midia nao possuem permissao para esta acao\u0027);\n}\n\nconst schemas = {\n  login_sso:          { required: [\u0027id_token\u0027] },\n  approve:            { required: [\u0027id\u0027] },\n  reject:             { required: [\u0027id\u0027, \u0027reason\u0027] },\n  logout:             { required: [] },\n  resubmit_checking:  { required: [\u0027submission_id\u0027] },\n  login:              { required: [\u0027email\u0027, \u0027password\u0027] },\n  register_user:      { required: [\u0027name\u0027, \u0027email\u0027, \u0027password\u0027], adminOnly: true },\n  update_user_role:   { required: [\u0027userId\u0027, \u0027newRole\u0027], adminOnly: true },\n  update_user_status: { required: [\u0027userId\u0027, \u0027status\u0027], adminOnly: true },\n  get_users:          { required: [], adminOnly: true },\n  log_security_event: { required: [\u0027event_type\u0027, \u0027severity\u0027] },\n  get_security_alerts: { required: [], adminOnly: true },\n  heartbeat:          { required: [] },\n  get_online_users:   { required: [] },\n  get_notifications:  { required: [] }\n};\n\nconst schema = schemas[action];\nif (schema) {\n  const missing = (schema.required || []).filter(f =\u003e !body[f]);\n  if (missing.length \u003e 0) throw new Error(\u0027MISSING_FIELDS: \u0027 + missing.join(\u0027, \u0027));\n  if (schema.adminOnly \u0026\u0026 (!authenticatedUser || authenticatedUser.role !== \u0027admin\u0027)) {\n    throw new Error(\u0027FORBIDDEN: Acesso restrito a administradores\u0027);\n  }\n}\n\nif (action === \u0027update_user_role\u0027) {\n  const allowedRoles = [\u0027admin\u0027, \u0027analyst\u0027, \u0027viewer\u0027];\n  if (!allowedRoles.includes(body.newRole)) throw new Error(\u0027INVALID_ROLE: Role must be admin, analyst or viewer\u0027);\n}\n\nif (action === \u0027update_user_status\u0027) {\n  const allowedStatus = [\u0027active\u0027, \u0027inactive\u0027];\n  if (!allowedStatus.includes(body.status)) throw new Error(\u0027INVALID_STATUS: Status must be active or inactive\u0027);\n}\n\nif (action === \u0027register_user\u0027 \u0026\u0026 body.email) {\n  const allowedDomains = [\u0027@grupoom.com.br\u0027, \u0027@opusmultipla.com.br\u0027];\n  const emailLower = body.email.toLowerCase();\n  if (!allowedDomains.some(d =\u003e emailLower.endsWith(d))) {\n    throw new Error(\u0027FORBIDDEN: Email deve ser do dominio corporativo\u0027);\n  }\n}\n\n// Logout já foi processado no auth node, responder diretamente\nif (action === \u0027logout\u0027 \u0026\u0026 $input.first().json._logoutSuccess) {\n  // O roteador não tem branch para logout, então retornamos aqui\n}\n\nreturn $input.all();"
+                                         "jsCode":  "// ============================================================\n// VALIDAR DADOS - Schema de validacao + RBAC + VIEWER BLOCK\n// ============================================================\nconst item = $input.first().json;\nconst { action, body } = item;\nconst authenticatedUser = item._auth || null;\n\n// ============================================================\n// FIX C: Guard anti-rej_\n// ============================================================\nconst actionsThatUseId = [\u0027approve\u0027, \u0027reject\u0027, \u0027resubmit_checking\u0027];\nif (actionsThatUseId.includes(action)) {\n  const targetId = body.id || body.submission_id || \u0027\u0027;\n  if (String(targetId).startsWith(\u0027rej_\u0027)) {\n    throw new Error(\u0027INVALID_ID: Operação não permitida em registros de log de rejeição (rej_)\u0027);\n  }\n}\n\n// ============================================================\n// RBAC: Acoes bloqueadas para viewers (setor Midia)\n// Viewers podem apenas visualizar — NUNCA aprovar/rejeitar\n// ============================================================\nconst VIEWER_BLOCKED_ACTIONS = [\u0027approve\u0027, \u0027reject\u0027, \u0027resubmit_checking\u0027, \u0027register_user\u0027, \u0027update_user_role\u0027, \u0027update_user_status\u0027];\nif (VIEWER_BLOCKED_ACTIONS.includes(action) \u0026\u0026 authenticatedUser \u0026\u0026 authenticatedUser.role === \u0027viewer\u0027) {\n  throw new Error(\u0027FORBIDDEN: Viewers do setor Midia nao possuem permissao para esta acao\u0027);\n}\n\nconst schemas = {\n  login_sso:          { required: [\u0027id_token\u0027] },\n  approve:            { required: [\u0027id\u0027] },\n  reject:             { required: [\u0027id\u0027, \u0027reason\u0027] },\n  logout:             { required: [] },\n  resubmit_checking:  { required: [\u0027submission_id\u0027] },\n  login:              { required: [\u0027email\u0027, \u0027password\u0027] },\n  register_user:      { required: [\u0027name\u0027, \u0027email\u0027, \u0027password\u0027], adminOnly: true },\n  update_user_role:   { required: [\u0027userId\u0027, \u0027newRole\u0027], adminOnly: true },\n  update_user_status: { required: [\u0027userId\u0027, \u0027status\u0027], adminOnly: true },\n  get_users:          { required: [], adminOnly: true },\n  log_security_event: { required: [\u0027event_type\u0027, \u0027severity\u0027] },\n  get_security_alerts: { required: [], adminOnly: true },\n  heartbeat:          { required: [] },\n  get_online_users:   { required: [] },\n  get_notifications:  { required: [] },\n  proxy_file:         { required: [] }\n};\n\nconst schema = schemas[action];\nif (schema) {\n  const missing = (schema.required || []).filter(f =\u003e !body[f]);\n  if (missing.length \u003e 0) throw new Error(\u0027MISSING_FIELDS: \u0027 + missing.join(\u0027, \u0027));\n  if (schema.adminOnly \u0026\u0026 (!authenticatedUser || authenticatedUser.role !== \u0027admin\u0027)) {\n    throw new Error(\u0027FORBIDDEN: Acesso restrito a administradores\u0027);\n  }\n}\n\nif (action === \u0027update_user_role\u0027) {\n  const allowedRoles = [\u0027admin\u0027, \u0027analyst\u0027, \u0027viewer\u0027];\n  if (!allowedRoles.includes(body.newRole)) throw new Error(\u0027INVALID_ROLE: Role must be admin, analyst or viewer\u0027);\n}\n\nif (action === \u0027update_user_status\u0027) {\n  const allowedStatus = [\u0027active\u0027, \u0027inactive\u0027];\n  if (!allowedStatus.includes(body.status)) throw new Error(\u0027INVALID_STATUS: Status must be active or inactive\u0027);\n}\n\nif (action === \u0027register_user\u0027 \u0026\u0026 body.email) {\n  const allowedDomains = [\u0027@grupoom.com.br\u0027, \u0027@opusmultipla.com.br\u0027];\n  const emailLower = body.email.toLowerCase();\n  if (!allowedDomains.some(d =\u003e emailLower.endsWith(d))) {\n    throw new Error(\u0027FORBIDDEN: Email deve ser do dominio corporativo\u0027);\n  }\n}\n\n// Logout já foi processado no auth node, responder diretamente\nif (action === \u0027logout\u0027 \u0026\u0026 $input.first().json._logoutSuccess) {\n  // O roteador não tem branch para logout, então retornamos aqui\n}\n\nreturn $input.all();"
                                      },
                       "id":  "0a5c7cc2-bbc3-49f5-af8b-202769e3804e",
                       "name":  "Validar Dados",
@@ -3598,7 +3623,7 @@
                   },
                   {
                       "parameters":  {
-                                         "jsCode":  "// ============================================================\n// SANITIZAR INPUT - Versao reforcada com validacao de tipos\n// v2: Sanitizacao em dois niveis (strict vs safe)\n// ============================================================\n\n// Campos que NAO devem ser sanitizados (tokens, hashes)\nconst SKIP_FIELDS = [\u0027id_token\u0027, \u0027token\u0027, \u0027password\u0027, \u0027password_hash\u0027];\n\n// Campos de texto livre - sanitizacao LEVE (so escapa quotes SQL)\nconst TEXT_FIELDS = [\u0027reason\u0027, \u0027rejection_reason\u0027, \u0027name\u0027, \u0027observacoes\u0027, \u0027comentario\u0027, \u0027responsavel_nome\u0027, \u0027conta\u0027];\n\n// Tipos esperados por campo (whitelist de validacao)\nconst FIELD_TYPES = {\n  id:              \u0027alphanumeric\u0027,\n  submission_id:   \u0027alphanumeric\u0027,\n  userId:          \u0027alphanumeric\u0027,\n  email:           \u0027email\u0027,\n  name:            \u0027string_safe\u0027,\n  role:            \u0027enum:admin,analyst,viewer\u0027,\n  status:          \u0027enum:active,inactive\u0027,\n  newRole:         \u0027enum:admin,analyst,viewer\u0027,\n  grupo:           \u0027string_safe\u0027,\n  approval_user:   \u0027string_safe\u0027,\n  reason:          \u0027string_safe\u0027,\n  n_pi:            \u0027alphanumeric\u0027,\n  cliente:         \u0027string_safe\u0027,\n  veiculo:         \u0027string_safe\u0027,\n  action:          \u0027alpha_underscore\u0027,\n  event_type:      \u0027alpha_underscore\u0027,\n  severity:        \u0027alpha_underscore\u0027,\n  data_inicio:     \u0027date\u0027,\n  data_fim:        \u0027date\u0027,\n  mes_referencia:  \u0027month\u0027,\n  responsavel:     \u0027email\u0027,\n  horas_atencao:   \u0027integer\u0027,\n  horas_risco:     \u0027integer\u0027,\n  rating:          \u0027integer\u0027\n};\n\n// Validadores por tipo\nconst validators = {\n  uuid: (v) =\u003e /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v),\n  email: (v) =\u003e /^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$/.test(v) \u0026\u0026 v.length \u003c= 254,\n  string_strict: (v) =\u003e typeof v === \u0027string\u0027 \u0026\u0026 v.length \u003c= 500,\n  string_safe: (v) =\u003e typeof v === \u0027string\u0027 \u0026\u0026 v.length \u003c= 1000,\n  alphanumeric: (v) =\u003e /^[a-zA-Z0-9_\\-./]+$/.test(v) \u0026\u0026 v.length \u003c= 100,\n  alpha_underscore: (v) =\u003e /^[a-zA-Z_]+$/.test(v) \u0026\u0026 v.length \u003c= 50,\n  date: (v) =\u003e /^\\d{4}-\\d{2}-\\d{2}$/.test(v),\n  integer: (v) =\u003e Number.isInteger(Number(v)),\n  month: (v) =\u003e /^\\d{4}-\\d{2}$/.test(v)\n};\n\nfunction validateEnum(value, allowed) {\n  return allowed.split(\u0027,\u0027).includes(value);\n}\n\n// Sanitizacao LEVE: so escapa quotes SQL e remove control chars\n// Preserva palavras como \u0027Selecionar\u0027, acentos, pontuacao normal\nfunction sanitizeSafe(val) {\n  if (typeof val !== \u0027string\u0027) return val;\n  return val\n    .replace(/\u0027/g, \"\u0027\u0027\")\n    .replace(/[\\x00-\\x1f]/g, \u0027\u0027)\n    .replace(/--/g, \u0027\u0027)\n    .replace(/\\/\\*/g, \u0027\u0027)\n    .replace(/\\*\\//g, \u0027\u0027);\n}\n\n// Sanitizacao ESTRITA: strip de keywords SQL (para campos que vao em WHERE/SET)\nfunction sanitizeStrict(val) {\n  if (typeof val !== \u0027string\u0027) return val;\n  return val\n    .replace(/\\\\/g, \u0027\\\\\\\\\u0027)\n    .replace(/\u0027/g, \"\\\\\u0027\")\n    .replace(/[\\x00-\\x1f]/g, \u0027\u0027)\n    .replace(/--/g, \u0027\u0027)\n    .replace(/\\/\\*/g, \u0027\u0027)\n    .replace(/\\*\\//g, \u0027\u0027)\n    .replace(/;/g, \u0027\u0027)\n    .replace(/\\bUNION\\b/gi, \u0027\u0027)\n    .replace(/\\bSELECT\\b/gi, \u0027\u0027)\n    .replace(/\\bINSERT\\b/gi, \u0027\u0027)\n    .replace(/\\bUPDATE\\b/gi, \u0027\u0027)\n    .replace(/\\bDELETE\\b/gi, \u0027\u0027)\n    .replace(/\\bDROP\\b/gi, \u0027\u0027)\n    .replace(/\\bEXEC\\b/gi, \u0027\u0027)\n    .replace(/\\bALTER\\b/gi, \u0027\u0027);\n}\n\n// Processar body\nconst items = $input.all();\nconst body = items[0].json.body || {};\nconst query = items[0].json.query || {};\nconst action = items[0].json.action || {};\n\nfunction processObj(obj, source) {\n  const result = {};\n  for (const [key, val] of Object.entries(obj)) {\n    if (SKIP_FIELDS.includes(key)) {\n      result[key] = val;\n      continue;\n    }\n\n    // Validacao de tipo se definida\n    const expectedType = FIELD_TYPES[key];\n    if (expectedType \u0026\u0026 typeof val === \u0027string\u0027 \u0026\u0026 val.length \u003e 0) {\n      if (expectedType.startsWith(\u0027enum:\u0027)) {\n        if (!validateEnum(val, expectedType.slice(5))) {\n          throw new Error(`INVALID_INPUT: Campo \u0027${key}\u0027 contem valor nao permitido`);\n        }\n        result[key] = val;\n        continue;\n      }\n      const validator = validators[expectedType];\n      if (action !== \u0027generate_slides\u0027) {\n        if (validator \u0026\u0026 !validator(val)) {\n          throw new Error(`INVALID_INPUT: Campo \u0027${key}\u0027 tem formato invalido`);\n        }\n      }\n    }\n\n    // Limitar tamanho maximo de qualquer campo\n    if (typeof val === \u0027string\u0027 \u0026\u0026 val.length \u003e 5000) {\n      throw new Error(`INVALID_INPUT: Campo \u0027${key}\u0027 excede tamanho maximo`);\n    }\n\n    // Sanitizar: LEVE para campos de texto, ESTRITA para o resto\n    if (typeof val === \u0027string\u0027) {\n      result[key] = TEXT_FIELDS.includes(key) ? sanitizeSafe(val) : sanitizeStrict(val);\n    } else {\n      result[key] = val;\n    }\n  }\n  return result;\n}\n\nitems[0].json.body = processObj(body, \u0027body\u0027);\nitems[0].json.query = processObj(query, \u0027query\u0027);\nreturn items;"
+                                         "jsCode":  "// ============================================================\n// SANITIZAR INPUT - Versao reforcada com validacao de tipos\n// v2: Sanitizacao em dois niveis (strict vs safe)\n// ============================================================\n\n// Campos que NAO devem ser sanitizados (tokens, hashes)\nconst SKIP_FIELDS = [\u0027id_token\u0027, \u0027token\u0027, \u0027password\u0027, \u0027password_hash\u0027];\n\n// Campos de texto livre - sanitizacao LEVE (so escapa quotes SQL)\nconst TEXT_FIELDS = [\u0027reason\u0027, \u0027rejection_reason\u0027, \u0027name\u0027, \u0027observacoes\u0027, \u0027comentario\u0027, \u0027responsavel_nome\u0027, \u0027conta\u0027];\n\n// Tipos esperados por campo (whitelist de validacao)\nconst FIELD_TYPES = {\n  id:              \u0027alphanumeric\u0027,\n  submission_id:   \u0027alphanumeric\u0027,\n  userId:          \u0027alphanumeric\u0027,\n  email:           \u0027email\u0027,\n  name:            \u0027string_safe\u0027,\n  role:            \u0027enum:admin,analyst,viewer\u0027,\n  status:          \u0027enum:active,inactive\u0027,\n  newRole:         \u0027enum:admin,analyst,viewer\u0027,\n  grupo:           \u0027string_safe\u0027,\n  approval_user:   \u0027string_safe\u0027,\n  reason:          \u0027string_safe\u0027,\n  n_pi:            \u0027alphanumeric\u0027,\n  cliente:         \u0027string_safe\u0027,\n  veiculo:         \u0027string_safe\u0027,\n  file_id:         \u0027alphanumeric\u0027,\n  action:          \u0027alpha_underscore\u0027,\n  event_type:      \u0027alpha_underscore\u0027,\n  severity:        \u0027alpha_underscore\u0027,\n  data_inicio:     \u0027date\u0027,\n  data_fim:        \u0027date\u0027,\n  mes_referencia:  \u0027month\u0027,\n  responsavel:     \u0027email\u0027,\n  horas_atencao:   \u0027integer\u0027,\n  horas_risco:     \u0027integer\u0027,\n  rating:          \u0027integer\u0027\n};\n\n// Validadores por tipo\nconst validators = {\n  uuid: (v) =\u003e /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v),\n  email: (v) =\u003e /^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$/.test(v) \u0026\u0026 v.length \u003c= 254,\n  string_strict: (v) =\u003e typeof v === \u0027string\u0027 \u0026\u0026 v.length \u003c= 500,\n  string_safe: (v) =\u003e typeof v === \u0027string\u0027 \u0026\u0026 v.length \u003c= 1000,\n  alphanumeric: (v) =\u003e /^[a-zA-Z0-9_\\-./]+$/.test(v) \u0026\u0026 v.length \u003c= 100,\n  alpha_underscore: (v) =\u003e /^[a-zA-Z_]+$/.test(v) \u0026\u0026 v.length \u003c= 50,\n  date: (v) =\u003e /^\\d{4}-\\d{2}-\\d{2}$/.test(v),\n  integer: (v) =\u003e Number.isInteger(Number(v)),\n  month: (v) =\u003e /^\\d{4}-\\d{2}$/.test(v)\n};\n\nfunction validateEnum(value, allowed) {\n  return allowed.split(\u0027,\u0027).includes(value);\n}\n\n// Sanitizacao LEVE: so escapa quotes SQL e remove control chars\n// Preserva palavras como \u0027Selecionar\u0027, acentos, pontuacao normal\nfunction sanitizeSafe(val) {\n  if (typeof val !== \u0027string\u0027) return val;\n  return val\n    .replace(/\u0027/g, \"\u0027\u0027\")\n    .replace(/[\\x00-\\x1f]/g, \u0027\u0027)\n    .replace(/--/g, \u0027\u0027)\n    .replace(/\\/\\*/g, \u0027\u0027)\n    .replace(/\\*\\//g, \u0027\u0027);\n}\n\n// Sanitizacao ESTRITA: strip de keywords SQL (para campos que vao em WHERE/SET)\nfunction sanitizeStrict(val) {\n  if (typeof val !== \u0027string\u0027) return val;\n  return val\n    .replace(/\\\\/g, \u0027\\\\\\\\\u0027)\n    .replace(/\u0027/g, \"\\\\\u0027\")\n    .replace(/[\\x00-\\x1f]/g, \u0027\u0027)\n    .replace(/--/g, \u0027\u0027)\n    .replace(/\\/\\*/g, \u0027\u0027)\n    .replace(/\\*\\//g, \u0027\u0027)\n    .replace(/;/g, \u0027\u0027)\n    .replace(/\\bUNION\\b/gi, \u0027\u0027)\n    .replace(/\\bSELECT\\b/gi, \u0027\u0027)\n    .replace(/\\bINSERT\\b/gi, \u0027\u0027)\n    .replace(/\\bUPDATE\\b/gi, \u0027\u0027)\n    .replace(/\\bDELETE\\b/gi, \u0027\u0027)\n    .replace(/\\bDROP\\b/gi, \u0027\u0027)\n    .replace(/\\bEXEC\\b/gi, \u0027\u0027)\n    .replace(/\\bALTER\\b/gi, \u0027\u0027);\n}\n\n// Processar body\nconst items = $input.all();\nconst body = items[0].json.body || {};\nconst query = items[0].json.query || {};\nconst action = items[0].json.action || {};\n\nfunction processObj(obj, source) {\n  const result = {};\n  for (const [key, val] of Object.entries(obj)) {\n    if (SKIP_FIELDS.includes(key)) {\n      result[key] = val;\n      continue;\n    }\n\n    // Validacao de tipo se definida\n    const expectedType = FIELD_TYPES[key];\n    if (expectedType \u0026\u0026 typeof val === \u0027string\u0027 \u0026\u0026 val.length \u003e 0) {\n      if (expectedType.startsWith(\u0027enum:\u0027)) {\n        if (!validateEnum(val, expectedType.slice(5))) {\n          throw new Error(`INVALID_INPUT: Campo \u0027${key}\u0027 contem valor nao permitido`);\n        }\n        result[key] = val;\n        continue;\n      }\n      const validator = validators[expectedType];\n      if (action !== \u0027generate_slides\u0027) {\n        if (validator \u0026\u0026 !validator(val)) {\n          throw new Error(`INVALID_INPUT: Campo \u0027${key}\u0027 tem formato invalido`);\n        }\n      }\n    }\n\n    // Limitar tamanho maximo de qualquer campo\n    if (typeof val === \u0027string\u0027 \u0026\u0026 val.length \u003e 5000) {\n      throw new Error(`INVALID_INPUT: Campo \u0027${key}\u0027 excede tamanho maximo`);\n    }\n\n    // Sanitizar: LEVE para campos de texto, ESTRITA para o resto\n    if (typeof val === \u0027string\u0027) {\n      result[key] = TEXT_FIELDS.includes(key) ? sanitizeSafe(val) : sanitizeStrict(val);\n    } else {\n      result[key] = val;\n    }\n  }\n  return result;\n}\n\nitems[0].json.body = processObj(body, \u0027body\u0027);\nitems[0].json.query = processObj(query, \u0027query\u0027);\nreturn items;"
                                      },
                       "id":  "12b390e2-6254-4a28-beb6-a32258a4c7a4",
                       "name":  "Sanitizar Input",
@@ -5212,6 +5237,72 @@
                                        72
                                    ],
                       "typeVersion":  2.1
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "download",
+                                         "fileId":  {
+                                                        "__rl":  true,
+                                                        "value":  "={{ $json.body.file_id || $json.query.file_id || '' }}",
+                                                        "mode":  "id"
+                                                    },
+                                         "options":  {}
+                                     },
+                      "id":  "a1b2c3d4-e5f6-7890-abcd-proxyfiledown",
+                      "name":  "Drive - Download Proxy",
+                      "type":  "n8n-nodes-base.googleDrive",
+                      "typeVersion":  3,
+                      "position":  [
+                                       -400,
+                                       1800
+                                   ],
+                      "credentials":  {
+                                          "googleDriveOAuth2Api":  {
+                                                                       "id":  "1c3ApLu5B45cMjkz",
+                                                                       "name":  "Painel de Cheking"
+                                                                   }
+                                      },
+                      "onError":  "continueErrorOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "binary",
+                                         "responseBinaryPropertyName":  "data",
+                                         "options":  {
+                                                         "responseHeaders":  {
+                                                                                 "entries":  [
+                                                                                                 {
+                                                                                                     "name":  "Access-Control-Allow-Origin",
+                                                                                                     "value":  "https://painelchecking.grupoom.com.br"
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "name":  "Access-Control-Allow-Methods",
+                                                                                                     "value":  "GET, POST, OPTIONS"
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "name":  "Access-Control-Allow-Headers",
+                                                                                                     "value":  "Content-Type, Authorization"
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "name":  "Content-Disposition",
+                                                                                                     "value":  "inline"
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "name":  "Cache-Control",
+                                                                                                     "value":  "public, max-age=3600"
+                                                                                                 }
+                                                                                             ]
+                                                                             }
+                                                     }
+                                     },
+                      "id":  "e5f6a7b8-9012-3456-cdef-proxyfileresp",
+                      "name":  "Responder Proxy File",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -192,
+                                       1800
+                                   ]
                   }
               ],
     "pinData":  {
@@ -6346,9 +6437,27 @@
                                                                        "type":  "main",
                                                                        "index":  0
                                                                    }
-                                                               ]
+                                                               ],
+                                                           [
+                                                               {
+                                                                   "node":  "Drive - Download Proxy",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               }
                                                            ]
+                                                       ]
                                               },
+                        "Drive - Download Proxy":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Responder Proxy File",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
                         "Validar Dados":  {
                                               "main":  [
                                                            [
