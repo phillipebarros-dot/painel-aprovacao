@@ -173,7 +173,7 @@ function ScreenDashboard({ stats, checkings, auditLog, onOpenReview, onNavigate,
           <div className="card-pad"><SlaHeatmap data={heat}/></div>
         </div>
         <div className="card">
-          <div className="card-head"><div className="col" style={{ gap: 2 }}><div className="eyebrow">Jornada</div><div className="h2">Funil de aprovação</div></div></div>
+          <div className="card-head"><div className="col" style={{ gap: 2 }}><div className="eyebrow">Jornada</div><div className="h2">Funil de aprovação</div></div><span className="cell-mono muted">{H.fmtNum(stats.total)} PIs enviados</span></div>
           <div className="card-pad"><Funnel steps={funnel}/></div>
         </div>
         <div className="card">
@@ -243,8 +243,10 @@ function ScreenDashboard({ stats, checkings, auditLog, onOpenReview, onNavigate,
               <div className="col" style={{ gap: 3, flex: 1, minWidth: 0 }}>
                 <span style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.label}</span>
                 <div className="row gap-2" style={{ alignItems: "center" }}>
-                  <span className="sup-stars">{[1, 2, 3, 4, 5].map(n => <Icon key={n} name="star" size={13} style={{ color: n <= Math.round(s.stars) ? "var(--warn)" : "var(--ink-4)", fill: n <= Math.round(s.stars) ? "var(--warn)" : "none" }}/>)}</span>
-                  <span className="cell-mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>{s.stars.toFixed(1)}</span>
+                  {s.stars != null ? <>
+                    <span className="sup-stars">{[1, 2, 3, 4, 5].map(n => <Icon key={n} name="star" size={13} style={{ color: n <= Math.round(s.stars) ? "var(--warn)" : "var(--ink-4)", fill: n <= Math.round(s.stars) ? "var(--warn)" : "none" }}/>)}</span>
+                    <span className="cell-mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>{s.stars.toFixed(1)}</span>
+                  </> : <span style={{ fontSize: 11.5, color: "var(--ink-4)", fontStyle: "italic" }}>Sem avaliação</span>}
                 </div>
               </div>
               <div className="col" style={{ alignItems: "flex-end", gap: 2 }}>

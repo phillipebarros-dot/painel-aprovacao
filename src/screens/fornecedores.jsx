@@ -19,7 +19,11 @@ function aggregateSuppliers(checkings) {
   });
   return Object.values(m).map(s => {
     const decided = s.approved + s.rejected;
-    const appRate = decided ? s.approved / decided : 0.8;
+    if (decided === 0 && s.manualN === 0) {
+      // Nenhuma decisão e nenhuma nota manual → sem avaliação
+      return { ...s, stars: null, appRate: null, avgSla: s.slaN ? s.slaSum / s.slaN : 0, clientes: s.clientes.size, pracas: s.pracas.size };
+    }
+    const appRate = decided ? s.approved / decided : 0;
     const reincPenalty = Math.min(1.5, (s.rej / s.total) * 1.2);
     let stars = 1 + appRate * 4 - reincPenalty;
     if (s.manualN) stars = (stars + (s.manual / s.manualN)) / 2;
@@ -29,6 +33,7 @@ function aggregateSuppliers(checkings) {
 }
 
 function Stars({ value, size = 13 }) {
+  if (value == null) return <span className="sup-stars" style={{ fontSize: size * 0.85, color: "var(--ink-4)", fontStyle: "italic" }}>Sem avaliação</span>;
   return <span className="sup-stars">{[1, 2, 3, 4, 5].map(n => <Icon key={n} name="star" size={size} style={{ color: n <= Math.round(value) ? "var(--warn)" : "var(--ink-4)", fill: n <= Math.round(value) ? "var(--warn)" : "none" }}/>)}</span>;
 }
 
@@ -47,12 +52,12 @@ function SupplierDrawer({ sup, checkings, onClose, onOpenReview }) {
           <span className="sup-logo" style={{ width: 48, height: 48, fontSize: 18 }}>{sup.veiculo.slice(0, 2).toUpperCase()}</span>
           <div className="col" style={{ gap: 4, minWidth: 0 }}>
             <span style={{ fontSize: 18, fontWeight: 600 }}>{sup.veiculo}</span>
-            <div className="row gap-2" style={{ alignItems: "center" }}><Stars value={sup.stars}/><span className="cell-mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>{sup.stars.toFixed(1)}</span></div>
+            <div className="row gap-2" style={{ alignItems: "center" }}><Stars value={sup.stars}/>{sup.stars != null && <span className="cell-mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>{sup.stars.toFixed(1)}</span>}</div>
           </div>
         </div>
         <div className="grid-cols-3" style={{ marginBottom: 14 }}>
           <div className="kpi" style={{ padding: "13px 15px" }}><div className="kpi-label">PIs totais</div><div className="kpi-value" style={{ fontSize: 23 }}>{sup.total}</div></div>
-          <div className="kpi" style={{ padding: "13px 15px" }}><div className="kpi-label">Aprovação</div><div className="kpi-value" style={{ fontSize: 23, color: "var(--accent)" }}>{Math.round(sup.appRate * 100)}<span style={{ fontSize: 13 }}>%</span></div></div>
+          <div className="kpi" style={{ padding: "13px 15px" }}><div className="kpi-label">Aprovação</div><div className="kpi-value" style={{ fontSize: 23, color: "var(--accent)" }}>{sup.appRate != null ? Math.round(sup.appRate * 100) : "–"}<span style={{ fontSize: 13 }}>{sup.appRate != null ? "%" : ""}</span></div></div>
           <div className="kpi" style={{ padding: "13px 15px" }}><div className="kpi-label">SLA médio</div><div className="kpi-value" style={{ fontSize: 23 }}>{sup.avgSla ? sup.avgSla.toFixed(1) + "h" : "·"}</div></div>
         </div>
         <div className="card card-pad" style={{ marginBottom: 16 }}>
@@ -109,7 +114,7 @@ function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast })
       <div className="grid-cols-4 stagger" style={{ marginBottom: "var(--gap)" }}>
         <div className="kpi"><div className="kpi-label">Fornecedores ativos</div><div className="kpi-value"><CountUp value={all.length}/></div><div className="kpi-meta">veículos com PIs no período</div></div>
         <div className="kpi"><div className="kpi-label">Nota média</div><div className="kpi-value">{avg.toFixed(1)}<span className="unit">/5</span></div><div className="kpi-meta"><Stars value={avg} size={12}/></div></div>
-        <div className="kpi"><div className="kpi-label">Melhor avaliado</div><div className="kpi-value" style={{ fontSize: 18, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{top ? top.veiculo : "·"}</div><div className="kpi-meta">{top ? top.stars.toFixed(1) + " estrelas" : ""}</div></div>
+        <div className="kpi"><div className="kpi-label">Melhor avaliado</div><div className="kpi-value" style={{ fontSize: 18, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{top ? top.veiculo : "·"}</div><div className="kpi-meta">{top && top.stars != null ? top.stars.toFixed(1) + " estrelas" : ""}</div></div>
         <div className="kpi"><div className="kpi-label">Em atenção</div><div className="kpi-value" style={{ color: risk ? "var(--warn)" : "var(--ink)" }}><CountUp value={risk}/></div><div className="kpi-meta">abaixo de 3 estrelas</div></div>
       </div>
 
@@ -153,12 +158,12 @@ function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast })
                   <span className="sup-logo" style={{ width: 40, height: 40, fontSize: 15 }}>{s.veiculo.slice(0, 2).toUpperCase()}</span>
                   <div className="col" style={{ flex: 1, minWidth: 0, gap: 4 }}>
                     <span style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.veiculo}</span>
-                    <div className="row gap-2" style={{ alignItems: "center" }}><Stars value={s.stars}/><span className="cell-mono" style={{ fontSize: 11.5, color: "var(--ink-3)" }}>{s.stars.toFixed(1)}</span></div>
+                    <div className="row gap-2" style={{ alignItems: "center" }}><Stars value={s.stars}/>{s.stars != null && <span className="cell-mono" style={{ fontSize: 11.5, color: "var(--ink-3)" }}>{s.stars.toFixed(1)}</span>}</div>
                   </div>
                   {s.stars < 3 && <span className="pill pill-warn" style={{ flexShrink: 0 }}>atenção</span>}
                 </div>
-                <div className="sup-meter" style={{ marginTop: 14 }}><span style={{ width: (s.appRate * 100) + "%" }}/></div>
-                <div className="row gap-2" style={{ justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "var(--ink-3)" }}><span>aprovação</span><span className="cell-mono">{Math.round(s.appRate * 100)}%</span></div>
+                <div className="sup-meter" style={{ marginTop: 14 }}><span style={{ width: (s.appRate != null ? s.appRate * 100 : 0) + "%" }}/></div>
+                <div className="row gap-2" style={{ justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "var(--ink-3)" }}><span>aprovação</span><span className="cell-mono">{s.appRate != null ? Math.round(s.appRate * 100) + "%" : "–"}</span></div>
               </div>
               <div className="row" style={{ borderTop: "1px solid var(--rule)", background: "var(--bg)" }}>
                 <div className="sup-stat"><b>{s.total}</b><span>PIs</span></div>
