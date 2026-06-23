@@ -19,16 +19,9 @@ function aggregateSuppliers(checkings) {
   });
   return Object.values(m).map(s => {
     const decided = s.approved + s.rejected;
-    if (decided === 0 && s.manualN === 0) {
-      // Nenhuma decisão e nenhuma nota manual → sem avaliação
-      return { ...s, stars: null, appRate: null, avgSla: s.slaN ? s.slaSum / s.slaN : 0, clientes: s.clientes.size, pracas: s.pracas.size };
-    }
-    const appRate = decided ? s.approved / decided : 0;
-    const reincPenalty = Math.min(1.5, (s.rej / s.total) * 1.2);
-    let stars = 1 + appRate * 4 - reincPenalty;
-    if (s.manualN) stars = (stars + (s.manual / s.manualN)) / 2;
-    stars = Math.max(1, Math.min(5, stars));
-    return { ...s, stars: Math.round(stars * 10) / 10, appRate, avgSla: s.slaN ? s.slaSum / s.slaN : 0, clientes: s.clientes.size, pracas: s.pracas.size };
+    const appRate = decided ? s.approved / decided : null;
+    const stars = s.manualN > 0 ? Math.round((s.manual / s.manualN) * 10) / 10 : null;
+    return { ...s, stars, appRate, avgSla: s.slaN ? s.slaSum / s.slaN : 0, clientes: s.clientes.size, pracas: s.pracas.size };
   });
 }
 

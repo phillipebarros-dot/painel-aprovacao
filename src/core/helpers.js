@@ -136,8 +136,8 @@
     return [...new Set(checkings.map(c => c[field]).filter(Boolean))].sort();
   }
 
-  // Ranking de fornecedores por avaliação (1..5 estrelas), derivado dos dados + nota manual salva
-  function supplierRating(checkings, limit = 6) {
+  // Ranking de fornecedores — estrelas só aparecem se alguém avaliou manualmente
+  function supplierRating(checkings, limit = 20) {
     const m = {};
     checkings.forEach(c => {
       const k = c.veiculo; if (!k) return;
@@ -150,17 +150,9 @@
       try { const r = Number(localStorage.getItem("painel_rating_" + (c.email_contato || c.nome_contato || "x")) || 0); if (r) { s.manual += r; s.manualN++; } } catch (e) {}
     });
     return Object.values(m).map(s => {
-      const decided = s.approved + s.rejected;
-      if (decided === 0 && s.manualN === 0) {
-        return { label: s.label, stars: null, total: s.total, reinc: s.rej };
-      }
-      const appRate = decided ? s.approved / decided : 0;
-      const reincPenalty = Math.min(1.5, (s.rej / s.total) * 1.2);
-      let stars = 1 + appRate * 4 - reincPenalty;
-      if (s.manualN) stars = (stars + (s.manual / s.manualN)) / 2; // mescla nota manual
-      stars = Math.max(1, Math.min(5, stars));
-      return { label: s.label, stars: Math.round(stars * 10) / 10, total: s.total, reinc: s.rej };
-    }).sort((a, b) => (b.stars || 0) - (a.stars || 0) || b.total - a.total).slice(0, limit);
+      const stars = s.manualN > 0 ? Math.round((s.manual / s.manualN) * 10) / 10 : null;
+      return { label: s.label, stars, total: s.total, approved: s.approved, rejected: s.rejected, reinc: s.rej };
+    }).sort((a, b) => b.total - a.total).slice(0, limit);
   }
 
   // SLA heatmap: dia-da-semana (0=Dom..6=Sab) x faixa horária (6 buckets de 4h)
