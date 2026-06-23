@@ -115,11 +115,23 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
                   <div key={k} className="col" style={{ gap: 2 }}><div className="eyebrow">{k}</div><div style={{ fontSize: 14, color: "var(--ink)", fontFamily: m ? "var(--font-mono)" : "inherit" }}>{v}</div></div>
                 ))}
               </div>
-              <div className="eyebrow" style={{ marginBottom: 10 }}>{loadingFiles ? "Carregando arquivos…" : `${c.total_arquivos} assets do Drive`}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
-                {loadingFiles && Array.from({ length: 4 }).map((_, i) => <div key={i} className="skel" style={{ aspectRatio: "4/3", borderRadius: 11 }}/>)}
-                {assets.flatMap((g, gi) => g.files.map((f, fi) => <AssetCard key={f.id} file={f} index={fi} group={g} onOpen={(file) => setLightbox(file)}/>))}
-              </div>
+              {(() => {
+                const totalFiles = assets.reduce((s, g) => s + g.files.length, 0);
+                return <>
+                  <div className="eyebrow" style={{ marginBottom: 10 }}>{loadingFiles ? "Carregando arquivos…" : `${totalFiles || c.total_arquivos || 0} assets do Drive`}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
+                    {loadingFiles && Array.from({ length: 4 }).map((_, i) => <div key={i} className="skel" style={{ aspectRatio: "4/3", borderRadius: 11 }}/>)}
+                    {!loadingFiles && totalFiles === 0 && (c.total_arquivos > 0 || c.webViewLink) && (
+                      <div className="card card-pad" style={{ gridColumn: "1/-1", textAlign: "center", padding: 24 }}>
+                        <Icon name="folder" size={28} style={{ color: "var(--ink-3)", marginBottom: 8 }}/>
+                        <p style={{ margin: 0, fontSize: 13, color: "var(--ink-2)" }}>Arquivos não carregaram. Verifique no Drive:</p>
+                        <a href={c.webViewLink || `https://drive.google.com/drive/search?q=${encodeURIComponent(c.n_pi)}`} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 10 }}>Abrir pasta no Drive ↗</a>
+                      </div>
+                    )}
+                    {assets.flatMap((g, gi) => g.files.map((f, fi) => <AssetCard key={f.id_imagem || f.id || fi} file={f} index={fi} group={g} onOpen={(file) => setLightbox(file)}/>))}
+                  </div>
+                </>;
+              })()}
               {c.observacoes && <div className="card card-pad" style={{ background: "var(--surface-2)", marginTop: 18 }}><div className="eyebrow" style={{ marginBottom: 6 }}>Observação do fornecedor</div><p style={{ margin: 0, fontSize: 13.5, color: "var(--ink-2)" }}>"{c.observacoes}"</p></div>}
             </div>
 
@@ -146,7 +158,7 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
               <div className="hr" style={{ margin: "18px 0" }}/>
               <div className="col gap-3">
                 <div className="eyebrow">Contato</div>
-                <div className="row gap-2"><Avatar user={{ nome: c.nome_contato, color: "#0E7490" }} size={26}/><div className="col" style={{ minWidth: 0 }}><span style={{ fontSize: 13, fontWeight: 500 }}>{c.nome_contato}</span><span style={{ fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis" }}>{c.email_contato}</span></div></div>
+                <div className="row gap-2"><Avatar user={{ nome: c.nome_contato, email: c.email_contato, avatar: c.avatar, color: "#0E7490" }} size={26}/><div className="col" style={{ minWidth: 0 }}><span style={{ fontSize: 13, fontWeight: 500 }}>{c.nome_contato || "—"}</span><span style={{ fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis" }}>{c.email_contato || "—"}</span></div></div>
               </div>
               <div className="hr" style={{ margin: "14px 0" }}/>
               <div className="col gap-2">

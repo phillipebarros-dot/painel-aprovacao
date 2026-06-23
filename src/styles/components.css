@@ -67,6 +67,12 @@
 .pill-info     { background: var(--info-soft);   color: #B8D6F5;           border-color: rgba(122,181,241,0.2); }
 .content .pill-info .dot, .pill-info .dot { background: var(--info); }
 .pill-admin    { background: rgba(196, 181, 253, 0.1); color: #7C3AED; border-color: rgba(196,181,253,0.3); }
+.pill-ok       { background: rgba(5,150,105,0.1);  color: #065F46; border-color: rgba(5,150,105,0.25); }
+.pill-alert    { background: rgba(220,38,38,0.08); color: #991B1B; border-color: rgba(220,38,38,0.2); }
+.pill-blue     { background: rgba(37,99,235,0.08); color: #1E40AF; border-color: rgba(37,99,235,0.18); }
+[data-theme="dark"] .pill-ok    { background: rgba(0,196,185,0.14);  color: var(--accent-ink); border-color: rgba(0,196,185,0.3); }
+[data-theme="dark"] .pill-alert { background: rgba(242,109,114,0.14); color: var(--alert-ink); border-color: rgba(242,109,114,0.3); }
+[data-theme="dark"] .pill-blue  { background: rgba(63,160,220,0.14); color: #9CCBF0; border-color: rgba(63,160,220,0.3); }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
 /* Filter chip (removable) */

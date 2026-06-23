@@ -230,18 +230,50 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
               {Array.from({ length: 6 }).map((_, i) => <div key={i} className="skel" style={{ aspectRatio: "4/3", borderRadius: 11 }}/>)}
             </div>
           )}
-          {assets.map((group, gi) => (
+          {assets.map((group, gi) => {
+            // Análise de completude por endereço (OOH: foto perto, longe, noturna, vídeo)
+            const meio = (checking.meio || "").trim().toUpperCase();
+            const isOOH = ["OD", "FL", "DO"].includes(meio);
+            const requiredTags = isOOH ? (() => {
+              const tags = [
+                { key: "perto", label: "Foto perto", icon: "image" },
+                { key: "longe", label: "Foto longe", icon: "image" },
+              ];
+              if (meio === "FL") tags.push({ key: "noturna", label: "Noturna", icon: "image" });
+              if (meio === "DO") tags.push({ key: "video", label: "Vídeo", icon: "play" });
+              return tags;
+            })() : null;
+            // Checa se o endereço tem os tipos obrigatórios
+            const fileDetails = group.files.map(f => (f.detalhe || f.tag || "").toLowerCase());
+            const completeness = requiredTags?.map(t => ({
+              ...t,
+              found: fileDetails.some(d => d.includes(t.key))
+            }));
+            const allComplete = completeness?.every(c => c.found);
+            return (
             <div key={gi} className="col gap-3">
               <div className="row gap-3" style={{ alignItems: "baseline" }}>
-                <span style={{ fontSize: 22, lineHeight: 1, fontWeight: 600, color: "var(--ink-3)" }}>{String(gi + 1).padStart(2, "0")}</span>
-                <div className="col" style={{ gap: 2 }}><div className="eyebrow">Endereço</div><div style={{ fontSize: 15, fontWeight: 500 }}>{group.endereco}</div></div>
+                <span style={{ fontSize: 22, lineHeight: 1, fontWeight: 600, color: allComplete ? "var(--ok)" : isOOH ? "var(--alert)" : "var(--ink-3)" }}>{String(gi + 1).padStart(2, "0")}</span>
+                <div className="col" style={{ gap: 2 }}><div className="eyebrow">Endereço</div><div style={{ fontSize: 15, fontWeight: 500 }}>{group.endereco || "(sem endereço)"}</div></div>
                 <div className="spacer"/><span className="cell-mono muted">{group.files.length} arquivos</span>
               </div>
+              {isOOH && completeness && (
+                <div className="row gap-2" style={{ flexWrap: "wrap", marginBottom: 2 }}>
+                  {completeness.map((c, ci) => (
+                    <span key={ci} className={`pill ${c.found ? "pill-ok" : "pill-alert"}`} style={{ fontSize: 11, padding: "3px 10px", gap: 4 }}>
+                      <Icon name={c.found ? "check" : "x"} size={11}/> {c.label}
+                    </span>
+                  ))}
+                  {allComplete
+                    ? <span className="body-xs" style={{ color: "var(--ok)", fontWeight: 600 }}>✓ Completo</span>
+                    : <span className="body-xs" style={{ color: "var(--alert)", fontWeight: 600 }}>⚠ Incompleto — faltam arquivos</span>}
+                </div>
+              )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
                 {group.files.map((f, fi) => <AssetCard key={f.id_imagem || f.id || fi} file={f} index={fi} group={group} onOpen={setLightbox} onDelete={!isViewer ? () => removeFile(group, f) : null}/>)}
               </div>
             </div>
-          ))}
+          );})}
           {!filesLoading && assets.length === 0 && <Empty title="Nenhum arquivo encontrado" hint="Verifique a pasta no Drive" icon="folder"/>}
           {checking.observacoes && (
             <div className="card card-pad" style={{ background: "var(--surface-2)" }}>
