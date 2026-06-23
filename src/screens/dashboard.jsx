@@ -1,5 +1,5 @@
 // screen-dashboard.jsx -> window.ScreenDashboard
-function ScreenDashboard({ stats, checkings, auditLog, onOpenReview, onNavigate, loading, onStartTriage, viewMode }) {
+function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview, onNavigate, loading, onStartTriage, viewMode }) {
   const resumido = viewMode === "resumido";
   const [period, setPeriod] = React.useState("90d");
   const [chartMode, setChartMode] = React.useState("trend");
@@ -8,21 +8,36 @@ function ScreenDashboard({ stats, checkings, auditLog, onOpenReview, onNavigate,
   const isMonth = period.startsWith("m:");
   const monthKey = isMonth ? period.slice(2) : null;
   const days = period === "7d" ? 7 : period === "30d" ? 30 : period === "90d" ? 90 : 30;
-  const periodLabel = isMonth ? (months.find(m => m.value === monthKey)?.label || "m\u00eas") : `${days} dias`;
+  const periodLabel = isMonth ? (months.find(m => m.value === monthKey)?.label || "mês") : `${days} dias`;
+
+  // Filtrar checkings pelo período selecionado
+  const periodCheckings = React.useMemo(() => {
+    if (isMonth && monthKey) {
+      const [y, m] = monthKey.split("-").map(Number);
+      const start = new Date(y, m - 1, 1).getTime();
+      const end = new Date(y, m, 1).getTime();
+      return checkings.filter(c => c.submittedAt >= start && c.submittedAt < end);
+    }
+    const cutoff = Date.now() - days * 86400000;
+    return checkings.filter(c => c.submittedAt >= cutoff);
+  }, [checkings, isMonth, monthKey, days]);
+
+  // Stats filtrados pelo período (KPIs mudam ao trocar mês/período)
+  const stats = React.useMemo(() => H.computeStats(periodCheckings), [periodCheckings]);
 
   const series = React.useMemo(() => isMonth ? H.buildMonthSeries(checkings, monthKey) : H.buildVolumeSeries(checkings, days), [checkings, days, isMonth, monthKey]);
   const last30 = React.useMemo(() => H.buildVolumeSeries(checkings, 30), [checkings]);
   const sparkApp = last30.map(d => ({ v: d.approved }));
   const sparkRej = last30.map(d => ({ v: d.rejected }));
   const sparkPen = last30.map(d => ({ v: d.total }));
-  const topVeic = React.useMemo(() => H.topRanking(checkings, "veiculo", 6).map(r => ({ ...r, color: "var(--ink)" })), [checkings]);
-  const topClientes = React.useMemo(() => H.topRanking(checkings, "cliente", 5).map(r => ({ ...r, color: "var(--accent)" })), [checkings]);
-  const supRating = React.useMemo(() => H.supplierRating(checkings, 6), [checkings]);
+  const topVeic = React.useMemo(() => H.topRanking(periodCheckings, "veiculo", 6).map(r => ({ ...r, color: "var(--ink)" })), [periodCheckings]);
+  const topClientes = React.useMemo(() => H.topRanking(periodCheckings, "cliente", 5).map(r => ({ ...r, color: "var(--accent)" })), [periodCheckings]);
+  const supRating = React.useMemo(() => H.supplierRating(periodCheckings, 6), [periodCheckings]);
   const aging = React.useMemo(() => H.agingBuckets(checkings), [checkings]);
-  const distMeio = React.useMemo(() => H.distribution(checkings, "meio", 5), [checkings]);
+  const distMeio = React.useMemo(() => H.distribution(periodCheckings, "meio", 5), [periodCheckings]);
   const pendingRecent = React.useMemo(() => checkings.filter(c => c.status === "pending").slice(0, 6), [checkings]);
-  const heat = React.useMemo(() => H.slaHeatmap(checkings), [checkings]);
-  const funnel = React.useMemo(() => H.funnelData(checkings), [checkings]);
+  const heat = React.useMemo(() => H.slaHeatmap(periodCheckings), [periodCheckings]);
+  const funnel = React.useMemo(() => H.funnelData(periodCheckings), [periodCheckings]);
 
   const exportCsv = () => {
     const header = "Status,Cliente,PI,Veículo,Meio,Praça,Arquivos,Recebido,Aprovador\n";
@@ -81,7 +96,7 @@ function ScreenDashboard({ stats, checkings, auditLog, onOpenReview, onNavigate,
           <div className="row gap-3" style={{ marginTop: 14, color: "rgba(245,244,239,0.65)", flexWrap: "wrap" }}>
             <span style={{ fontSize: 12.5, whiteSpace: "nowrap" }}><b style={{ color: "#fff" }}>{stats.novos}</b> novos</span>
             <span style={{ width: 4, height: 4, borderRadius: 99, background: "rgba(245,244,239,0.3)" }}/>
-            <span style={{ fontSize: 12.5, whiteSpace: "nowrap" }}><b style={{ color: "#fff" }}>{stats.complementos}</b> compl.</span>
+            <span style={{ fontSize: 12.5, whiteSpace: "nowrap" }}><b style={{ color: "#fff" }}>{stats.complementos}</b> complementos</span>
             <span style={{ width: 4, height: 4, borderRadius: 99, background: "rgba(245,244,239,0.3)" }}/>
             <span style={{ fontSize: 12.5, whiteSpace: "nowrap" }}><b style={{ color: "#fff" }}>{stats.recebidosHoje}</b> hoje</span>
           </div>

@@ -183,7 +183,10 @@ function useCountUp(target, dur = 1000, deps = []) {
 }
 const CountUp = ({ value, format, dur = 1100 }) => {
   const v = useCountUp(value, dur, [value]);
-  return <>{format ? format(v) : Math.round(v)}</>;
+  if (format) return <>{format(v)}</>;
+  // Preservar casas decimais do valor original (ex: 99.6 nao pode virar 100)
+  const dec = String(value).includes('.') ? (String(value).split('.')[1] || '').length : 0;
+  return <>{dec > 0 ? v.toFixed(dec) : Math.round(v)}</>;
 };
 
 Object.assign(window, { Icon, Pill, Avatar, Button, Segmented, SearchInput, Empty, NumDot, Toggle, useCountUp, CountUp });
