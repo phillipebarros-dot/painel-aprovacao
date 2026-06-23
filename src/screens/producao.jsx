@@ -10,6 +10,18 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const [divPage, setDivPage] = React.useState(50); // paginação virtual
   const changePeriod = (v) => { if (React.startTransition) React.startTransition(() => setPeriod(v)); else setPeriod(v); };
 
+  // ── Lazy load: carregar board de produção do n8n (BigQuery) ──
+  const [boardData, setBoardData] = React.useState(null);
+  const [boardLoading, setBoardLoading] = React.useState(false);
+  React.useEffect(() => {
+    if (boardData) return; // já carregou
+    setBoardLoading(true);
+    window.MOCK?.loadProduction?.()
+      .then(res => { if (res?.board?.length) setBoardData(res.board); })
+      .catch(() => {})
+      .finally(() => setBoardLoading(false));
+  }, []);
+
   const sinceTs = React.useMemo(() => {
     const now = Date.now();
     if (period === "hoje") return new Date().setHours(0, 0, 0, 0);

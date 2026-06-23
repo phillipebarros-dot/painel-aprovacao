@@ -106,6 +106,27 @@
       return Object.values(byAddr);
     } catch { return []; }
   };
+  // Carrega board de produção sob demanda (lazy, com cache TTL 5min)
+  let _prodCache = null;
+  let _prodTs = 0;
+  const PROD_TTL = 5 * 60 * 1000; // 5 minutos
+  MOCK.loadProduction = async function (force) {
+    if (!force && _prodCache && (Date.now() - _prodTs) < PROD_TTL) return _prodCache;
+    const API = window.PainelAPI;
+    if (!API || !API.getProductionBoard) return _prodCache || { board: [] };
+    try {
+      const res = await API.getProductionBoard();
+      if (res?.success && res?.board) {
+        _prodCache = res;
+        _prodTs = Date.now();
+        return res;
+      }
+      return _prodCache || { board: [], error: res?.error };
+    } catch (e) {
+      console.warn("[Data] loadProduction falhou:", e.message);
+      return _prodCache || { board: [] };
+    }
+  };
 
   window.MOCK = MOCK;
 })();
