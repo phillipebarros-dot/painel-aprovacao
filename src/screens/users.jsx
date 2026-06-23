@@ -174,7 +174,7 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
         <div className="kpi"><div className="kpi-label">Viewers</div><div className="kpi-value"><CountUp value={counts.viewer}/></div><div className="kpi-meta">só consulta</div></div>
       </div>
       <div className="row gap-3" style={{ marginBottom: 18 }}>
-        <SearchInput value={search} onChange={setSearch} placeholder="Nome ou email…" style={{ flex: "1 1 280px", maxWidth: 360 }}/>
+        <SearchInput value={search} onChange={setSearch} placeholder="Nome ou email…" style={{ flex: "1 1 320px", maxWidth: 480 }}/>
         <Segmented value={filter} onChange={setFilter} options={[{ value: "all", label: "Todos" }, { value: "admin", label: "Admin" }, { value: "analyst", label: "Analyst" }, { value: "viewer", label: "Viewer" }]}/>
         {view === "lista" && <ColumnsMenu cols={USER_COLS} visible={visCols} onToggle={toggleCol}/>}
         <div className="spacer"/><span className="muted-2" style={{ fontSize: 12.5, fontFamily: "var(--font-mono)" }}>{filtered.length} usuários</span>

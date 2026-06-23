@@ -122,7 +122,7 @@ function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast, p
       </div>
 
       <div className="row gap-3" style={{ marginBottom: 18 }}>
-        <SearchInput value={search} onChange={setSearch} placeholder="Buscar fornecedor…" style={{ flex: "1 1 280px", maxWidth: 360 }}/>
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar fornecedor…" style={{ flex: "1 1 320px", maxWidth: 480 }}/>
         <span className="tb-view-lbl" style={{ alignSelf: "center" }}>Ordenar</span>
         <Segmented value={sort} onChange={setSort} options={[{ value: "stars", label: "Estrelas" }, { value: "volume", label: "Volume" }, { value: "reinc", label: "Reenvios" }, { value: "sla", label: "SLA" }]}/>
         <div className="spacer"/><span className="muted-2" style={{ fontSize: 12.5, fontFamily: "var(--font-mono)", alignSelf: "center" }}>{filtered.length} fornecedores</span>

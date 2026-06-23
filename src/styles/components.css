@@ -99,9 +99,9 @@
 .input:focus { border-color: var(--rule-bright); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--surface); }
 .content .input:focus { border-color: var(--accent); }
 .input::placeholder { color: var(--ink-4); }
-.input.search { padding-left: 36px; }
+.input.search { padding-left: 40px; height: 44px; font-size: 15px; }
 .input-wrap { position: relative; }
-.input-wrap .ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-3); width: 16px; height: 16px; pointer-events: none; }
+.input-wrap .ico { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--ink-3); width: 18px; height: 18px; pointer-events: none; }
 textarea.input { height: auto; padding: 10px 12px; resize: vertical; font-family: inherit; }
 select.input {
   appearance: none;

@@ -140,7 +140,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
 
       {/* Toolbar */}
       <div className="row gap-3" style={{ marginBottom: 12, flexWrap: "wrap" }}>
-        <SearchInput value={search} onChange={setSearch} placeholder="Cliente, PI, veículo ou praça…" style={{ flex: "1 1 260px", maxWidth: 340 }}/>
+        <SearchInput value={search} onChange={setSearch} placeholder="Cliente, PI, veículo ou praça…" style={{ flex: "1 1 320px", maxWidth: 480 }}/>
         <select className="input" value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ width: "auto" }}>
           <option value="all">Todos os clientes</option>{clientes.map(c => <option key={c}>{c}</option>)}
         </select>
