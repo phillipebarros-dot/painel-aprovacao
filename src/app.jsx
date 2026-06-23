@@ -93,20 +93,29 @@ function Sidebar({ route, onNav, user, onLogout, pending, alertCount, alertCrit 
 // ── Online strip ──
 function OnlineStrip({ users }) {
   const [hover, setHover] = aUseState(null);
-  const visible = users.slice(0, 7);
-  const overflow = users.length - visible.length;
+  // Enriquece usuarios online com avatar de MOCK.users (que ja tem foto Google)
+  const enriched = aUseMemo(() => {
+    const byEmail = {};
+    (window.MOCK?.users || []).forEach(u => { if (u.email) byEmail[u.email.toLowerCase()] = u; });
+    return users.map(u => {
+      const full = byEmail[(u.email || '').toLowerCase()];
+      return { ...u, avatar: u.avatar || full?.avatar || null, name: u.name || u.nome || full?.name || u.email };
+    });
+  }, [users]);
+  const visible = enriched.slice(0, 7);
+  const overflow = enriched.length - visible.length;
   return (
     <div className="row gap-2" style={{ position: "relative" }}>
       <div className="online-strip" onMouseLeave={() => setHover(null)}>
         {visible.map((u, i) => (
           <span key={u.email || i} onMouseEnter={() => setHover(u)} style={{ display: "inline-flex", position: "relative" }}>
-            <Avatar user={{ nome: u.name || u.nome || u.email, color: u.color || "#0E7490" }} size={26}/>
+            <Avatar user={{ nome: u.name, avatar: u.avatar, color: u.color || "#0E7490" }} size={26}/>
             <span style={{ position: "absolute", bottom: -1, right: -1, width: 8, height: 8, borderRadius: 99, background: "#22c55e", border: "2px solid var(--bg)", zIndex: 2 }}/>
           </span>
         ))}
         {overflow > 0 && <span style={{ marginLeft: -8, width: 26, height: 26, borderRadius: 99, background: "var(--surface-3)", color: "var(--ink-2)", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 600, boxShadow: "0 0 0 2px var(--bg)" }}>+{overflow}</span>}
       </div>
-      <span className="online-strip-label"><b>{users.length}</b> online</span>
+      <span className="online-strip-label"><b>{enriched.length}</b> online</span>
       {hover && <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, background: "var(--surface)", border: "1px solid var(--rule-strong)", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: "var(--ink-2)", boxShadow: "var(--shadow-md)", pointerEvents: "none", whiteSpace: "nowrap", zIndex: 30 }}><div style={{ color: "var(--ink)", fontWeight: 500, marginBottom: 2 }}>{hover.name || hover.email}</div><div className="row gap-2"><span style={{ width: 6, height: 6, borderRadius: 99, background: "#22c55e" }}/>online agora</div></div>}
     </div>
   );

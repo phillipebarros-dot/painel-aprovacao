@@ -97,11 +97,11 @@ function ScreenLogin({ onLogin }) {
             )}
           </div>
 
-          <div className="login-kpis">
+          {STATS.total > 0 && <div className="login-kpis">
             <div><div className="login-kpi-value"><CountUp value={STATS.total} dur={1400} /></div><div className="login-kpi-label">Checkings auditados</div></div>
             <div><div className="login-kpi-value">{STATS.sla}h</div><div className="login-kpi-label">SLA médio</div></div>
             <div><div className="login-kpi-value"><CountUp value={STATS.veic} dur={1400} /></div><div className="login-kpi-label">Veículos cobertos</div></div>
-          </div>
+          </div>}
         </div>
 
         <div className="login-left-foot">
