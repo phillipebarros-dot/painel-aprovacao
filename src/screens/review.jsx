@@ -40,7 +40,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
   const [lateReason, setLateReason] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   const [lightbox, setLightbox] = React.useState(null);
-  const [comprovante, setComprovante] = React.useState(false);
+
   const [filesLoading, setFilesLoading] = React.useState(true);
   const [assets, setAssets] = React.useState([]);
   const ckey = "painel_notes_" + checking.submission_id;
@@ -138,7 +138,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
         <span className="muted">/</span><span className="muted-2">{checking.cliente}</span>
         <span className="spacer"/>
         <a className="row gap-2 btn-quiet sm btn" href={"https://drive.google.com/drive/search?q=" + encodeURIComponent(checking.n_pi)} target="_blank" rel="noreferrer" title="Abrir a pasta deste PI no Google Drive"><Icon name="folder" size={13}/>Abrir pasta no Drive</a>
-        <button className="row gap-2 btn-ghost sm btn" onClick={() => setComprovante(true)}><Icon name="pdf" size={13}/>Ver comprovante</button>
+
       </div>
 
       <div className="row" style={{ alignItems: "flex-start", gap: 32, paddingBottom: 24, borderBottom: "1px solid var(--rule)", marginBottom: 32 }}>
@@ -477,20 +477,21 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
             </div>
           </div>
           <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden" }}>
-            {lightbox.isImage ? (
+            {lightbox.isImage && (lightbox.thumbnailUrl || lightbox.id_imagem) ? (
               <img src={lightbox.thumbnailUrl || `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w1200`} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer"/>
-            ) : (lightbox.isVideo || lightbox.isPdf) ? (
-              <iframe src={lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/preview`} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay" referrerPolicy="no-referrer"/>
             ) : (
-              <div style={{ textAlign: "center", color: "#8a8f98" }}>
-                <Icon name="image" size={84}/>
-                <p style={{ marginTop: 18, fontSize: 14 }}>Arquivo não disponível para preview</p>
+              <div style={{ textAlign: "center", color: "#b0b5be", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+                <Icon name={lightbox.isPdf ? "pdf" : lightbox.isVideo ? "play" : "image"} size={72}/>
+                <p style={{ fontSize: 16, fontWeight: 500, margin: 0 }}>{lightbox.detalhe || "Arquivo"}</p>
+                <p style={{ fontSize: 13, color: "#6e7681", margin: 0 }}>{lightbox.isPdf ? "PDF" : lightbox.isVideo ? "Vídeo MP4" : "Imagem"} · clique abaixo para visualizar no Drive</p>
+                <a href={lightbox.viewUrl || lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ marginTop: 8, fontSize: 14, padding: "10px 24px" }}><Icon name="folder" size={15}/> Abrir no Google Drive ↗</a>
+                {lightbox.downloadUrl && <a href={lightbox.downloadUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#6e7681", textDecoration: "underline" }}>Baixar arquivo</a>}
               </div>
             )}
           </div>
         </div>
       </>)}
-      {comprovante && <Comprovante checking={checking} onClose={() => setComprovante(false)}/>}
+
     </div>
   );
 }
