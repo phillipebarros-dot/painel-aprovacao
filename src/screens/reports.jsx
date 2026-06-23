@@ -64,7 +64,7 @@ function ScreenReports({ checkings, currentUser, onToast }) {
             {[["Total", localStats.total, "var(--ink)"], ["Aprovados", localStats.approved, "var(--accent)"], ["Reprovados", localStats.rejected, "var(--alert)"], ["SLA médio", null, "var(--ink)"]].map(([lb, v, c], i) => (
               <div key={lb} className="kpi" style={{ padding: "18px 20px" }}>
                 <div className="kpi-label">{lb}</div>
-                <div className="kpi-value" style={{ fontSize: 38, color: c }}>{v != null ? <CountUp value={v}/> : <><CountUp value={localStats.avgSlaHours} format={x => x.toFixed(1)}/><span className="unit">h</span></>}</div>
+                <div className="kpi-value" style={{ fontSize: 38, color: c }}>{v != null ? <CountUp value={v}/> : <><CountUp value={localStats.avgSlaHours || 0} format={x => (Number(x) || 0).toFixed(1)}/><span className="unit">h</span></>}</div>
               </div>
             ))}
           </div>

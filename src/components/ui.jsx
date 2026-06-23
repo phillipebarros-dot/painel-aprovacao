@@ -182,11 +182,13 @@ function useCountUp(target, dur = 1000, deps = []) {
   return val;
 }
 const CountUp = ({ value, format, dur = 1100 }) => {
-  const v = useCountUp(value, dur, [value]);
-  if (format) return <>{format(v)}</>;
+  const safeValue = (value == null || isNaN(value)) ? 0 : Number(value);
+  const v = useCountUp(safeValue, dur, [safeValue]);
+  const sv = isNaN(v) ? 0 : v;
+  if (format) return <>{format(sv)}</>;
   // Preservar casas decimais do valor original (ex: 99.6 nao pode virar 100)
-  const dec = String(value).includes('.') ? (String(value).split('.')[1] || '').length : 0;
-  return <>{dec > 0 ? v.toFixed(dec) : Math.round(v)}</>;
+  const dec = String(safeValue).includes('.') ? (String(safeValue).split('.')[1] || '').length : 0;
+  return <>{dec > 0 ? sv.toFixed(dec) : Math.round(sv)}</>;
 };
 
 Object.assign(window, { Icon, Pill, Avatar, Button, Segmented, SearchInput, Empty, NumDot, Toggle, useCountUp, CountUp });

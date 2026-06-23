@@ -1,20 +1,22 @@
 /* helpers.js — formatters + data computations (plain JS -> window.H) */
 (function () {
   const fmtRelTime = (ts) => {
+    if (ts == null || isNaN(ts)) return "";
     const diff = (Date.now() - ts) / 1000;
+    if (diff < 0) return "agora";
     if (diff < 60) return "agora";
     if (diff < 3600) return `${Math.floor(diff / 60)}min`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
     if (diff < 7 * 86400) return `${Math.floor(diff / 86400)}d`;
     return new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
   };
-  const fmtTime = (ts) => new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  const fmtDate = (ts) => new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
-  const fmtDateLong = (ts) => new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
-  const fmtNum = (n) => new Intl.NumberFormat("pt-BR").format(Math.round(n));
-  const fmtPct = (n) => { const v = Math.round(n * 1000) / 10; return n === 1 ? "100%" : v >= 100 ? "99.9%" : `${v}%`; };
-  const fmtHours = (h) => h < 1 ? `${Math.round(h * 60)}min` : `${h.toFixed(1)}h`;
-  const fmtDur = (h) => { if (h < 1) return `${Math.round(h * 60)}min`; if (h < 36) return `${h < 10 ? h.toFixed(1) : Math.round(h)}h`; return `${Math.round(h / 24)} dias`; };
+  const fmtTime = (ts) => { if (ts == null || isNaN(ts)) return ""; return new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); };
+  const fmtDate = (ts) => { if (ts == null || isNaN(ts)) return ""; return new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }); };
+  const fmtDateLong = (ts) => { if (ts == null || isNaN(ts)) return ""; return new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }); };
+  const fmtNum = (n) => { const v = Number(n); return isNaN(v) ? "0" : new Intl.NumberFormat("pt-BR").format(Math.round(v)); };
+  const fmtPct = (n) => { const v = Math.round((Number(n) || 0) * 1000) / 10; return n === 1 ? "100%" : v >= 100 ? "99.9%" : `${v}%`; };
+  const fmtHours = (h) => { const v = Number(h) || 0; return v < 1 ? `${Math.round(v * 60)}min` : `${v.toFixed(1)}h`; };
+  const fmtDur = (h) => { const v = Number(h) || 0; if (v < 1) return `${Math.round(v * 60)}min`; if (v < 36) return `${v < 10 ? v.toFixed(1) : Math.round(v)}h`; return `${Math.round(v / 24)} dias`; };
   const norm = (s) => { const v = (s || '').toLowerCase().trim(); return (!v || v === 'null') ? 'pending' : v; };
   // Bug 1.2 fix: chave de data em horario LOCAL (nao UTC) para evitar troca de dia a noite
   const localDateKey = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };

@@ -145,9 +145,9 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
             <div className="col" style={{ gap: 2 }}><div className="eyebrow">Por login · {periodLabel}</div><div className="h2">Baixas por pessoa</div></div>
             <ExportMenu label="Relatório" onCsv={() => {
               const head = "Pessoa,Demanda,Baixados,Aprovados,Reprovados,Pendentes,Conclusao %,SLA medio h\n";
-              const rows = prod.rows.map(r => `"${r.name}",${r.demanda},${r.baixados},${r.approved},${r.rejected},${r.pendentes},${Math.round(r.pct * 100)},${r.avgSla.toFixed(1)}`).join("\n");
+              const rows = prod.rows.map(r => `"${r.name}",${r.demanda},${r.baixados},${r.approved},${r.rejected},${r.pendentes},${Math.round((r.pct || 0) * 100)},${(Number(r.avgSla) || 0).toFixed(1)}`).join("\n");
               const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([head + rows], { type: "text/csv" })); a.download = `producao_${period}.csv`; a.click(); URL.revokeObjectURL(a.href);
-            }} onPdf={() => H.exportPDF("Produtividade por pessoa", ["Pessoa", "Demanda", "Baixados", "Aprovados", "Reprovados", "Pendentes", "Conclusão", "SLA médio"], prod.rows.map(r => [r.name, r.demanda, r.baixados, r.approved, r.rejected, r.pendentes, Math.round(r.pct * 100) + "%", (r.avgSla ? r.avgSla.toFixed(1) + "h" : "·")]), periodLabel)}/>
+            }} onPdf={() => H.exportPDF("Produtividade por pessoa", ["Pessoa", "Demanda", "Baixados", "Aprovados", "Reprovados", "Pendentes", "Conclusão", "SLA médio"], prod.rows.map(r => [r.name, r.demanda, r.baixados, r.approved, r.rejected, r.pendentes, Math.round((r.pct || 0) * 100) + "%", ((Number(r.avgSla) || 0).toFixed(1) + "h")]), periodLabel)}/>
           </div>
           <table className="tbl">
             <thead><tr><th>Pessoa</th><th style={{ width: 240 }}>Baixas</th><th style={{ textAlign: "right" }}>Demanda</th><th style={{ textAlign: "right" }}>Baixados</th><th style={{ textAlign: "right" }}>Pendentes</th><th style={{ textAlign: "right" }}>SLA médio</th><th style={{ width: 110, textAlign: "right" }}>Conclusão</th></tr></thead>
@@ -164,7 +164,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                   <td className="cell-mono" style={{ textAlign: "right" }}>{r.demanda}</td>
                   <td className="cell-mono" style={{ textAlign: "right", color: "var(--ink)", fontWeight: 600 }}>{r.baixados}</td>
                   <td className="cell-mono" style={{ textAlign: "right", color: r.pendentes ? "var(--warn)" : "var(--ink-3)" }}>{r.pendentes}</td>
-                  <td className="cell-mono" style={{ textAlign: "right", color: r.avgSla > 4 ? "var(--warn)" : "var(--ink-2)" }}>{r.avgSla ? r.avgSla.toFixed(1) + "h" : "·"}</td>
+                  <td className="cell-mono" style={{ textAlign: "right", color: (Number(r.avgSla) || 0) > 4 ? "var(--warn)" : "var(--ink-2)" }}>{(Number(r.avgSla) || 0) ? (Number(r.avgSla) || 0).toFixed(1) + "h" : "·"}</td>
                   <td style={{ textAlign: "right" }}>
                     <div className="row gap-2" style={{ justifyContent: "flex-end" }}>
                       <span className="cell-mono" style={{ fontWeight: 600, color: r.pct >= 0.8 ? "var(--accent)" : r.pct >= 0.5 ? "var(--warn)" : "var(--alert)" }}>{Math.round(r.pct * 100)}%</span>
@@ -188,7 +188,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                 <div className="row gap-4" style={{ marginTop: 12, fontSize: 12, color: "var(--ink-3)" }}>
                   <span><b style={{ color: "var(--ink)" }}>{r.baixados}</b> baixados</span>
                   <span><b style={{ color: r.pendentes ? "var(--warn)" : "var(--ink)" }}>{r.pendentes}</b> pendentes</span>
-                  <span>SLA <b style={{ color: "var(--ink)" }}>{r.avgSla ? r.avgSla.toFixed(1) + "h" : "·"}</b></span>
+                  <span>SLA <b style={{ color: "var(--ink)" }}>{(Number(r.avgSla) || 0) ? (Number(r.avgSla) || 0).toFixed(1) + "h" : "·"}</b></span>
                 </div>
               </div>
             ))}
@@ -229,7 +229,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                     : divRows.slice(0, divPage).map((c, i) => {
                       const SC = window.CHECK_STATUS || {}; const SCL = window.CHECK_STATUS_LIST || [];
                       const per = c.periodo_ini && c.periodo_fim ? `${new Date(c.periodo_ini).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}–${new Date(c.periodo_fim).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}` : "";
-                      const tip = [c.campanha, per, c.valor_liquido ? (c.valor_liquido).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : null, c.praca].filter(Boolean).join(" · ");
+                      const tip = [c.campanha, per, c.valor_liquido ? Number(c.valor_liquido || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : null, c.praca].filter(Boolean).join(" · ");
                       return (
                       <tr key={c.submission_id} className={i < 20 ? "row-anim" : ""} style={i < 20 ? { animationDelay: (i * 12) + "ms" } : undefined} title={tip}>
                         <td className="cell-pi">{c.n_pi}</td>
@@ -311,8 +311,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
             <div className="card-pad col gap-3">
               <AreaSpark data={mySpark} height={84} color="var(--accent)"/>
               <div className="row gap-2" style={{ justifyContent: "space-between", fontSize: 12, color: "var(--ink-3)", borderTop: "1px solid var(--rule)", paddingTop: 10 }}>
-                <span>Meu SLA <b style={{ color: (myStats?.avgSla || 0) <= teamAvgSla ? "var(--accent)" : "var(--warn)" }}>{(myStats?.avgSla || 0).toFixed(1)}h</b></span>
-                <span>Média do time <b style={{ color: "var(--ink-2)" }}>{teamAvgSla.toFixed(1)}h</b></span>
+                <span>Meu SLA <b style={{ color: (myStats?.avgSla || 0) <= (Number(teamAvgSla) || 0) ? "var(--accent)" : "var(--warn)" }}>{(myStats?.avgSla || 0).toFixed(1)}h</b></span>
+                <span>Média do time <b style={{ color: "var(--ink-2)" }}>{(Number(teamAvgSla) || 0).toFixed(1)}h</b></span>
               </div>
             </div>
           </div>
@@ -352,10 +352,10 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
 // Modal de divisão de demanda — espelha a planilha do Camilo (abas por conta + responsável mensal)
 function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   const H = window.H;
-  const monthOpts = React.useMemo(() => { const a = []; const now = new Date(); for (let i = 0; i < 3; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); a.push({ v: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) }); } return a; }, []);
+  const monthOpts = React.useMemo(() => { const a = []; const now = new Date(); for (let i = 0; i < 3; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); a.push({ v: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) }); } return a; }, []);
   const [mes, setMes] = React.useState(monthOpts[0].v);
   const [mode, setMode] = React.useState("conta");
-  const inMonth = (c) => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${d.getMonth()}` === mes; };
+  const inMonth = (c) => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === mes; };
   const poolAll = React.useMemo(() => checkings.filter(c => H.norm(c.status) === "pending" && inMonth(c)), [checkings, mes]);
 
   // ── Por conta: cada conta (aba) recebe um responsável para o mês ──

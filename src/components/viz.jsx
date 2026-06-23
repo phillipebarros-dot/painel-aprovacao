@@ -26,7 +26,7 @@ const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 })
   const max = Math.max(1, ...data.map(d => d.v));
   const stepX = w / (data.length - 1 || 1);
   const yOf = (v) => height - 5 - (v / max) * (height - 14);
-  const pts = data.map((d, i) => `${(i * stepX).toFixed(1)},${yOf(d.v).toFixed(1)}`).join(" ");
+  const pts = data.map((d, i) => `${(i * stepX).toFixed(1)},${yOf(Number(d.v) || 0).toFixed(1)}`).join(" ");
   const area = `M 0,${height} L ${pts} L ${w},${height} Z`;
   const len = w * 1.4;
   // Bug 4.2 fix: gerar id unico por instancia (evita colisao de gradientes)
@@ -54,7 +54,7 @@ const TrendLine = ({ series, height = 280 }) => {
   const max = Math.max(2, ...series.map(d => d.total));
   const xOf = (i) => padL + (i / (series.length - 1 || 1)) * innerW;
   const yOf = (v) => padT + innerH - (v / max) * innerH;
-  const pts = series.map((d, i) => `${xOf(i).toFixed(1)},${yOf(d.total).toFixed(1)}`).join(" ");
+  const pts = series.map((d, i) => `${xOf(i).toFixed(1)},${yOf(Number(d.total) || 0).toFixed(1)}`).join(" ");
   const area = `M ${padL},${padT + innerH} L ${pts} L ${padL + innerW},${padT + innerH} Z`;
   const len = innerW * 1.5;
   const onMove = (e) => {
@@ -293,7 +293,7 @@ const SlaHeatmap = ({ data }) => {
             <div style={{ fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)", textAlign: "right", paddingRight: 6 }}>{d}</div>
             {grid[di].map((cell, hi) => (
               <div key={hi} className="heat-cell" style={{ background: colorFor(cell.avg, cell.n), animationDelay: ((di * 6 + hi) * 12) + "ms", aspectRatio: "auto", height: 30 }}
-                onMouseEnter={(e) => { const r = e.currentTarget.getBoundingClientRect(); setTip({ x: r.left + r.width / 2, y: r.top, content: cell.n ? <span><b>{cell.avg.toFixed(1)}h</b> SLA médio · {cell.n} checkings</span> : "sem dados" }); }}
+                onMouseEnter={(e) => { const r = e.currentTarget.getBoundingClientRect(); setTip({ x: r.left + r.width / 2, y: r.top, content: cell.n ? <span><b>{(Number(cell.avg) || 0).toFixed(1)}h</b> SLA médio · {cell.n} checkings</span> : "sem dados" }); }}
                 onMouseLeave={() => setTip(null)}/>
             ))}
           </React.Fragment>

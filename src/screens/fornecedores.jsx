@@ -97,7 +97,7 @@ function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast, p
   const [detail, setDetail] = React.useState(null);
   const all = React.useMemo(() => preSuppliers && preSuppliers.length ? preSuppliers : aggregateSuppliers(checkings), [checkings, preSuppliers]);
   const filtered = React.useMemo(() => {
-    let r = all.filter(s => !search || s.veiculo.toLowerCase().includes(search.toLowerCase()));
+    let r = all.filter(s => !search || (s.veiculo || "").toLowerCase().includes(search.toLowerCase()));
     // Bug 1.1 fix: ordenacao por stars joga null para o fim
     const cmp = { stars: (a, b) => (b.stars ?? -1) - (a.stars ?? -1), volume: (a, b) => b.total - a.total, reinc: (a, b) => b.rej - a.rej, sla: (a, b) => b.avgSla - a.avgSla, nome: (a, b) => a.veiculo.localeCompare(b.veiculo) };
     return r.sort(cmp[sort] || cmp.stars);

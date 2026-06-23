@@ -94,8 +94,8 @@ function ScreenOperations({ onToast, checkings }) {
                 <Pill status="approved">Online</Pill>
               </div>
               <div className="row gap-6">
-                <div><div className="eyebrow" style={{ marginBottom: 4 }}>Latência</div><div className="cell-mono" style={{ fontSize: 15, fontWeight: 500, color: s.latency > 1000 ? "var(--warn)" : "var(--ink)" }}>{s.latency}<span style={{ color: "var(--ink-3)", marginLeft: 2 }}>ms</span></div></div>
-                <div><div className="eyebrow" style={{ marginBottom: 4 }}>Uptime 30d</div><div className="cell-mono" style={{ fontSize: 15, fontWeight: 500 }}>{s.uptime.toFixed(2)}<span style={{ color: "var(--ink-3)", marginLeft: 2 }}>%</span></div></div>
+                <div><div className="eyebrow" style={{ marginBottom: 4 }}>Latência</div><div className="cell-mono" style={{ fontSize: 15, fontWeight: 500, color: (s.latency || 0) > 1000 ? "var(--warn)" : "var(--ink)" }}>{s.latency || 0}<span style={{ color: "var(--ink-3)", marginLeft: 2 }}>ms</span></div></div>
+                <div><div className="eyebrow" style={{ marginBottom: 4 }}>Uptime 30d</div><div className="cell-mono" style={{ fontSize: 15, fontWeight: 500 }}>{(Number(s.uptime) || 0).toFixed(2)}<span style={{ color: "var(--ink-3)", marginLeft: 2 }}>%</span></div></div>
               </div>
               <div style={{ marginTop: 14, height: 4, borderRadius: 99, background: "var(--surface-3)" }}><div className="rank-fill" style={{ width: s.uptime + "%", height: "100%", borderRadius: 99, background: "var(--accent)" }}/></div>
             </div>

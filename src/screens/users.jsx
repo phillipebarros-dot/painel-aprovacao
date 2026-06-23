@@ -148,7 +148,7 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
   const carga = React.useMemo(() => { const m = {}; checkings.forEach(c => { const who = c.assigned_to || c.approval_user; if (who) m[who] = (m[who] || 0) + 1; }); return m; }, [checkings]);
   const slaBy = React.useMemo(() => { const acc = {}; checkings.forEach(c => { const end = c.approvedAt || c.rejectedAt; if (end && c.approval_user) { (acc[c.approval_user] = acc[c.approval_user] || []).push((end - c.submittedAt) / 3600000); } }); const out = {}; Object.entries(acc).forEach(([k, v]) => out[k] = v.reduce((a, b) => a + b, 0) / v.length); return out; }, [checkings]);
 
-  const filtered = users.filter(u => (filter === "all" || u.role === filter) && (!search || (u.nome || "").toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())));
+  const filtered = users.filter(u => (filter === "all" || u.role === filter) && (!search || (u.nome || "").toLowerCase().includes(search.toLowerCase()) || (u.email || "").toLowerCase().includes(search.toLowerCase())));
   const counts = { admin: users.filter(u => u.role === "admin").length, analyst: users.filter(u => u.role === "analyst").length, viewer: users.filter(u => u.role === "viewer").length };
 
   const setRole = (id, role) => { setUsers(users.map(u => u.id === id ? { ...u, role } : u)); setDetail(d => d && d.id === id ? { ...d, role } : d); onToast?.({ type: "success", message: "Cargo atualizado." }); };

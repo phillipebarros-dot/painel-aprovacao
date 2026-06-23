@@ -125,7 +125,7 @@
       const todayMs = new Date().setHours(0, 0, 0, 0);
       const today = checkings.filter(c => c.submittedAt >= todayMs).length;
       const avg = checkings.filter(c => c.submittedAt >= todayMs - 14 * 86400000 && c.submittedAt < todayMs).length / 14;
-      if (avg > 0 && today >= avg * 1.8 && today >= 4) alerts.push({ id: "spike", sev: 'info', type: 'Pico de volume', detail: `${today} recebidos hoje · média ${avg.toFixed(1)}/dia`, metric: today });
+      if (avg > 0 && today >= avg * 1.8 && today >= 4) alerts.push({ id: "spike", sev: 'info', type: 'Pico de volume', detail: `${today} recebidos hoje · média ${(Number(avg) || 0).toFixed(1)}/dia`, metric: today });
     }
 
     const rank = { critical: 0, warning: 1, info: 2 };

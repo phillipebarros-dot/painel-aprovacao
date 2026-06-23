@@ -38,13 +38,13 @@ function Comprovante({ checking, onClose }) {
         <div className="comprovante-page" id="comprovante-print">
           <div className="cp-head">
             <div className="cp-emissora">
-              <div className="cp-logo">{checking.veiculo.split(" ").map(s => s[0]).slice(0, 2).join("")}</div>
+              <div className="cp-logo">{(checking.veiculo || "").split(" ").map(s => s[0]).slice(0, 2).join("")}</div>
               <div className="cp-emissora-info">
                 <div><b>Emissora: {checking.veiculo} Ltda</b></div>
                 <div>CNPJ: 83.747.949/0001-87</div>
                 <div>Endereço: Rua Coronel Aristiliano Ramos, 485 1a andar</div>
                 <div>Cidade-UF: {checking.praca}</div>
-                <div>E-mail: financeiro@{checking.veiculo.toLowerCase().replace(/[^a-z]/g, "")}.com.br</div>
+                <div>E-mail: financeiro@{(checking.veiculo || "").toLowerCase().replace(/[^a-z]/g, "")}.com.br</div>
               </div>
             </div>
             <div className="cp-emissora-right">
@@ -78,7 +78,7 @@ function Comprovante({ checking, onClose }) {
           </div>
           <div className="cp-foot">
             <div className="cp-sign">
-              <div style={{ fontWeight: 700, color: "#1a5", fontSize: 11 }}>{checking.veiculo.toUpperCase()} LTDA</div>
+              <div style={{ fontWeight: 700, color: "#1a5", fontSize: 11 }}>{(checking.veiculo || "").toUpperCase()} LTDA</div>
               <div style={{ fontSize: 9, color: "#666" }}>Assinado de forma digital · {fmtD(new Date())}</div>
             </div>
             <div className="cp-totais">

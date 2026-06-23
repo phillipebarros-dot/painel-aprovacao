@@ -180,7 +180,7 @@ function SearchPalette({ checkings, onSelect, onNav, onClose }) {
   const results = aUseMemo(() => {
     if (!q.trim()) return { nav: navCmds, checks: checkings.slice(0, 6) };
     const t = q.toLowerCase();
-    return { nav: navCmds.filter(c => c.t.toLowerCase().includes(t)), checks: checkings.filter(c => (c.cliente + c.n_pi + c.veiculo + c.meio + c.praca).toLowerCase().includes(t)).slice(0, 10) };
+    return { nav: navCmds.filter(c => c.t.toLowerCase().includes(t)), checks: checkings.filter(c => ((c.cliente || '') + (c.n_pi || '') + (c.veiculo || '') + (c.meio || '') + (c.praca || '')).toLowerCase().includes(t)).slice(0, 10) };
   }, [checkings, q]);
   const flat = [...results.nav.map(n => ({ kind: "nav", ...n })), ...results.checks.map(c => ({ kind: "check", c }))];
   aUseEffect(() => { setSel(0); }, [q]);
@@ -308,6 +308,43 @@ function ToastItem({ toast, onClose }) {
 }
 function ToastStack({ toasts, onDismiss }) { return <div className="toast-stack">{toasts.map(t => <ToastItem key={t.id} toast={t} onClose={() => onDismiss(t.id)}/>)}</div>; }
 
+
+// ── ScreenBoundary: Error Boundary isolado por tela (nao derruba app inteiro) ──
+class ScreenBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(err) { return { hasError: true, error: err }; }
+  componentDidCatch(err, info) {
+    // Silenciar erros de extensoes do navegador (content_script, childNodes null)
+    if (err?.message?.includes('childNodes') || err?.message?.includes('removeChild')) {
+      this.setState({ hasError: false, error: null });
+      return;
+    }
+    console.error('[ScreenBoundary]', err, info?.componentStack);
+  }
+  render() {
+    if (this.state.hasError) {
+      const retry = () => this.setState({ hasError: false, error: null });
+      return React.createElement('div', { className: 'page fade-in', style: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16 } },
+        React.createElement('div', { style: { width: 56, height: 56, borderRadius: 15, background: 'var(--alert-soft)', color: 'var(--alert)', display: 'grid', placeItems: 'center' } },
+          React.createElement(Icon, { name: 'warn', size: 26, strokeWidth: 2 })
+        ),
+        React.createElement('h2', { style: { fontSize: 18, fontWeight: 600, color: 'var(--ink)', margin: 0 } }, 'Erro ao renderizar esta tela'),
+        React.createElement('p', { style: { fontSize: 13.5, color: 'var(--ink-2)', margin: 0, maxWidth: 420, textAlign: 'center' } },
+          'Um erro inesperado impediu a exibicao. O restante do painel continua funcionando normalmente.'
+        ),
+        this.state.error && React.createElement('pre', { style: { fontSize: 11, color: 'var(--alert)', background: 'var(--alert-soft)', padding: '10px 16px', borderRadius: 8, maxWidth: 500, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', border: '1px solid color-mix(in srgb, var(--alert) 25%, transparent)' } },
+          String(this.state.error?.message || this.state.error)
+        ),
+        React.createElement('div', { className: 'row gap-3', style: { marginTop: 8 } },
+          React.createElement('button', { className: 'btn btn-accent', onClick: retry }, 'Tentar novamente'),
+          React.createElement('button', { className: 'btn btn-ghost', onClick: () => window.location.reload() }, 'Recarregar pagina')
+        )
+      );
+    }
+    return this.props.children;
+  }
+}
+window.ScreenBoundary = ScreenBoundary;
 
 // ── App ──
 function App() {
@@ -445,7 +482,8 @@ function App() {
 
   if (!user) return <><ScreenLogin onLogin={handleLogin}/><ToastStack toasts={toasts} onDismiss={dismissToast}/></>;
 
-  const screen = reviewing ? <ScreenReview checking={reviewing} currentUser={user} onBack={() => setReviewing(null)} onDecide={handleDecide}/>
+  const screenKey = reviewing ? "review_" + reviewing.submission_id : route;
+  const screenContent = reviewing ? <ScreenReview checking={reviewing} currentUser={user} onBack={() => setReviewing(null)} onDecide={handleDecide}/>
     : route === "dashboard" ? <ScreenDashboard stats={stats} checkings={checkings} auditLog={auditLog} onOpenReview={openReview} onNavigate={handleNav} loading={false} onStartTriage={startTriage} viewMode={curView}/>
     : route === "approvals" ? <ScreenApprovals currentUser={user} checkings={checkings} stats={stats} onOpenReview={openReview} onRefresh={() => {}} onToast={addToast} onDecide={handleDecide} onStartTriage={startTriage} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onSetResponsavel={(id, who) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, assigned_to: who, approval_user: c.status !== "pending" ? who : c.approval_user } : c)); window.PainelAPI?.assignResponsible(id, who, new Date().toISOString().slice(0, 7)).catch(e => addToast({ type: "error", message: "Falha ao atribuir: " + (e.message || "") })); }}/>
     : route === "alerts" ? <ScreenAlerts checkings={checkings} currentUser={user} onOpenReview={openReview} onStartTriage={startTriage} onDecide={handleDecide} onToast={addToast} viewMode={curView} preAlerts={alerts}/>
@@ -460,6 +498,7 @@ function App() {
     : route === "fornecedores" ? <ScreenFornecedores checkings={checkings} onOpenReview={openReview} viewMode={curView} onToast={addToast} preSuppliers={preSuppliers}/>
     : route === "automacoes" ? <ScreenAutomacoes onToast={addToast}/>
     : <ScreenDashboard stats={stats} checkings={checkings} auditLog={auditLog} onOpenReview={openReview} onNavigate={handleNav} loading={false}/>;
+  const screen = <ScreenBoundary key={screenKey}>{screenContent}</ScreenBoundary>;
 
   return (
     <>
