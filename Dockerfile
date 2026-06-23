@@ -1,12 +1,17 @@
-# Painel de Checking — imagem estática servida por nginx (Cloud Run)
-# O app é estático (index.html + React/Babel no navegador), então só servimos os arquivos.
+# Painel de Checking — Build com Vite + Serve com Nginx
+# Multi-stage: Node compila, Nginx serve
+
+# ── Build stage ──
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --production=false
+COPY . .
+RUN npm run build
+
+# ── Serve stage ──
 FROM nginx:alpine
-
-# Config do nginx ouvindo na porta do Cloud Run (8080)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copia o site para o diretório servido
-COPY . /usr/share/nginx/html
-
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

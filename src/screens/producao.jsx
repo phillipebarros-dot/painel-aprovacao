@@ -174,7 +174,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                   {divRows.length === 0
                     ? <tr><td colSpan={17}><div style={{ padding: 28 }}><Empty title="Sem PIs nesta conta/mês" hint="Troque a aba ou o mês" icon="layers"/></div></td></tr>
                     : divRows.map((c, i) => {
-                      const per = `${new Date(c.periodo_ini).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}–${new Date(c.periodo_fim).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`;
+                      const per = c.periodo_ini && c.periodo_fim ? `${new Date(c.periodo_ini).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}–${new Date(c.periodo_fim).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}` : "—";
                       const SC = window.CHECK_STATUS || {}; const SCL = window.CHECK_STATUS_LIST || [];
                       return (
                       <tr key={c.submission_id} className="row-anim" style={{ animationDelay: (i * 12) + "ms" }}>
@@ -185,7 +185,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                         <td style={{ fontWeight: 500, whiteSpace: "nowrap" }}>{c.cliente}</td>
                         <td className="cell-secondary" style={{ whiteSpace: "nowrap", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis" }}>{c.veiculo}</td>
                         <td className="cell-time" style={{ whiteSpace: "nowrap" }}>{per}</td>
-                        <td className="mono" style={{ textAlign: "right", whiteSpace: "nowrap" }}>{c.valor_liquido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
+                        <td className="mono" style={{ textAlign: "right", whiteSpace: "nowrap" }}>{(c.valor_liquido ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
                         <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.campanha}</td>
                         <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.produto}</td>
                         <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.praca}</td>
@@ -204,7 +204,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                             <input className="plan-input" defaultValue={c.comentario || ""} placeholder="Comentário…" onBlur={e => { if (e.target.value !== (c.comentario || "")) { onSetComentario && onSetComentario(c.submission_id, e.target.value); onToast?.({ type: "success", message: "Comentário salvo." }); } }} onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}/>
                           )}
                         </td>
-                        <td className="cell-time" style={{ whiteSpace: "nowrap" }}>{new Date(c.vencimento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</td>
+                        <td className="cell-time" style={{ whiteSpace: "nowrap" }}>{c.vencimento ? new Date(c.vencimento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "—"}</td>
                         <td className="cell-secondary" style={{ textAlign: "center" }}><span className={"lib-dot " + (c.liberado === "Sim" ? "lib-yes" : c.liberado === "Não" ? "lib-no" : "lib-wait")}>{c.liberado}</span></td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
                           {!isManager ? <span className="cell-secondary">{c.assigned_to || "—"}</span> : (
