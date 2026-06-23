@@ -78,8 +78,21 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
   const applyFilter = (f) => { setTab(f.tab); setFilterClient(f.filterClient); setFilterMeio(f.filterMeio); setSearch(f.search || ""); };
   const delFilter = (id) => { const next = saved.filter(f => f.id !== id); setSaved(next); localStorage.setItem("painel_saved_filters", JSON.stringify(next)); };
 
-  const bulkApprove = () => { onToast?.({ type: "success", message: `${selected.size} checkings aprovados em lote.` }); setSelected(new Set()); onRefresh?.(); };
-  const bulkReject = () => { const r = prompt("Motivo da reprovação em lote:"); if (!r) return; onToast?.({ type: "success", message: `${selected.size} checkings reprovados.` }); setSelected(new Set()); onRefresh?.(); };
+  const bulkApprove = () => {
+    const who = currentUser.nome || currentUser.name;
+    const ids = [...selected];
+    ids.forEach(id => window.PainelAPI?.approve(id, who).catch(e => onToast?.({ type: "error", message: `Falha ao aprovar ${id}: ${e.message || ""}` })));
+    onToast?.({ type: "success", message: `${ids.length} checkings aprovados em lote.` });
+    setSelected(new Set()); onRefresh?.();
+  };
+  const bulkReject = () => {
+    const r = prompt("Motivo da reprovação em lote:"); if (!r) return;
+    const who = currentUser.nome || currentUser.name;
+    const ids = [...selected];
+    ids.forEach(id => window.PainelAPI?.reject(id, who, r).catch(e => onToast?.({ type: "error", message: `Falha ao reprovar ${id}: ${e.message || ""}` })));
+    onToast?.({ type: "success", message: `${ids.length} checkings reprovados.` });
+    setSelected(new Set()); onRefresh?.();
+  };
 
   const exportPdf = () => {
     const cols = ["Status", "Cliente", "PI", "Veículo", "Meio", "Praça", "Arq.", "Recebido", "Responsável"];

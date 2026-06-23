@@ -66,14 +66,21 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
   const [linkDraft, setLinkDraft] = React.useState("");
   const addLink = () => {
     const url = linkDraft.trim(); if (!url) return;
-    const item = { id: Date.now(), url, kind: "link", author: currentUser?.nome || currentUser?.name || "Equipe", ts: Date.now() };
+    const author = currentUser?.nome || currentUser?.name || "Equipe";
+    const item = { id: Date.now(), url, kind: "link", author, ts: Date.now() };
     const next = [item, ...links]; setLinks(next); localStorage.setItem(lkey, JSON.stringify(next)); setLinkDraft("");
+    // Persiste no backend como comentário + link
+    window.PainelAPI?.addComment(checking.submission_id, `[DRIVE] ${url}`, author).catch(() => {});
   };
   const addReupload = (kind, detail) => {
     const base = { foto: "Foto reenviada", pdf: "PDF reenviado", video: "Vídeo reenviado" }[kind];
     const label = detail ? base + " (" + detail + ")" : base;
-    const item = { id: Date.now(), kind, label, author: currentUser?.nome || currentUser?.name || "Equipe", ts: Date.now() };
+    const author = currentUser?.nome || currentUser?.name || "Equipe";
+    const item = { id: Date.now(), kind, label, author, ts: Date.now() };
     const next = [item, ...links]; setLinks(next); localStorage.setItem(lkey, JSON.stringify(next));
+    // Persiste no backend
+    window.PainelAPI?.uploadSupplement(checking.submission_id, [{ kind, label }]).catch(() => {});
+    window.PainelAPI?.addComment(checking.submission_id, `[REUPLOAD] ${label}`, author).catch(() => {});
   };
   const delLink = (id) => { const next = links.filter(l => l.id !== id); setLinks(next); localStorage.setItem(lkey, JSON.stringify(next)); };
 
