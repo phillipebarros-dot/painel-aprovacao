@@ -26,10 +26,9 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
   const stats = React.useMemo(() => H.computeStats(periodCheckings), [periodCheckings]);
 
   const series = React.useMemo(() => isMonth ? H.buildMonthSeries(checkings, monthKey) : H.buildVolumeSeries(checkings, days), [checkings, days, isMonth, monthKey]);
-  const last30 = React.useMemo(() => H.buildVolumeSeries(checkings, 30), [checkings]);
-  const sparkApp = last30.map(d => ({ v: d.approved }));
-  const sparkRej = last30.map(d => ({ v: d.rejected }));
-  const sparkPen = last30.map(d => ({ v: d.total }));
+  const sparkApp = series.map(d => ({ v: d.approved }));
+  const sparkRej = series.map(d => ({ v: d.rejected }));
+  const sparkPen = series.map(d => ({ v: d.total }));
   const topVeic = React.useMemo(() => H.topRanking(periodCheckings, "veiculo", 6).map(r => ({ ...r, color: "var(--ink)" })), [periodCheckings]);
   const topClientes = React.useMemo(() => H.topRanking(periodCheckings, "cliente", 5).map(r => ({ ...r, color: "var(--accent)" })), [periodCheckings]);
   const supRating = React.useMemo(() => H.supplierRating(periodCheckings, 6), [periodCheckings]);
@@ -101,7 +100,7 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
             <span style={{ fontSize: 12.5, whiteSpace: "nowrap" }}><b style={{ color: "#fff" }}>{stats.recebidosHoje}</b> hoje</span>
           </div>
           <div style={{ marginTop: 14 }}><AreaSpark data={sparkPen} height={46} color="#5DD9A1" animKey={period}/></div>
-          <div className="eyebrow" style={{ color: "rgba(245,244,239,0.4)", marginTop: 6 }}>volume · últimos 30 dias</div>
+          <div className="eyebrow" style={{ color: "rgba(245,244,239,0.4)", marginTop: 6 }}>volume · {periodLabel}</div>
         </div>
 
         <div className="kpi">

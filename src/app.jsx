@@ -372,10 +372,10 @@ function App() {
 
   const handleLogin = (u) => { setUser({ ...u, nome: u.name || u.email }); window.PainelAPI?.startHeartbeat(); loadData(); addToast({ type: "success", message: `Bem-vindo, ${(u.name || "usuário").split(" ")[0]}!` }); };
   const handleLogout = async () => { try { window.PainelAPI?.stopHeartbeat(); await window.PainelAPI?.logout(); } catch {} setUser(null); setRoute("dashboard"); setReviewing(null); setCheckings([]); };
-  const openReview = (c) => { setReviewing(c); };
+  const openReview = (c) => { React.startTransition(() => setReviewing(c)); };
   const handleNav = (r) => {
     if ((r === "users" || r === "operations") && user?.role !== "admin") { addToast({ type: "error", message: "Acesso restrito a admins." }); return; }
-    setRoute(r); setReviewing(null);
+    React.startTransition(() => { setRoute(r); setReviewing(null); });
   };
   const startTriage = (queue) => {
     if (user?.role === "viewer") { addToast({ type: "error", message: "Sem permissão para decidir." }); return; }
