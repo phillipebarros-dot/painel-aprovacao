@@ -2,6 +2,14 @@
 // Diretório de fornecedores (veículos), inspirado na página Customers da Atera.
 function aggregateSuppliers(checkings) {
   const H = window.H;
+  // Pré-cachear ratings do localStorage UMA VEZ (não 1768x dentro do loop)
+  const ratingCache = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("painel_rating_")) ratingCache[k] = Number(localStorage.getItem(k) || 0);
+    }
+  } catch {}
   const m = {};
   checkings.forEach(c => {
     const k = c.veiculo; if (!k) return;
@@ -15,7 +23,9 @@ function aggregateSuppliers(checkings) {
     s.last = Math.max(s.last, c.submittedAt || 0);
     if (c.cliente) s.clientes.add(c.cliente);
     if (c.praca) s.pracas.add(c.praca);
-    try { const r = Number(localStorage.getItem("painel_rating_" + (c.email_contato || c.nome_contato || "x")) || 0); if (r) { s.manual += r; s.manualN++; } } catch (e) {}
+    const rkey = "painel_rating_" + (c.email_contato || c.nome_contato || "x");
+    const r = ratingCache[rkey] || 0;
+    if (r) { s.manual += r; s.manualN++; }
   });
   return Object.values(m).map(s => {
     const decided = s.approved + s.rejected;

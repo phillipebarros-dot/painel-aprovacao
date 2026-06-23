@@ -265,7 +265,7 @@ const ROUTE_ICONS = { dashboard: "dashboard", approvals: "approvals", producao: 
 function TopBar({ route, user, onNav, onlineUsers, notifications, checkings, onOpenReview, density, setDensity, onHelp, onSearch, onToggleSidebar, navCollapsed, viewModes, view, onView, theme, onToggleTheme }) {
   const [notifOpen, setNotifOpen] = aUseState(false);
   const unread = notifications.length;
-  const titles = { dashboard: "Dashboard", approvals: "Aprovações", review: "Review", reports: "Relatórios", users: "Usuários", operations: "Operações", fornecedores: "Fornecedores", automacoes: "Automações" };
+  const titles = { dashboard: "Dashboard", approvals: "Aprovações", review: "Review", reports: "Relatórios", users: "Usuários", operations: "Operações", fornecedores: "Fornecedores", automacoes: "Automações", producao: "Produção", alerts: "Alertas" };
   const selfIn = onlineUsers.some(u => u.email === user?.email);
   const displayUsers = selfIn ? onlineUsers : [{ name: user?.nome || user?.name, email: user?.email, color: user?.color }, ...onlineUsers];
   return (
