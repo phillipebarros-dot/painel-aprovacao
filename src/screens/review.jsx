@@ -478,7 +478,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
           </div>
           <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden" }}>
             {lightbox.isImage && (lightbox.thumbnailUrl || lightbox.id_imagem) ? (
-              {lightbox.thumbnailUrl ? <img src={lightbox.thumbnailUrl} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer"/> : <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "var(--ink-3)", fontSize: 16 }}>Visualizar no Drive <a href={`https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 12 }}>Abrir no Drive</a></div>}
+              lightbox.thumbnailUrl ? <img src={lightbox.thumbnailUrl} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer"/> : <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "var(--ink-3)", fontSize: 16 }}><span>Visualizar no Drive</span><a href={`https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" className="btn btn-accent sm" style={{ marginTop: 12 }}>Abrir no Drive</a></div>
             ) : (lightbox.isPdf || lightbox.isVideo) && lightbox.id_imagem ? (
               <iframe src={lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/preview`} style={{ width: "100%", height: "100%", border: "none" }} allow="autoplay" referrerPolicy="no-referrer"/>
             ) : (
