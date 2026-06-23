@@ -327,26 +327,7 @@ select.input {
 .loc-marker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -90%); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); animation: globe-pulse 2.4s var(--ease) infinite; }
 .loc-marker::after { content: ""; position: absolute; bottom: -3px; left: 50%; transform: translateX(-50%); width: 14px; height: 4px; border-radius: 50%; background: rgba(0,0,0,0.4); }
 
-/* ════════ Easter egg: jogo de luta ════════ */
-.game-shell { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 99999; width: min(800px, 96vw); background: #0c1118; border: 1px solid rgba(93,217,161,0.3); border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 30px 90px rgba(0,0,0,0.7); animation: modalIn 360ms var(--ease-out); }
-.game-bar { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; background: rgba(255,255,255,0.04); }
-.game-title { font-family: var(--font-mono); font-size: 14px; font-weight: 700; letter-spacing: 0.08em; color: #5DD9A1; }
-.game-hud { display: flex; align-items: center; gap: 14px; padding: 12px 18px 6px; }
-.game-hud-side { flex: 1; }
-.game-hud-side.r { display: flex; flex-direction: column; align-items: flex-end; }
-.game-name { font-family: var(--font-mono); font-size: 11px; color: #cfd6dd; margin-bottom: 5px; letter-spacing: 0.06em; }
-.game-bar-bg { width: 100%; height: 14px; background: #1a2230; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
-.game-bar-fill { height: 100%; width: 100%; transition: width 160ms linear; }
-.game-bar-fill.p { background: linear-gradient(90deg, #2f9e6e, #5DD9A1); }
-.game-bar-fill.e { background: linear-gradient(270deg, #b03b40, #E36268); margin-left: auto; }
-.game-hud-side.r .game-bar-bg { transform: scaleX(-1); }
-.game-vs { font-family: var(--font-mono); font-weight: 700; color: #E8C26D; font-size: 13px; }
-.game-stage { position: relative; padding: 8px 18px; }
-.game-canvas { width: 100%; display: block; border-radius: 8px; background: #0c1118; image-rendering: pixelated; }
-.game-over { position: absolute; inset: 8px 18px; display: flex; flex-direction: column; gap: 16px; align-items: center; justify-content: center; background: rgba(8,11,16,0.82); backdrop-filter: blur(4px); border-radius: 8px; }
-.game-over-title { font-family: var(--font-mono); font-size: 28px; font-weight: 800; letter-spacing: 0.08em; }
-.game-controls { display: flex; gap: 16px; justify-content: center; padding: 10px 18px 16px; flex-wrap: wrap; font-size: 12px; color: var(--ink-3); }
-.game-controls b { font-family: var(--font-mono); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 1px 6px; color: #cfd6dd; margin-right: 2px; }
+
 .star-btn { display: grid; place-items: center; padding: 1px; transition: transform 140ms var(--spring); }
 .star-btn:hover:not(:disabled) { transform: scale(1.18); }
 .star-btn:disabled { cursor: default; }

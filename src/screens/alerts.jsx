@@ -22,7 +22,7 @@ function AlertLine({ a, i, sevMeta, leadOf, isViewer, onDecide, onOpenReview }) 
   );
 }
 
-function ScreenAlerts({ checkings, currentUser, onOpenReview, onStartTriage, onDecide, onToast, viewMode }) {
+function ScreenAlerts({ checkings, currentUser, onOpenReview, onStartTriage, onDecide, onToast, viewMode, preAlerts }) {
   const H = window.H, AI = window.AI;
   const [profile, setProfile] = React.useState(() => AI.loadProfile());
   const [draft, setDraft] = React.useState(profile);
@@ -39,7 +39,7 @@ function ScreenAlerts({ checkings, currentUser, onOpenReview, onStartTriage, onD
     return checkings.filter(c => c.assigned_to === me);
   }, [checkings, currentUser, isAdmin]);
 
-  const alerts = React.useMemo(() => AI.computeAlerts(scoped, profile), [scoped, profile]);
+  const alerts = React.useMemo(() => (isAdmin && preAlerts) ? preAlerts : AI.computeAlerts(scoped, profile), [scoped, profile, isAdmin, preAlerts]);
   const counts = React.useMemo(() => AI.alertCounts(alerts), [alerts]);
   const shown = filter === "all" ? alerts : alerts.filter(a => a.sev === filter);
 

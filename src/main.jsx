@@ -37,7 +37,7 @@ import './screens/approvals.jsx';
 import './screens/producao.jsx';
 import './screens/review.jsx';
 import './screens/comprovante.jsx';
-import './screens/game.jsx';
+
 import './screens/triage.jsx';
 import './screens/alerts.jsx';
 import './screens/reports.jsx';

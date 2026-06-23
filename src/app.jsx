@@ -83,7 +83,7 @@ function Sidebar({ route, onNav, user, onLogout, pending, alertCount, alertCrit 
             <div className="user-chip-body"><span className="user-chip-name">{(user.nome || user.name || "").split(" ").slice(0, 2).join(" ")}</span><span className="user-chip-role">{roleLabel}</span></div>
             <Icon name="logout" size={15} className="logout-ico"/>
           </div>
-          <div className="tas-sign nav-tas" title="Desenvolvido pelo TAS"><span>Desenvolvido pelo TAS</span><img src="assets/img/goosewhite.png" alt="" className="tas-goose" onClick={() => { window.__gooseClicks = (window.__gooseClicks || 0) + 1; clearTimeout(window.__gooseTimer); window.__gooseTimer = setTimeout(() => { window.__gooseClicks = 0; }, 1500); if (window.__gooseClicks >= 3) { window.__gooseClicks = 0; window.__openSecretGame?.(); } }}/></div>
+          <div className="tas-sign nav-tas" title="Desenvolvido pelo TAS"><span>Desenvolvido pelo TAS</span><img src="assets/img/goosewhite.png" alt="" className="tas-goose"/></div>
         </div>
       </aside>
     </>
@@ -298,21 +298,6 @@ function ToastItem({ toast, onClose }) {
 }
 function ToastStack({ toasts, onDismiss }) { return <div className="toast-stack">{toasts.map(t => <ToastItem key={t.id} toast={t} onClose={() => onDismiss(t.id)}/>)}</div>; }
 
-// Easter egg: 10 reprovações seguidas
-function EasterEggVideo({ onClose }) {
-  return (<>
-    <div className="scrim" onClick={onClose} style={{ zIndex: 9998, background: "rgba(0,0,0,0.8)" }}/>
-    <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 9999, width: "min(680px, 94vw)", background: "#0a0a0c", borderRadius: 14, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.7)", animation: "modalIn 360ms var(--ease-out)" }}>
-      <div className="row" style={{ justifyContent: "space-between", padding: "12px 16px", background: "rgba(255,255,255,0.05)" }}>
-        <span style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>Calma com as reprovações...</span>
-        <button onClick={onClose} style={{ color: "#999", fontSize: 18, padding: "0 8px" }}>✕</button>
-      </div>
-      <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
-        <iframe src="https://www.youtube-nocookie.com/embed/HB2bnfMb1tQ?autoplay=1" title="easter egg" frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}/>
-      </div>
-    </div>
-  </>);
-}
 
 // ── App ──
 function App() {
@@ -331,17 +316,14 @@ function App() {
   const [triageQueue, setTriageQueue] = aUseState(null);
   const toastId = aUseRef(0);
   const gKey = aUseRef(false);
-  const rejectCount = aUseRef(0);
-  const [easterEgg, setEasterEgg] = aUseState(false);
-  const [gameOpen, setGameOpen] = aUseState(false);
-  const konami = aUseRef([]);
-  aUseEffect(() => { window.__openSecretGame = () => setGameOpen(true); return () => { delete window.__openSecretGame; }; }, []);
+
 
   const stats = aUseMemo(() => window.H.computeStats(checkings), [checkings]);
   const alerts = aUseMemo(() => window.AI.computeAlerts(checkings), [checkings]);
   const alertCounts = aUseMemo(() => window.AI.alertCounts(alerts), [alerts]);
   const auditLog = aUseMemo(() => buildAuditLog(checkings), [checkings]);
   const notifications = aUseMemo(() => buildNotifs(checkings), [checkings]);
+  const preSuppliers = aUseMemo(() => typeof aggregateSuppliers === "function" ? aggregateSuppliers(checkings) : [], [checkings]);
 
   const addToast = aUseCallback((t) => { const id = ++toastId.current; setToasts(p => [...p.slice(-3), { id, ...t }]); }, []);
   const dismissToast = aUseCallback((id) => setToasts(p => p.filter(t => t.id !== id)), []);
@@ -412,7 +394,7 @@ function App() {
       setReviewing(null); return;
     }
     const isApprove = decision === "approve" || decision === "ressalva";
-    if (decision === "reject") { rejectCount.current++; if (rejectCount.current >= 10) { rejectCount.current = 0; setTimeout(() => setEasterEgg(true), 300); } }
+
     const label = decision === "ressalva" ? "Aprovado com sugestões" : decision === "sem_checking" ? "Sem checking" : "";
     const who = user.nome || user.name;
     if (isApprove) window.PainelAPI?.approve(checking.submission_id, who).catch(err => addToast({ type: "error", message: "Falha ao aprovar: " + (err.message || "") }));
@@ -429,10 +411,7 @@ function App() {
   aUseEffect(() => {
     if (!user) return;
     const h = (e) => {
-      const seq = konami.current;
-      seq.push(e.key); if (seq.length > 10) seq.shift();
-      const code = "ArrowUp,ArrowUp,ArrowDown,ArrowDown,ArrowLeft,ArrowRight,ArrowLeft,ArrowRight,b,a";
-      if (seq.join(",").toLowerCase() === code.toLowerCase()) { konami.current = []; setGameOpen(true); return; }
+
       const tag = e.target.tagName;
       const typing = tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setSearchOpen(true); return; }
@@ -459,7 +438,7 @@ function App() {
   const screen = reviewing ? <ScreenReview checking={reviewing} currentUser={user} onBack={() => setReviewing(null)} onDecide={handleDecide}/>
     : route === "dashboard" ? <ScreenDashboard stats={stats} checkings={checkings} auditLog={auditLog} onOpenReview={openReview} onNavigate={handleNav} loading={false} onStartTriage={startTriage} viewMode={curView}/>
     : route === "approvals" ? <ScreenApprovals currentUser={user} checkings={checkings} stats={stats} onOpenReview={openReview} onRefresh={() => {}} onToast={addToast} onDecide={handleDecide} onStartTriage={startTriage} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onSetResponsavel={(id, who) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, assigned_to: who, approval_user: c.status !== "pending" ? who : c.approval_user } : c)); window.PainelAPI?.assignResponsible(id, who, new Date().toISOString().slice(0, 7)).catch(e => addToast({ type: "error", message: "Falha ao atribuir: " + (e.message || "") })); }}/>
-    : route === "alerts" ? <ScreenAlerts checkings={checkings} currentUser={user} onOpenReview={openReview} onStartTriage={startTriage} onDecide={handleDecide} onToast={addToast} viewMode={curView}/>
+    : route === "alerts" ? <ScreenAlerts checkings={checkings} currentUser={user} onOpenReview={openReview} onStartTriage={startTriage} onDecide={handleDecide} onToast={addToast} viewMode={curView} preAlerts={alerts}/>
     : route === "producao" ? <ScreenProducao checkings={checkings} currentUser={user} onOpenReview={openReview} onToast={addToast} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onAssign={(map) => {
         const mes = new Date().toISOString().slice(0, 7);
         setCheckings(prev => prev.map(c => map[c.submission_id] ? { ...c, assigned_to: map[c.submission_id] } : c));
@@ -468,7 +447,7 @@ function App() {
     : route === "reports" ? <ScreenReports checkings={checkings} currentUser={user} onToast={addToast}/>
     : route === "users" ? <ScreenUsers onToast={addToast} viewMode={curView} checkings={checkings}/>
     : route === "operations" ? <ScreenOperations onToast={addToast} checkings={checkings}/>
-    : route === "fornecedores" ? <ScreenFornecedores checkings={checkings} onOpenReview={openReview} viewMode={curView} onToast={addToast}/>
+    : route === "fornecedores" ? <ScreenFornecedores checkings={checkings} onOpenReview={openReview} viewMode={curView} onToast={addToast} preSuppliers={preSuppliers}/>
     : route === "automacoes" ? <ScreenAutomacoes onToast={addToast}/>
     : <ScreenDashboard stats={stats} checkings={checkings} auditLog={auditLog} onOpenReview={openReview} onNavigate={handleNav} loading={false}/>;
 
@@ -484,8 +463,7 @@ function App() {
       {searchOpen && <SearchPalette checkings={checkings} onSelect={openReview} onNav={handleNav} onClose={() => setSearchOpen(false)}/>}
       {helpOpen && <HelpOverlay onClose={() => setHelpOpen(false)}/>}
       {triageQueue && <ScreenTriage queue={triageQueue} currentUser={user} onDecide={(c, d, r) => handleDecide(c, d, r, true)} onClose={() => setTriageQueue(null)}/>}
-      {easterEgg && <EasterEggVideo onClose={() => setEasterEgg(false)}/>}
-      {gameOpen && <FightGame onClose={() => setGameOpen(false)}/>}
+
       <ToastStack toasts={toasts} onDismiss={dismissToast}/>
     </>
   );

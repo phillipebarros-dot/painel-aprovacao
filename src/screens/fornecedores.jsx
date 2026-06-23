@@ -89,13 +89,13 @@ function SupplierDrawer({ sup, checkings, onClose, onOpenReview }) {
   </>);
 }
 
-function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast }) {
+function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast, preSuppliers }) {
   const H = window.H;
   const view = viewMode || "cards";
   const [search, setSearch] = React.useState("");
   const [sort, setSort] = React.useState("stars");
   const [detail, setDetail] = React.useState(null);
-  const all = React.useMemo(() => aggregateSuppliers(checkings), [checkings]);
+  const all = React.useMemo(() => preSuppliers && preSuppliers.length ? preSuppliers : aggregateSuppliers(checkings), [checkings, preSuppliers]);
   const filtered = React.useMemo(() => {
     let r = all.filter(s => !search || s.veiculo.toLowerCase().includes(search.toLowerCase()));
     const cmp = { stars: (a, b) => b.stars - a.stars, volume: (a, b) => b.total - a.total, reinc: (a, b) => b.rej - a.rej, sla: (a, b) => b.avgSla - a.avgSla, nome: (a, b) => a.veiculo.localeCompare(b.veiculo) };
@@ -184,3 +184,4 @@ function ScreenFornecedores({ checkings = [], onOpenReview, viewMode, onToast })
   );
 }
 window.ScreenFornecedores = ScreenFornecedores;
+window.aggregateSuppliers = aggregateSuppliers;
