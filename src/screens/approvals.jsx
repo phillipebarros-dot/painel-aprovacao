@@ -97,7 +97,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
   const exportPdf = () => {
     const cols = ["Status", "Cliente", "PI", "Veículo", "Meio", "Praça", "Arq.", "Recebido", "Responsável"];
     const labels = { pending: "Pendente", approved: "Aprovado", rejected: "Reprovado" };
-    const rows = filtered.map(c => [labels[c.status] || c.status, c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt), c.approval_user || "—"]);
+    const rows = filtered.map(c => [labels[c.status] || c.status, c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt), c.approval_user || "-"]);
     H.exportPDF("Aprovações", cols, rows, `Filtro: ${tab === "all" ? "todos" : tab}`);
   };
   const exportCsv = () => {

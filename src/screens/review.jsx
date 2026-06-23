@@ -354,7 +354,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                     <a href={`tel:${checking.telefone_contato.replace(/\D/g, "")}`} style={{ fontSize: 12.5, color: "var(--ink-2)", fontFamily: "var(--font-mono)" }}>{checking.telefone_contato}</a>
                     <a className="btn btn-quiet sm" href={`https://wa.me/55${checking.telefone_contato.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" style={{ padding: "3px 9px", fontSize: 11 }} title="Abrir conversa no WhatsApp"><Icon name="bolt" size={11}/> WhatsApp</a>
                   </div>
-                ) : <div style={{ fontSize: 12.5, color: "var(--ink-3)" }}>—</div>}
+                ) : <div style={{ fontSize: 12.5, color: "var(--ink-3)" }}>-</div>}
               </div>
               <div>
                 <div className="eyebrow" style={{ fontSize: 9.5, marginBottom: 5 }}>Classificação interna</div>

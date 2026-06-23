@@ -49,14 +49,14 @@
     // Regra 2: Arquivos vs mínimo do meio
     if (c.total_arquivos < minFiles) {
       conf -= 12;
-      reasons.push({ neg: true, text: `Esperado pelo menos ${minFiles} arquivo(s) para ${meio || "este meio"} — enviou ${c.total_arquivos}` });
+      reasons.push({ neg: true, text: `Esperado pelo menos ${minFiles} arquivo(s) para ${meio || "este meio"}, enviou ${c.total_arquivos}` });
     } else {
-      reasons.push({ neg: false, text: `${c.total_arquivos} arquivo(s) — compatível com ${meio || "o meio"}` });
+      reasons.push({ neg: false, text: `${c.total_arquivos} arquivo(s), compatível com ${meio || "o meio"}` });
       if (c.total_arquivos >= minFiles + 3) conf += 5;
     }
 
     // Regra 3: SLA
-    if (norm(c.status) === 'pending' && ageH > 8) { conf -= 9; reasons.push({ neg: true, text: `Em fila há ${window.H.fmtDur(ageH)} — SLA estourado` }); }
+    if (norm(c.status) === 'pending' && ageH > 8) { conf -= 9; reasons.push({ neg: true, text: `Em fila há ${window.H.fmtDur(ageH)}, SLA estourado` }); }
 
     // Regra 4: Complemento
     if (c.is_complement === 1) { conf -= 8; reasons.push({ neg: true, text: `Complemento: conferir contra a versão anterior` }); }

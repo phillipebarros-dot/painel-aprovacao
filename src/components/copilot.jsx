@@ -113,7 +113,7 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
         {geminiLoading && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 0" }}>
             <div className="spinner" style={{ width: 20, height: 20 }}/>
-            <span className="body-xs muted">Consultando Gemini — analisando PI, histórico do fornecedor e comprovantes…</span>
+            <span className="body-xs muted">Consultando Gemini: analisando PI, histórico do fornecedor e comprovantes…</span>
           </div>
         )}
         <div className="row gap-4" style={{ alignItems: "center", marginBottom: 16 }}>
@@ -135,7 +135,7 @@ function CopilotPanel({ checking, onApprove, onReject, isViewer }) {
         </div>
         {geminiError && (
           <div style={{ fontSize: 11.5, color: "var(--warn)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-            <Icon name="warn" size={12}/> Gemini indisponível: {geminiError} — usando análise local
+            <Icon name="warn" size={12}/> Gemini indisponível: {geminiError}. Usando análise local
           </div>
         )}
         <div className="eyebrow" style={{ marginBottom: 8 }}>{useGemini ? "Análise Gemini" : "Regras aplicadas"}</div>

@@ -10,7 +10,7 @@ function ScreenLogin({ onLogin }) {
   const [error, setError] = React.useState("");
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const STATS = { total: window.MOCK.checkings.length, sla: "—", veic: H.extractList(window.MOCK.checkings, "veiculo").length };
+  const STATS = { total: window.MOCK.checkings.length, sla: "-", veic: H.extractList(window.MOCK.checkings, "veiculo").length };
 
   // Google Identity Services (SSO real)
   React.useEffect(() => {

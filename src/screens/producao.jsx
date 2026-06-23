@@ -230,24 +230,24 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                         <td className="cell-secondary">{c.meio}</td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
                           <div className="plan-status" style={{ "--sc": SC[c.statusCheck] || "var(--ink-3)" }}>
-                            {!isManager ? <span className="plan-status-tag">{c.statusCheck || "—"}</span> : (
+                            {!isManager ? <span className="plan-status-tag">{c.statusCheck || "-"}</span> : (
                               <select value={c.statusCheck || ""} onChange={e => { onSetCheckStatus && onSetCheckStatus(c.submission_id, e.target.value); onToast?.({ type: "success", message: `Status: ${e.target.value}` }); }}>
-                                {!c.statusCheck && <option value="">—</option>}
+                                {!c.statusCheck && <option value="">-</option>}
                                 {SCL.map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
                             )}
                           </div>
                         </td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
-                          {!isManager ? <span className="cell-secondary">{c.assigned_to || "—"}</span> : (
+                          {!isManager ? <span className="cell-secondary">{c.assigned_to || "-"}</span> : (
                             <select className="plan-resp" value={c.assigned_to || ""} onChange={e => e.target.value && assignOne(c.submission_id, e.target.value)}>
-                              <option value="">— a definir —</option>
+                              <option value="">Selecionar</option>
                               {team.map(n => <option key={n} value={n}>{n}</option>)}
                             </select>
                           )}
                         </td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
-                          {!isManager ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.comentario || "—"}</span> : (
+                          {!isManager ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.comentario || "-"}</span> : (
                             <input className="plan-input" defaultValue={c.comentario || ""} placeholder="Comentário…" onBlur={e => { if (e.target.value !== (c.comentario || "")) { onSetComentario && onSetComentario(c.submission_id, e.target.value); onToast?.({ type: "success", message: "Comentário salvo." }); } }} onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}/>
                           )}
                         </td>
