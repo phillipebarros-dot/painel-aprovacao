@@ -19,29 +19,20 @@ function VizTip({ tip }) {
   return <div className="viz-tip" style={{ left: tip.x, top: tip.y }}>{tip.content}</div>;
 }
 
-// ── Area sparkline (animated draw, with gaps on zero) ──
+// ── Area sparkline (animated draw) ──
+// Linha continua conectando somente pontos com valor > 0 (pula zeros)
 const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 }) => {
   const [ref, w] = useWidth();
   if (!data || !data.length) return <div ref={ref} style={{ height }}/>;
   const max = Math.max(1, ...data.map(d => d.v));
   const stepX = w / (data.length - 1 || 1);
   const yOf = (v) => height - 5 - (v / max) * (height - 14);
-  // Construir path com gaps via M (moveto) nos zeros
-  let lineD = "", areaD = "", inSeg = false;
-  for (let i = 0; i < data.length; i++) {
-    const v = Number(data[i].v) || 0;
-    const x = (i * stepX).toFixed(1);
-    const y = yOf(v).toFixed(1);
-    if (v > 0) {
-      if (!inSeg) { lineD += `M ${x},${y} `; areaD += `M ${x},${height} L ${x},${y} `; inSeg = true; }
-      else { lineD += `L ${x},${y} `; areaD += `L ${x},${y} `; }
-    } else if (inSeg) {
-      const px = ((i - 1) * stepX).toFixed(1);
-      areaD += `L ${px},${height} Z `;
-      inSeg = false;
-    }
-  }
-  if (inSeg) { for (let i = data.length - 1; i >= 0; i--) { if ((Number(data[i].v) || 0) > 0) { areaD += `L ${(i * stepX).toFixed(1)},${height} Z `; break; } } }
+  // Filtrar somente pontos com valor > 0, manter posicao X original
+  const live = [];
+  data.forEach((d, i) => { if (d.v > 0) live.push({ x: (i * stepX).toFixed(1), y: yOf(d.v).toFixed(1) }); });
+  if (!live.length) return <div ref={ref} style={{ width: "100%", height }}/>;
+  const pts = live.map(p => `${p.x},${p.y}`).join(" ");
+  const area = `M ${live[0].x},${height} L ${pts} L ${live[live.length - 1].x},${height} Z`;
   const len = w * 1.4;
   // Bug 4.2 fix: gerar id unico por instancia (evita colisao de gradientes)
   const gid = (React.useId || (() => "ag" + Math.random().toString(36).slice(2)))();
@@ -51,16 +42,16 @@ const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 })
         <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.28"/><stop offset="100%" stopColor={color} stopOpacity="0"/>
         </linearGradient></defs>
-        {areaD && <path key={"a" + animKey} className="area-rise" d={areaD} fill={`url(#${gid})`}/>}
-        {lineD && <path key={"l" + animKey} className="line-draw" style={{ "--len": len }} d={lineD} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>}
+        <path key={"a" + animKey} className="area-rise" d={area} fill={`url(#${gid})`}/>
+        <polyline key={"l" + animKey} className="line-draw" style={{ "--len": len }} points={pts} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
       </svg>
     </div>
   );
 };
 
 // ── Trend line (volume total, animated, hover) ──
-// Usa SVG path com M (moveto) para criar gaps nos dias sem dados.
-// Tecnica equivalente ao d3.line().defined() mas sem dependencia externa.
+// Linha unica continua conectando somente dias com dados (total > 0).
+// Dias sem dados sao pulados, sem cair para zero e sem criar gaps.
 const TrendLine = ({ series, height = 280 }) => {
   const [ref, w] = useWidth(800);
   const [hover, setHover] = vUseState(null);
@@ -72,48 +63,11 @@ const TrendLine = ({ series, height = 280 }) => {
   const yOf = (v) => padT + innerH - (v / max) * innerH;
   const bottom = padT + innerH;
 
-  // Construir path com gaps: M para iniciar segmento, L para continuar
-  // Quando total=0, nao emite nenhum comando (cria gap na linha)
-  let lineD = "";
-  let areaD = "";
-  let inSegment = false;
-  let segStartX = 0;
-  for (let i = 0; i < series.length; i++) {
-    const v = Number(series[i].total) || 0;
-    const x = xOf(i).toFixed(1);
-    const y = yOf(v).toFixed(1);
-    if (v > 0) {
-      if (!inSegment) {
-        // Iniciar novo segmento
-        lineD += `M ${x},${y} `;
-        areaD += `M ${x},${bottom} L ${x},${y} `;
-        segStartX = x;
-        inSegment = true;
-      } else {
-        // Continuar segmento
-        lineD += `L ${x},${y} `;
-        areaD += `L ${x},${y} `;
-      }
-    } else {
-      if (inSegment) {
-        // Fechar area do segmento anterior
-        const prevX = xOf(i - 1).toFixed(1);
-        areaD += `L ${prevX},${bottom} Z `;
-        inSegment = false;
-      }
-    }
-  }
-  // Fechar ultimo segmento se terminou com dados
-  if (inSegment) {
-    const lastDataIdx = series.length - 1;
-    // Encontrar ultimo indice com dados
-    for (let i = series.length - 1; i >= 0; i--) {
-      if ((Number(series[i].total) || 0) > 0) {
-        areaD += `L ${xOf(i).toFixed(1)},${bottom} Z `;
-        break;
-      }
-    }
-  }
+  // Filtrar somente dias com dados, mantendo posicao X original
+  const live = [];
+  series.forEach((d, i) => { if (d.total > 0) live.push({ i, x: xOf(i).toFixed(1), y: yOf(d.total).toFixed(1) }); });
+  const pts = live.map(p => `${p.x},${p.y}`).join(" ");
+  const area = live.length ? `M ${live[0].x},${bottom} L ${pts} L ${live[live.length - 1].x},${bottom} Z` : "";
 
   const len = innerW * 1.5;
   const onMove = (e) => {
@@ -132,8 +86,8 @@ const TrendLine = ({ series, height = 280 }) => {
           const y = padT + innerH * (1 - p);
           return <g key={i}><line className="grid-line" x1={padL} x2={w - padR} y1={y} y2={y}/><text className="axis-text" x={padL - 8} y={y + 3} textAnchor="end">{Math.round(max * p)}</text></g>;
         })}
-        {areaD && <path className="area-rise" d={areaD} fill="url(#trendg)"/>}
-        {lineD && <path className="line-draw" style={{ "--len": len }} d={lineD} fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>}
+        {area && <path className="area-rise" d={area} fill="url(#trendg)"/>}
+        {pts && <polyline className="line-draw" style={{ "--len": len }} points={pts} fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>}
         {series.map((d, i) => i % Math.ceil(series.length / 8) === 0 && (
           <text key={"x" + i} className="axis-text" x={xOf(i)} y={height - 9} textAnchor="middle">
             {new Date(d.ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
