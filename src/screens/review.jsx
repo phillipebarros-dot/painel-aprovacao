@@ -498,44 +498,48 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                 <Button variant="primary" size="sm" icon="plus" disabled={!linkDraft.trim()} onClick={addLink}>Registrar link</Button>
               </div>
               <div className="row gap-2" style={{ marginBottom: links.length ? 14 : 0, flexWrap: "wrap" }}>
-                <span className="body-xs muted" style={{ alignSelf: "center" }}>Para reanexar arquivos, use os botoes dentro de cada bloco de endereco acima.</span>
-                {(() => { return null; // Botoes movidos para blocos de endereco
-                  // Regras de reanexar dinâmicas conforme tipo de mídia (meio) do checking
-                  const meio = (checking.meio || "").trim().toUpperCase();
-                  const REUPLOAD_MAP = {
-                    OD: [["foto","de perto"],["foto","de longe"],["foto","noturna"]],
-                    FL: [["foto","de perto"],["foto","de longe"],["foto","noturna"]],
-                    DO: [["foto","de perto"],["foto","de longe"],["video","diurno"],["pdf","relatorio exibicoes"]],
-                    BD: [["foto","frota"],["pdf","relatorio"]],
-                    TV: [["pdf","relatorio veiculacao"]],
-                    RD: [["pdf","relatorio veiculacao"],["foto",""],["video",""]],
-                    JO: [["pdf","pagina escaneada"],["foto",""]],
-                    RV: [["pdf","revista digital"],["foto","capa + pagina"]],
-                    CI: [["pdf","relatorio exibicao"]],
-                    CS: [["video","campanha"],["pdf","fotos datadas"],["pdf","relatorio"]],
-                    IN: [["pdf","relatorio veiculacao"],["foto","prints"]],
-                    AT: [["pdf","relatorio fotografico"],["video",""],["foto",""]],
-                    PY: [["foto","material produzido"],["pdf","nota fiscal"]],
-                    MA: [["foto","relatorio fotografico"],["pdf","descricao acao"]],
-                    MT: [["pdf","relatorio estacoes"],["foto","amostrais"]],
-                    ME: [["pdf","relatorio pontos"],["foto","diurnas"],["foto","noturnas"]],
-                    MN: [["foto","todos pontos"],["pdf","relacao locais"]],
-                    AS: [["pdf","clipping midia"],["pdf","relatorio resultados"]],
-                  };
-                  const rules = REUPLOAD_MAP[meio] || [["foto","de perto"],["foto","de longe"],["pdf",""],["video",""]];
-                  const allowAudio = meio === "RD";
-                  const iconMap = { foto: "image", pdf: "pdf", video: "play" };
-                  const labelMap = { foto: "Foto", pdf: "PDF", video: "Vídeo" };
-                  return <>
-                    {rules.map(([kind, detail], i) => (
-                      <button key={i} className="pill pill-neutral" style={{ cursor: "pointer" }} onClick={() => addReupload(kind, detail)}>
-                        <Icon name={iconMap[kind] || "image"} size={12}/> {labelMap[kind]}{detail ? ` ${detail}` : ""}
-                      </button>
-                    ))}
-                    {allowAudio && <button className="pill pill-neutral" style={{ cursor: "pointer" }} onClick={() => addReupload("foto", "audio")}><Icon name="play" size={12}/> Áudio</button>}
-                    {!allowAudio && <span className="body-xs muted" style={{ alignSelf: "center" }}>áudio não permitido</span>}
-                  </>;
-                })()}
+                {(() => {
+                   const meio = (checking.meio || "").trim().toUpperCase();
+                   const isOOHMeio = ["OD", "FL", "DO"].includes(meio);
+                   // Para meios OOH com enderecos, os botoes ficam por endereco (acima)
+                   if (isOOHMeio && assets.some(g => g.endereco)) {
+                     return <span className="body-xs muted" style={{ alignSelf: "center" }}>Para reanexar, use os botoes em cada bloco de endereco acima.</span>;
+                   }
+                   // Para meios nao-OOH ou sem enderecos, manter botoes genericos aqui
+                   const REUPLOAD_MAP = {
+                     OD: [["foto","de perto"],["foto","de longe"],["foto","noturna"]],
+                     FL: [["foto","de perto"],["foto","de longe"],["foto","noturna"]],
+                     DO: [["foto","de perto"],["foto","de longe"],["video","diurno"],["pdf","relatorio exibicoes"]],
+                     BD: [["foto","frota"],["pdf","relatorio"]],
+                     TV: [["pdf","relatorio veiculacao"]],
+                     RD: [["pdf","relatorio veiculacao"],["foto",""],["video",""]],
+                     JO: [["pdf","pagina escaneada"],["foto",""]],
+                     RV: [["pdf","revista digital"],["foto","capa + pagina"]],
+                     CI: [["pdf","relatorio exibicao"]],
+                     CS: [["video","campanha"],["pdf","fotos datadas"],["pdf","relatorio"]],
+                     IN: [["pdf","relatorio veiculacao"],["foto","prints"]],
+                     AT: [["pdf","relatorio fotografico"],["video",""],["foto",""]],
+                     PY: [["foto","material produzido"],["pdf","nota fiscal"]],
+                     MA: [["foto","relatorio fotografico"],["pdf","descricao acao"]],
+                     MT: [["pdf","relatorio estacoes"],["foto","amostrais"]],
+                     ME: [["pdf","relatorio pontos"],["foto","diurnas"],["foto","noturnas"]],
+                     MN: [["foto","todos pontos"],["pdf","relacao locais"]],
+                     AS: [["pdf","clipping midia"],["pdf","relatorio resultados"]],
+                   };
+                   const rules = REUPLOAD_MAP[meio] || [["foto",""],["pdf",""],["video",""]];
+                   const allowAudio = meio === "RD";
+                   const iconMap = { foto: "image", pdf: "pdf", video: "play" };
+                   const labelMap = { foto: "Foto", pdf: "PDF", video: "Video" };
+                   return <>
+                     <span className="tb-view-lbl" style={{ alignSelf: "center" }}>Reanexar:</span>
+                     {rules.map(([kind, detail], i) => (
+                       <button key={i} className="pill pill-neutral" style={{ cursor: "pointer" }} onClick={() => addReupload(kind, detail)}>
+                         <Icon name={iconMap[kind] || "image"} size={12}/> {labelMap[kind]}{detail ? ` ${detail}` : ""}
+                       </button>
+                     ))}
+                     {allowAudio && <button className="pill pill-neutral" style={{ cursor: "pointer" }} onClick={() => addReupload("foto", "audio")}><Icon name="play" size={12}/> Audio</button>}
+                   </>;
+                 })()}
               </div>
               {links.length > 0 && (
                 <div className="col" style={{ gap: 0 }}>

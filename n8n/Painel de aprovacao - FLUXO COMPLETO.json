@@ -4341,6 +4341,30 @@
                                                                                      "name":  "fileBase64",
                                                                                      "value":  "={{ $(\u0027Validar Dados\u0027).first().json.body.file_base64 }}",
                                                                                      "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "s-endereco",
+                                                                                     "name":  "endereco",
+                                                                                     "value":  "={{ $(\u0027Validar Dados\u0027).first().json.body.endereco || \u0027\u0027 }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "s-detalhe",
+                                                                                     "name":  "detalhe",
+                                                                                     "value":  "={{ $(\u0027Validar Dados\u0027).first().json.body.detail || \u0027complemento\u0027 }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "s-npi",
+                                                                                     "name":  "n_pi",
+                                                                                     "value":  "={{ $(\u0027BigQuery - Pasta PI\u0027).first().json.n_pi || $(\u0027Validar Dados\u0027).first().json.body.n_pi || \u0027\u0027 }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "s-submid",
+                                                                                     "name":  "submission_id",
+                                                                                     "value":  "={{ $(\u0027BigQuery - Pasta PI\u0027).first().json.submission_id || $(\u0027Validar Dados\u0027).first().json.body.submission_id || \u0027\u0027 }}",
+                                                                                     "type":  "string"
                                                                                  }
                                                                              ]
                                                          },
@@ -4414,7 +4438,7 @@
                                                            "value":  "checking-grupoom",
                                                            "mode":  "list"
                                                        },
-                                         "sqlQuery":  "INSERT INTO `checking-grupoom.form_checking.audit_logs`\n(id, user_id, action, entity, entity_id, payload, ip, created_at)\nVALUES (\n  GENERATE_UUID(),\n  \u0027{{ $(\u0027Validar Dados\u0027).first().json._auth.email }}\u0027,\n  \u0027upload_supplement\u0027,\n  \u0027checking\u0027,\n  \u0027{{ $(\u0027BigQuery - Pasta PI\u0027).first().json.submission_id }}\u0027,\n  \u0027{{ JSON.stringify({ file: $(\u0027Suplemento - Montar Dados\u0027).first().json.fileName, link: $json.webViewLink || \"\" }) }}\u0027,\n  \u0027\u0027,\n  CURRENT_TIMESTAMP()\n)",
+                                         "sqlQuery":  "INSERT INTO `checking-grupoom.form_checking.audit_logs`\n(id, user_id, action, entity, entity_id, payload, ip, created_at)\nVALUES (\n  GENERATE_UUID(),\n  \u0027{{ $(\u0027Validar Dados\u0027).first().json._auth.email }}\u0027,\n  \u0027upload_supplement\u0027,\n  \u0027checking\u0027,\n  \u0027{{ $(\u0027BigQuery - Pasta PI\u0027).first().json.submission_id }}\u0027,\n  \u0027{{ JSON.stringify({ file: $(\u0027Suplemento - Montar Dados\u0027).first().json.fileName, link: $json.webViewLink || \"\", endereco: $(\u0027Suplemento - Montar Dados\u0027).first().json.endereco || \"\", detalhe: $(\u0027Suplemento - Montar Dados\u0027).first().json.detalhe || \"\" }) }}\u0027,\n  \u0027\u0027,\n  CURRENT_TIMESTAMP()\n);\n\nINSERT INTO `checking-grupoom.form_checking.checking_imagens`\n(submission_id, n_pi, id_pasta, id_imagem, detalhe, endereco)\nVALUES (\n  \u0027{{ $(\u0027Suplemento - Montar Dados\u0027).first().json.submission_id }}\u0027,\n  \u0027{{ $(\u0027Suplemento - Montar Dados\u0027).first().json.n_pi }}\u0027,\n  \u0027{{ $(\u0027Suplemento - Montar Dados\u0027).first().json.folderId }}\u0027,\n  \u0027{{ $json.id || \u0027\u0027 }}\u0027,\n  \u0027{{ $(\u0027Suplemento - Montar Dados\u0027).first().json.detalhe }}\u0027,\n  \u0027{{ $(\u0027Suplemento - Montar Dados\u0027).first().json.endereco }}\u0027\n)",
                                          "options":  {
 
                                                      }
