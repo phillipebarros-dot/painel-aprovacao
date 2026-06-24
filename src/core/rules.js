@@ -29,12 +29,12 @@
       instrucaoU: "Cobertura 100% dos pontos. Foto de perto + longe. Se iluminado: +1 foto noturna." },
     DO: { code: "DO", nome: "DOOH (Out of Home Digital)", periodo: true,
       generico: [
-        { label: "Relatório Fotográfico de Todos os Pontos", req: true, mult: true, max: 20, fmt: "JPG, PNG, HEIC, PDF, ZIP" },
-        { label: "Relatório de Exibições Automatizado", req: true, mult: true, max: 20, fmt: "PDF, XLSX, CSV" },
-        { label: "Vídeo Diurno", req: true, mult: true, max: 20, fmt: "MP4, MOV, AVI, WEBM", bug: true },
+        { label: "Relatorio Fotografico de Todos os Pontos", req: true, mult: true, max: 20, fmt: "JPG, PNG, HEIC, PDF, ZIP" },
+        { label: "Relatorio de Exibicoes Automatizado", req: true, mult: true, max: 20, fmt: "PDF, XLSX, CSV" },
+        // FIX Marlene: Video Diurno agora opcional (antes req:true impedia envio de veiculo sem video)
+        { label: "Video Diurno", req: false, mult: true, max: 20, fmt: "MP4, MOV, AVI, WEBM" },
       ],
-      instrucao: "Relatório fotográfico de todos os pontos + relatório de exibições + vídeo diurno.",
-      nota: "BUG reportado pela Marlene: o campo Vídeo Diurno está como obrigatório na versão genérica. Veículo sem vídeo fica impedido de enviar. Recomendado tornar opcional." },
+      instrucao: "Relatorio fotografico de todos os pontos + relatorio de exibicoes. Video diurno opcional." },
     FL: { code: "FL", nome: "Frontlight / Gigadoor", uninterOnly: true, hasNight: true,
       generico: [{ label: "Relatório Fotográfico com Endereço (diurno/noturno se iluminado)", req: true, mult: true, max: 20, fmt: "JPG, PNG, HEIC, PDF, ZIP" }],
       uninter: [
