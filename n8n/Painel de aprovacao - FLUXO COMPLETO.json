@@ -47,6 +47,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -107,6 +115,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -181,6 +197,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -339,6 +363,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -371,6 +403,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -426,6 +466,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -480,6 +528,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -599,6 +655,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -746,6 +810,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -803,6 +875,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -875,6 +955,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -976,6 +1064,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -1417,6 +1513,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -1449,6 +1553,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -1496,6 +1608,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -1553,6 +1673,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -1610,6 +1738,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -1694,6 +1830,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -1738,6 +1882,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -1848,6 +2000,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -1906,6 +2066,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -1964,6 +2132,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -2055,6 +2231,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -2142,6 +2326,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -2406,6 +2598,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -3489,7 +3689,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ============================================================\n// VALIDAR DADOS - Schema de validacao + RBAC + VIEWER BLOCK\n// ============================================================\nconst item = $input.first().json;\nconst { action, body } = item;\nconst authenticatedUser = item._auth || null;\n\n// ============================================================\n// FIX C: Guard anti-rej_\n// ============================================================\nconst actionsThatUseId = ['approve', 'reject', 'resubmit_checking'];\nif (actionsThatUseId.includes(action)) {\n  const targetId = body.id || body.submission_id || '';\n  if (String(targetId).startsWith('rej_')) {\n    throw new Error('INVALID_ID: Operação não permitida em registros de log de rejeição (rej_)');\n  }\n}\n\n// ============================================================\n// RBAC: Acoes bloqueadas para viewers (setor Midia)\n// Viewers podem apenas visualizar — NUNCA aprovar/rejeitar\n// ============================================================\nconst VIEWER_BLOCKED_ACTIONS = ['approve', 'reject', 'resubmit_checking', 'register_user', 'update_user_role', 'update_user_status', 'update_checking_status', 'save_sla_config', 'distribute_demands', 'toggle_automation', 'assign_responsible', 'set_supplier_rating', 'log_security_event'];\nif (VIEWER_BLOCKED_ACTIONS.includes(action) && authenticatedUser && authenticatedUser.role === 'viewer') {\n  throw new Error('FORBIDDEN: Viewers do setor Midia nao possuem permissao para esta acao');\n}\n\nconst schemas = {\n  login_sso:          { required: ['id_token'] },\n  approve:            { required: ['id'] },\n  reject:             { required: ['id', 'reason'] },\n  logout:             { required: [] },\n  resubmit_checking:  { required: ['submission_id'] },\n  login:              { required: ['email', 'password'] },\n  register_user:      { required: ['name', 'email', 'password'], adminOnly: true },\n  update_user_role:   { required: ['userId', 'newRole'], adminOnly: true },\n  update_user_status: { required: ['userId', 'status'], adminOnly: true },\n  get_users:          { required: [], adminOnly: true },\n  log_security_event: { required: ['event_type', 'severity'], adminOnly: true },\n  get_security_alerts: { required: [], adminOnly: true },\n  heartbeat:          { required: [] },\n  get_online_users:   { required: [] },\n  get_notifications:  { required: [] },\n  proxy_file:         { required: [] },\n  update_checking_status: { required: ['id', 'status'], adminOnly: true },\n  save_sla_config:    { required: [], adminOnly: true },\n  toggle_automation:  { required: ['automation_id'], adminOnly: true },\n  distribute_demands: { required: [], adminOnly: true },\n  upload_supplement:  { required: ['submission_id'] }\n};\n\nconst schema = schemas[action];\nif (schema) {\n  const missing = (schema.required || []).filter(f => !body[f]);\n  if (missing.length > 0) throw new Error('MISSING_FIELDS: ' + missing.join(', '));\n  if (schema.adminOnly && (!authenticatedUser || authenticatedUser.role !== 'admin')) {\n    throw new Error('FORBIDDEN: Acesso restrito a administradores');\n  }\n}\n\nif (action === 'update_user_role') {\n  const allowedRoles = ['admin', 'analyst', 'viewer'];\n  if (!allowedRoles.includes(body.newRole)) throw new Error('INVALID_ROLE: Role must be admin, analyst or viewer');\n}\n\nif (action === 'update_user_status') {\n  const allowedStatus = ['active', 'inactive'];\n  if (!allowedStatus.includes(body.status)) throw new Error('INVALID_STATUS: Status must be active or inactive');\n}\n\nif (action === 'register_user' && body.email) {\n  const allowedDomains = ['@grupoom.com.br', '@opusmultipla.com.br'];\n  const emailLower = body.email.toLowerCase();\n  if (!allowedDomains.some(d => emailLower.endsWith(d))) {\n    throw new Error('FORBIDDEN: Email deve ser do dominio corporativo');\n  }\n}\n\n// Logout já foi processado no auth node, responder diretamente\nif (action === 'logout' && $input.first().json._logoutSuccess) {\n  // O roteador não tem branch para logout, então retornamos aqui\n}\n\nreturn $input.all();"
+        "jsCode": "// ============================================================\n// VALIDAR DADOS - Schema de validacao + RBAC + VIEWER BLOCK\n// ============================================================\nconst item = $input.first().json;\nconst { action, body } = item;\nconst authenticatedUser = item._auth || null;\n\n// ============================================================\n// FIX C: Guard anti-rej_\n// ============================================================\nconst actionsThatUseId = ['approve', 'reject', 'resubmit_checking'];\nif (actionsThatUseId.includes(action)) {\n  const targetId = body.id || body.submission_id || '';\n  if (String(targetId).startsWith('rej_')) {\n    throw new Error('INVALID_ID: Operação não permitida em registros de log de rejeição (rej_)');\n  }\n}\n\n// ============================================================\n// RBAC: Acoes bloqueadas para viewers (setor Midia)\n// Viewers podem apenas visualizar — NUNCA aprovar/rejeitar\n// ============================================================\nconst VIEWER_BLOCKED_ACTIONS = ['approve', 'reject', 'resubmit_checking', 'register_user', 'update_user_role', 'update_user_status', 'update_checking_status', 'save_sla_config', 'distribute_demands', 'toggle_automation', 'assign_responsible', 'set_supplier_rating', 'log_security_event'];\nif (VIEWER_BLOCKED_ACTIONS.includes(action) && authenticatedUser && authenticatedUser.role === 'viewer') {\n  throw new Error('FORBIDDEN: Viewers do setor Midia nao possuem permissao para esta acao');\n}\n\nconst schemas = {\n  login_sso:          { required: ['id_token'] },\n  approve:            { required: ['id'] },\n  reject:             { required: ['id', 'reason'] },\n  logout:             { required: [] },\n  resubmit_checking:  { required: ['submission_id'] },\n  login:              { required: ['email', 'password'] },\n  register_user:      { required: ['name', 'email', 'password'], adminOnly: true },\n  update_user_role:   { required: ['userId', 'newRole'], adminOnly: true },\n  update_user_status: { required: ['userId', 'status'], adminOnly: true },\n  get_users:          { required: [], adminOnly: true },\n  log_security_event: { required: ['event_type', 'severity'], adminOnly: true },\n  get_security_alerts: { required: [], adminOnly: true },\n  heartbeat:          { required: [] },\n  get_online_users:   { required: [] },\n  get_notifications:  { required: [] },\n  proxy_file:         { required: [] },\n  update_checking_status: { required: ['id', 'status'], adminOnly: true },\n  save_sla_config:    { required: [], adminOnly: true },\n  toggle_automation:  { required: ['automation_id'], adminOnly: true },\n  distribute_demands: { required: [], adminOnly: true },\n  upload_supplement:  { required: ['submission_id'] },\n  'get_automations':  { required: [], adminOnly: true },\n  'get_sla_config':  { required: [], adminOnly: true },\n  'copilot_analyze':  { required: [] },\n  'get_board_sheets':  { required: [] },\n  'get_history':  { required: [] },\n  'add_comment':  { required: [] },\n  'get_responsibles':  { required: [] },\n  'get_checking_files':  { required: [] },\n  'get_checkings':  { required: [] },\n  'get_board':  { required: [] },\n  'get_suppliers':  { required: [] },\n  'get_alerts':  { required: [] },\n  'get_all_checkings':  { required: [] },\n  'get_pending':  { required: [] },\n  'get_stats':  { required: [] }\n};\n\nconst schema = schemas[action];\nif (schema) {\n  const missing = (schema.required || []).filter(f => !body[f]);\n  if (missing.length > 0) throw new Error('MISSING_FIELDS: ' + missing.join(', '));\n  if (schema.adminOnly && (!authenticatedUser || authenticatedUser.role !== 'admin')) {\n    throw new Error('FORBIDDEN: Acesso restrito a administradores');\n  }\n}\n\n// ============================================================\n// SECURITY: Bloquear actions desconhecidas\n// ============================================================\nif (!schema && action !== 'health_check') {\n  throw new Error('INVALID_ACTION: Acao desconhecida: ' + String(action).substring(0, 30));\n}\n\n\nif (action === 'update_user_role') {\n  const allowedRoles = ['admin', 'analyst', 'viewer'];\n  if (!allowedRoles.includes(body.newRole)) throw new Error('INVALID_ROLE: Role must be admin, analyst or viewer');\n}\n\nif (action === 'update_user_status') {\n  const allowedStatus = ['active', 'inactive'];\n  if (!allowedStatus.includes(body.status)) throw new Error('INVALID_STATUS: Status must be active or inactive');\n}\n\nif (action === 'register_user' && body.email) {\n  const allowedDomains = ['@grupoom.com.br', '@opusmultipla.com.br'];\n  const emailLower = body.email.toLowerCase();\n  if (!allowedDomains.some(d => emailLower.endsWith(d))) {\n    throw new Error('FORBIDDEN: Email deve ser do dominio corporativo');\n  }\n}\n\n// Logout já foi processado no auth node, responder diretamente\nif (action === 'logout' && $input.first().json._logoutSuccess) {\n  // O roteador não tem branch para logout, então retornamos aqui\n}\n\nreturn $input.all();"
       },
       "id": "0a5c7cc2-bbc3-49f5-af8b-202769e3804e",
       "name": "Validar Dados",
@@ -3517,7 +3717,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ============================================================\n// SANITIZAR INPUT - Versao reforcada com validacao de tipos\n// v2: Sanitizacao em dois niveis (strict vs safe)\n// ============================================================\n\n// Campos que NAO devem ser sanitizados (tokens, hashes)\nconst SKIP_FIELDS = ['id_token', 'token', 'password', 'password_hash'];\n\n// Campos de texto livre - sanitizacao LEVE (so escapa quotes SQL)\nconst TEXT_FIELDS = ['reason', 'rejection_reason', 'name', 'observacoes', 'comentario', 'responsavel_nome', 'conta'];\n\n// Tipos esperados por campo (whitelist de validacao)\nconst FIELD_TYPES = {\n  id:              'alphanumeric',\n  submission_id:   'alphanumeric',\n  userId:          'alphanumeric',\n  email:           'email',\n  name:            'string_safe',\n  role:            'enum:admin,analyst,viewer',\n  status:          'enum:active,inactive',\n  newRole:         'enum:admin,analyst,viewer',\n  grupo:           'string_safe',\n  approval_user:   'string_safe',\n  reason:          'string_safe',\n  n_pi:            'alphanumeric',\n  cliente:         'string_safe',\n  veiculo:         'string_safe',\n  file_id:         'alphanumeric',\n  action:          'alpha_underscore',\n  event_type:      'alpha_underscore',\n  severity:        'alpha_underscore',\n  data_inicio:     'date',\n  data_fim:        'date',\n  mes_referencia:  'month',\n  responsavel:     'email',\n  horas_atencao:   'integer',\n  horas_risco:     'integer',\n  rating:          'integer'\n};\n\n// Validadores por tipo\nconst validators = {\n  uuid: (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v),\n  email: (v) => /^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$/.test(v) && v.length <= 254,\n  string_strict: (v) => typeof v === 'string' && v.length <= 500,\n  string_safe: (v) => typeof v === 'string' && v.length <= 1000,\n  alphanumeric: (v) => /^[a-zA-Z0-9_\\-./]+$/.test(v) && v.length <= 100,\n  alpha_underscore: (v) => /^[a-zA-Z_]+$/.test(v) && v.length <= 50,\n  date: (v) => /^\\d{4}-\\d{2}-\\d{2}$/.test(v),\n  integer: (v) => Number.isInteger(Number(v)),\n  month: (v) => /^\\d{4}-\\d{2}$/.test(v)\n};\n\nfunction validateEnum(value, allowed) {\n  return allowed.split(',').includes(value);\n}\n\n// Sanitizacao LEVE: so escapa quotes SQL e remove control chars\n// Preserva palavras como 'Selecionar', acentos, pontuacao normal\nfunction sanitizeSafe(val) {\n  if (typeof val !== 'string') return val;\n  return val\n    .replace(/'/g, \"''\")\n    .replace(/[\\x00-\\x1f]/g, '')\n    .replace(/--/g, '')\n    .replace(/\\/\\*/g, '')\n    .replace(/\\*\\//g, '');\n}\n\n// Sanitizacao ESTRITA: strip de keywords SQL (para campos que vao em WHERE/SET)\nfunction sanitizeStrict(val) {\n  if (typeof val !== 'string') return val;\n  return val\n    .replace(/\\\\/g, '\\\\\\\\')\n    .replace(/'/g, \"\\\\'\")\n    .replace(/[\\x00-\\x1f]/g, '')\n    .replace(/--/g, '')\n    .replace(/\\/\\*/g, '')\n    .replace(/\\*\\//g, '')\n    .replace(/;/g, '')\n    .replace(/\\bUNION\\b/gi, '')\n    .replace(/\\bSELECT\\b/gi, '')\n    .replace(/\\bINSERT\\b/gi, '')\n    .replace(/\\bUPDATE\\b/gi, '')\n    .replace(/\\bDELETE\\b/gi, '')\n    .replace(/\\bDROP\\b/gi, '')\n    .replace(/\\bEXEC\\b/gi, '')\n    .replace(/\\bALTER\\b/gi, '');\n}\n\n// Processar body\nconst items = $input.all();\nconst body = items[0].json.body || {};\nconst query = items[0].json.query || {};\nconst action = items[0].json.action || {};\n\nfunction processObj(obj, source) {\n  const result = {};\n  for (const [key, val] of Object.entries(obj)) {\n    if (SKIP_FIELDS.includes(key)) {\n      result[key] = val;\n      continue;\n    }\n\n    // Validacao de tipo se definida\n    const expectedType = FIELD_TYPES[key];\n    if (expectedType && typeof val === 'string' && val.length > 0) {\n      if (expectedType.startsWith('enum:')) {\n        if (!validateEnum(val, expectedType.slice(5))) {\n          throw new Error(`INVALID_INPUT: Campo '${key}' contem valor nao permitido`);\n        }\n        result[key] = val;\n        continue;\n      }\n      const validator = validators[expectedType];\n      if (action !== 'generate_slides') {\n        if (validator && !validator(val)) {\n          throw new Error(`INVALID_INPUT: Campo '${key}' tem formato invalido`);\n        }\n      }\n    }\n\n    // Limitar tamanho maximo de qualquer campo\n    if (typeof val === 'string' && val.length > 5000) {\n      throw new Error(`INVALID_INPUT: Campo '${key}' excede tamanho maximo`);\n    }\n\n    // Sanitizar: LEVE para campos de texto, ESTRITA para o resto\n    if (typeof val === 'string') {\n      result[key] = TEXT_FIELDS.includes(key) ? sanitizeSafe(val) : sanitizeStrict(val);\n    } else {\n      result[key] = val;\n    }\n  }\n  return result;\n}\n\nitems[0].json.body = processObj(body, 'body');\nitems[0].json.query = processObj(query, 'query');\nreturn items;"
+        "jsCode": "// ============================================================\n\n// SECURITY: Limitar tamanho maximo de inputs\nconst MAX_INPUT_LENGTH = 5000;\nfunction truncateDeep(obj, depth = 0) {\n  if (depth > 10) return obj;\n  if (typeof obj === 'string' && obj.length > MAX_INPUT_LENGTH) return obj.substring(0, MAX_INPUT_LENGTH);\n  if (Array.isArray(obj)) return obj.slice(0, 100).map(v => truncateDeep(v, depth + 1));\n  if (obj && typeof obj === 'object') {\n    const r = {};\n    for (const [k, v] of Object.entries(obj).slice(0, 50)) r[k] = truncateDeep(v, depth + 1);\n    return r;\n  }\n  return obj;\n}\nif (item.body) item.body = truncateDeep(item.body);\n\n// SANITIZAR INPUT - Versao reforcada com validacao de tipos\n// v2: Sanitizacao em dois niveis (strict vs safe)\n// ============================================================\n\n// Campos que NAO devem ser sanitizados (tokens, hashes)\nconst SKIP_FIELDS = ['id_token', 'token', 'password', 'password_hash'];\n\n// Campos de texto livre - sanitizacao LEVE (so escapa quotes SQL)\nconst TEXT_FIELDS = ['reason', 'rejection_reason', 'name', 'observacoes', 'comentario', 'responsavel_nome', 'conta'];\n\n// Tipos esperados por campo (whitelist de validacao)\nconst FIELD_TYPES = {\n  id:              'alphanumeric',\n  submission_id:   'alphanumeric',\n  userId:          'alphanumeric',\n  email:           'email',\n  name:            'string_safe',\n  role:            'enum:admin,analyst,viewer',\n  status:          'enum:active,inactive',\n  newRole:         'enum:admin,analyst,viewer',\n  grupo:           'string_safe',\n  approval_user:   'string_safe',\n  reason:          'string_safe',\n  n_pi:            'alphanumeric',\n  cliente:         'string_safe',\n  veiculo:         'string_safe',\n  file_id:         'alphanumeric',\n  action:          'alpha_underscore',\n  event_type:      'alpha_underscore',\n  severity:        'alpha_underscore',\n  data_inicio:     'date',\n  data_fim:        'date',\n  mes_referencia:  'month',\n  responsavel:     'email',\n  horas_atencao:   'integer',\n  horas_risco:     'integer',\n  rating:          'integer'\n};\n\n// Validadores por tipo\nconst validators = {\n  uuid: (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v),\n  email: (v) => /^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$/.test(v) && v.length <= 254,\n  string_strict: (v) => typeof v === 'string' && v.length <= 500,\n  string_safe: (v) => typeof v === 'string' && v.length <= 1000,\n  alphanumeric: (v) => /^[a-zA-Z0-9_\\-./]+$/.test(v) && v.length <= 100,\n  alpha_underscore: (v) => /^[a-zA-Z_]+$/.test(v) && v.length <= 50,\n  date: (v) => /^\\d{4}-\\d{2}-\\d{2}$/.test(v),\n  integer: (v) => Number.isInteger(Number(v)),\n  month: (v) => /^\\d{4}-\\d{2}$/.test(v)\n};\n\nfunction validateEnum(value, allowed) {\n  return allowed.split(',').includes(value);\n}\n\n// Sanitizacao LEVE: so escapa quotes SQL e remove control chars\n// Preserva palavras como 'Selecionar', acentos, pontuacao normal\nfunction sanitizeSafe(val) {\n  if (typeof val !== 'string') return val;\n  return val\n    .replace(/'/g, \"''\")\n    .replace(/[\\x00-\\x1f]/g, '')\n    .replace(/--/g, '')\n    .replace(/\\/\\*/g, '')\n    .replace(/\\*\\//g, '');\n}\n\n// Sanitizacao ESTRITA: strip de keywords SQL (para campos que vao em WHERE/SET)\nfunction sanitizeStrict(val) {\n  if (typeof val !== 'string') return val;\n  return val\n    .replace(/\\\\/g, '\\\\\\\\')\n    .replace(/'/g, \"\\\\'\")\n    .replace(/[\\x00-\\x1f]/g, '')\n    .replace(/--/g, '')\n    .replace(/\\/\\*/g, '')\n    .replace(/\\*\\//g, '')\n    .replace(/;/g, '')\n    .replace(/\\bUNION\\b/gi, '')\n    .replace(/\\bSELECT\\b/gi, '')\n    .replace(/\\bINSERT\\b/gi, '')\n    .replace(/\\bUPDATE\\b/gi, '')\n    .replace(/\\bDELETE\\b/gi, '')\n    .replace(/\\bDROP\\b/gi, '')\n    .replace(/\\bEXEC\\b/gi, '')\n    .replace(/\\bALTER\\b/gi, '');\n}\n\n// Processar body\nconst items = $input.all();\nconst body = items[0].json.body || {};\nconst query = items[0].json.query || {};\nconst action = items[0].json.action || {};\n\nfunction processObj(obj, source) {\n  const result = {};\n  for (const [key, val] of Object.entries(obj)) {\n    if (SKIP_FIELDS.includes(key)) {\n      result[key] = val;\n      continue;\n    }\n\n    // Validacao de tipo se definida\n    const expectedType = FIELD_TYPES[key];\n    if (expectedType && typeof val === 'string' && val.length > 0) {\n      if (expectedType.startsWith('enum:')) {\n        if (!validateEnum(val, expectedType.slice(5))) {\n          throw new Error(`INVALID_INPUT: Campo '${key}' contem valor nao permitido`);\n        }\n        result[key] = val;\n        continue;\n      }\n      const validator = validators[expectedType];\n      if (action !== 'generate_slides') {\n        if (validator && !validator(val)) {\n          throw new Error(`INVALID_INPUT: Campo '${key}' tem formato invalido`);\n        }\n      }\n    }\n\n    // Limitar tamanho maximo de qualquer campo\n    if (typeof val === 'string' && val.length > 5000) {\n      throw new Error(`INVALID_INPUT: Campo '${key}' excede tamanho maximo`);\n    }\n\n    // Sanitizar: LEVE para campos de texto, ESTRITA para o resto\n    if (typeof val === 'string') {\n      result[key] = TEXT_FIELDS.includes(key) ? sanitizeSafe(val) : sanitizeStrict(val);\n    } else {\n      result[key] = val;\n    }\n  }\n  return result;\n}\n\nitems[0].json.body = processObj(body, 'body');\nitems[0].json.query = processObj(query, 'query');\nreturn items;"
       },
       "id": "12b390e2-6254-4a28-beb6-a32258a4c7a4",
       "name": "Sanitizar Input",
@@ -3604,6 +3804,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -3731,6 +3939,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -3788,6 +4004,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -3903,6 +4127,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -3935,6 +4167,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4151,6 +4391,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4343,6 +4591,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4375,6 +4631,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4434,6 +4698,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4492,6 +4764,14 @@
               {
                 "name": "Access-Control-Allow-Headers",
                 "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4557,6 +4837,14 @@
               {
                 "name": "Access-Control-Allow-Origin",
                 "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4606,6 +4894,14 @@
               {
                 "name": "Access-Control-Allow-Origin",
                 "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4656,6 +4952,14 @@
               {
                 "name": "Access-Control-Allow-Origin",
                 "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4705,6 +5009,14 @@
               {
                 "name": "Access-Control-Allow-Origin",
                 "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4755,6 +5067,14 @@
               {
                 "name": "Access-Control-Allow-Origin",
                 "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4830,6 +5150,14 @@
               {
                 "name": "Access-Control-Allow-Origin",
                 "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4880,6 +5208,14 @@
               {
                 "name": "Access-Control-Allow-Origin",
                 "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4929,6 +5265,14 @@
               {
                 "name": "Access-Control-Allow-Origin",
                 "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -4953,6 +5297,14 @@
               {
                 "name": "Access-Control-Allow-Origin",
                 "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -5019,6 +5371,14 @@
               {
                 "value": "Content-Type, Authorization",
                 "name": "Access-Control-Allow-Headers"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
               }
             ]
           }
@@ -5154,6 +5514,10 @@
               {
                 "name": "Cache-Control",
                 "value": "public, max-age=3600"
+              },
+              {
+                "name": "X-Content-Type-Options",
+                "value": "nosniff"
               }
             ]
           }
