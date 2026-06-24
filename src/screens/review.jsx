@@ -344,63 +344,58 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
             </div>
           )}
           {assets.map((group, gi) => {
-            // FIX 1: Analise de completude revisada. Nao depende exclusivamente de keyword.
-            // Para OOH, exige QUANTIDADE minima de imagens por endereco (regra do meio).
-            // Keyword matching serve como DICA, nao como veredito final.
+            // REGRA FUNDAMENTAL: "foto perto + foto longe POR ENDERECO" e regra UNINTER.
+            // Para clientes genericos, a exigencia e um relatorio fotografico consolidado.
             const meio = (checking.meio || "").trim().toUpperCase();
             const isOOH = ["OD", "FL", "DO"].includes(meio);
+            // Verificar se e Uninter via RULES_API (mesma logica do card de regras)
+            const RA = window.RULES_API;
+            const isUninter = RA ? RA.rulesForChecking(checking).isUninter : false;
             const imageCount = group.files.filter(f => f.isImage).length;
             const videoCount = group.files.filter(f => f.isVideo).length;
-            const fileDetails = group.files.map(f => (f.detalhe || f.tag || "").toLowerCase());
 
-            // Regras de quantidade minima por meio OOH
-            const requiredTags = isOOH ? (() => {
+            // Chips de completude POR ENDERECO so aparecem para Uninter OOH
+            const requiredTags = (isOOH && isUninter) ? (() => {
               const tags = [
                 { key: "perto", label: "Foto perto", icon: "image", kind: "image" },
                 { key: "longe", label: "Foto longe", icon: "image", kind: "image" },
               ];
+              // FL Uninter: foto noturna obrigatoria
               if (meio === "FL") tags.push({ key: "noturna", label: "Noturna", icon: "image", kind: "image" });
-              if (meio === "DO") tags.push({ key: "video", label: "Video", icon: "play", kind: "video" });
+              // OD Uninter: foto noturna condicional (se ponto iluminado)
+              // DO Uninter grandes formatos: video opcional (nao obrigatorio)
+              if (meio === "DO") tags.push({ key: "video", label: "Video", icon: "play", kind: "video", optional: true });
               return tags;
             })() : null;
 
-            // FIX 1: contagem minima por tipo. Se ha imagens suficientes, marca como atendido
-            // mesmo que o fornecedor nao tenha nomeado como "perto"/"longe".
+            const fileDetails = group.files.map(f => (f.detalhe || f.tag || "").toLowerCase());
             const minPhotosNeeded = requiredTags ? requiredTags.filter(t => t.kind === "image").length : 0;
-            const minVideosNeeded = requiredTags ? requiredTags.filter(t => t.kind === "video").length : 0;
+            const minVideosNeeded = requiredTags ? requiredTags.filter(t => t.kind === "video" && !t.optional).length : 0;
             const photosOk = imageCount >= minPhotosNeeded;
             const videosOk = videoCount >= minVideosNeeded;
 
             const completeness = requiredTags?.map(t => {
-              // Tenta keyword match primeiro (dica)
               const keywordFound = fileDetails.some(d => d.includes(t.key));
-              // FIX 1: se nao encontrou por keyword mas ha quantidade suficiente,
-              // marca como "atendido por quantidade" (nao vermelho)
-              const countOk = t.kind === "image" ? photosOk : videosOk;
+              const countOk = t.kind === "image" ? photosOk : (t.optional ? true : videosOk);
               return { ...t, found: keywordFound, countOk };
             });
-            // FIX 1: allComplete agora considera QUANTIDADE, nao so keyword
             const allComplete = completeness?.every(c => c.found || c.countOk);
-            // FIX 1: reallyMissing = quantidade de arquivos abaixo do exigido
-            const reallyMissing = isOOH && (!photosOk || !videosOk);
+            const reallyMissing = isOOH && isUninter && (!photosOk || !videosOk);
             return (
             <div key={gi} className="col gap-3">
               <div className="row gap-3" style={{ alignItems: "baseline" }}>
-                {/* FIX 3: numero do bloco em cor neutra (antes era vermelho para incompletos) */}
                 <span style={{ fontSize: 22, lineHeight: 1, fontWeight: 600, color: "var(--ink-3)" }}>{String(gi + 1).padStart(2, "0")}</span>
-                {/* FIX 3: endereco com mais peso visual, rotulo discreto acima */}
                 <div className="col" style={{ gap: 2, flex: 1, minWidth: 0 }}>
                   <div className="eyebrow" style={{ fontSize: 9 }}>ENDERECO</div>
                   <div style={{ fontSize: 16, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.endereco || "(sem endereco)"}</div>
                 </div>
                 <span className="cell-mono muted">{group.files.length} arquivo{group.files.length !== 1 ? "s" : ""}</span>
               </div>
-              {/* FIX 3+5: status e reanexar fundidos numa unica linha. Chips sao dica, nao veredito */}
-              {isOOH && completeness && (
+              {/* Chips de completude: so para Uninter OOH */}
+              {isOOH && isUninter && completeness && (
                 <div className="row gap-2" style={{ flexWrap: "wrap", alignItems: "center" }}>
                   {completeness.map((c, ci) => {
                     const isOk = c.found || c.countOk;
-                    // FIX 1: chip clicavel = acao de reanexar se faltando E ha arquivos insuficientes
                     if (!isOk && reallyMissing && !isViewer) {
                       const kindMap = { perto: ["foto", "de perto"], longe: ["foto", "de longe"], noturna: ["foto", "noturna"], video: ["video", "diurno"] };
                       const pair = kindMap[c.key] || ["foto", c.key];
@@ -410,18 +405,23 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                         <Icon name="plus" size={10}/> {c.label}
                       </button>;
                     }
-                    // Chip de status (nao clicavel)
                     return <span key={ci} className={`pill ${isOk ? "pill-ok" : "pill-neutral"}`} style={{ fontSize: 11, padding: "3px 10px", gap: 4 }}>
                       <Icon name={isOk ? "check" : "info"} size={11}/> {c.label}
-                      {!c.found && c.countOk && <span style={{ fontSize: 9, opacity: 0.7 }}>(por qtd)</span>}
+                      {c.optional && <span style={{ fontSize: 9, opacity: 0.7 }}>(opcional)</span>}
+                      {!c.found && c.countOk && !c.optional && <span style={{ fontSize: 9, opacity: 0.7 }}>(por qtd)</span>}
                     </span>;
                   })}
-                  {/* FIX 2+3: texto limpo sem travessao. So aparece vermelho quando REALMENTE faltam arquivos */}
                   {reallyMissing
                     ? <span className="body-xs" style={{ color: "var(--alert)", fontWeight: 600 }}>Faltam arquivos</span>
                     : allComplete
                       ? <span className="body-xs" style={{ color: "var(--ok)", fontWeight: 600 }}>Completo</span>
                       : <span className="body-xs" style={{ color: "var(--ink-3)" }}>{imageCount} foto{imageCount !== 1 ? "s" : ""} enviada{imageCount !== 1 ? "s" : ""}</span>}
+                </div>
+              )}
+              {/* Para OOH generico (nao-Uninter): mostra contagem simples */}
+              {isOOH && !isUninter && (
+                <div className="row gap-2" style={{ alignItems: "center" }}>
+                  <span className="body-xs" style={{ color: "var(--ink-3)" }}>{imageCount} foto{imageCount !== 1 ? "s" : ""}, {videoCount} video{videoCount !== 1 ? "s" : ""}</span>
                 </div>
               )}
               {/* FIX 5: padronizar proporcao das miniaturas + gap coerente */}
