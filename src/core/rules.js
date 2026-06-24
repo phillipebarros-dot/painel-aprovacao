@@ -90,10 +90,56 @@
     "Mídia Exterior": ["OD", "DO", "FL", "ME", "MT", "BD", "MN", "CI"],
   };
 
+  // Aliases: nomes alternativos que podem vir do BigQuery/n8n
+  const MEIO_ALIASES = {
+    "DOOH": "DO", "OUT OF HOME": "DO", "OOH": "DO",
+    "OUTDOOR": "OD", "PAINEL": "OD",
+    "FRONTLIGHT": "FL", "GIGADOOR": "FL", "FRONT LIGHT": "FL",
+    "BUSDOOR": "BD", "TAXIDOOR": "BD", "BACKBUS": "BD", "BUS": "BD",
+    "METRO": "MT", "METRÔ": "MT",
+    "MOBILIARIO": "ME", "MOBILIÁRIO": "ME", "MIDIA EXTERNA": "ME",
+    "MIDIA INTERNA": "MN", "MÍDIA INTERNA": "MN",
+    "CINEMA": "CI",
+    "ATIVACAO": "AT", "ATIVAÇÃO": "AT", "PROJETO ESPECIAL": "AT",
+    "ASSESSORIA": "AS",
+    "RADIO": "RD", "RÁDIO": "RD",
+    "TELEVISAO": "TV", "TELEVISÃO": "TV",
+    "JORNAL": "JO",
+    "REVISTA": "RV",
+    "INTERNET": "IN", "DIGITAL": "IN",
+    "PRODUCAO": "PY", "PRODUÇÃO": "PY",
+  };
+
   function rulesForChecking(c) {
-    const codes = MEIO_TO_CODES[c.meio] || ["DEFAULT"];
+    const raw = (c.meio || "").trim();
     const isUninter = /uninter/i.test(c.conta || "") || /uninter/i.test(c.cliente || "");
-    return { codes: codes.map(k => RULES[k]).filter(Boolean), isUninter };
+
+    // 1. Tenta pelo nome amplo (ex: "Mídia Exterior")
+    if (MEIO_TO_CODES[raw]) {
+      return { codes: MEIO_TO_CODES[raw].map(k => RULES[k]).filter(Boolean), isUninter };
+    }
+
+    // 2. Tenta como codigo direto (ex: "DO", "OD", "FL")
+    const upper = raw.toUpperCase();
+    if (RULES[upper]) {
+      return { codes: [RULES[upper]], isUninter };
+    }
+
+    // 3. Tenta aliases (ex: "DOOH" -> "DO", "Outdoor" -> "OD")
+    const alias = MEIO_ALIASES[upper];
+    if (alias && RULES[alias]) {
+      return { codes: [RULES[alias]], isUninter };
+    }
+
+    // 4. Tenta matching parcial nos aliases (ex: "Busdoor SP" -> BD)
+    for (const [key, code] of Object.entries(MEIO_ALIASES)) {
+      if (upper.includes(key) && RULES[code]) {
+        return { codes: [RULES[code]], isUninter };
+      }
+    }
+
+    // 5. Fallback: DEFAULT
+    return { codes: [RULES.DEFAULT].filter(Boolean), isUninter };
   }
 
   window.RULES_API = { RULES, MEIO_TO_CODES, rulesForChecking };

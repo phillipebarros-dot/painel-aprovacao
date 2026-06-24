@@ -172,8 +172,8 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
     // Persiste no backend como comentário + link
     window.PainelAPI?.addComment(checking.submission_id, `[DRIVE] ${url}`, author).catch(() => {});
   };
-  const addReupload = (kind, detail) => {
-    // Abre file picker nativo com validação MIME por tipo
+  const addReupload = (kind, detail, endereco) => {
+    // Abre file picker nativo com validacao MIME por tipo
     const acceptMap = {
       foto: ".jpg,.jpeg,.png,.heic,.webp",
       pdf: ".pdf",
@@ -185,11 +185,12 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
     inp.multiple = true;
     inp.onchange = async () => {
       if (!inp.files?.length) return;
-      const base = { foto: "Foto reenviada", pdf: "PDF reenviado", video: "Vídeo reenviado" }[kind];
-      const label = detail ? base + " (" + detail + ")" : base;
+      const base = { foto: "Foto reenviada", pdf: "PDF reenviado", video: "Video reenviado" }[kind];
+      const addrSuffix = endereco ? " [" + endereco.substring(0, 40) + "]" : "";
+      const label = (detail ? base + " (" + detail + ")" : base) + addrSuffix;
       const author = currentUser?.nome || currentUser?.name || "Equipe";
       const fileNames = Array.from(inp.files).map(f => f.name).join(", ");
-      const item = { id: Date.now(), kind, label: label + ": " + fileNames, author, ts: Date.now(), uploading: true };
+      const item = { id: Date.now(), kind, label: label + ": " + fileNames, author, ts: Date.now(), uploading: true, endereco: endereco || "" };
       const next = [item, ...links]; setLinks(next); localStorage.setItem(lkey, JSON.stringify(next));
       // Upload real via FormData
       try {
@@ -200,14 +201,15 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
         fd.append("category", kind);
         fd.append("detail", detail || "");
         fd.append("uploaded_by", author);
+        if (endereco) fd.append("endereco", endereco);
         Array.from(inp.files).forEach(f => fd.append("files", f));
         const uploadRes = await window.PainelAPI?.uploadSupplement?.(checking.submission_id, fd);
-        // Marca como concluído
+        // Marca como concluido
         const done = { ...item, uploading: false, success: true };
         const updated = [done, ...links.filter(l => l.id !== item.id)];
         setLinks(updated); localStorage.setItem(lkey, JSON.stringify(updated));
       } catch (err) {
-        // Fallback: registra como comentário se endpoint não existe
+        // Fallback: registra como comentario se endpoint nao existe
         const failed = { ...item, uploading: false, success: false };
         const updated = [failed, ...links.filter(l => l.id !== item.id)];
         setLinks(updated); localStorage.setItem(lkey, JSON.stringify(updated));
@@ -365,8 +367,20 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                     </span>
                   ))}
                   {allComplete
-                    ? <span className="body-xs" style={{ color: "var(--ok)", fontWeight: 600 }}>✓ Completo</span>
-                    : <span className="body-xs" style={{ color: "var(--alert)", fontWeight: 600 }}>⚠ Incompleto — faltam arquivos</span>}
+                    ? <span className="body-xs" style={{ color: "var(--ok)", fontWeight: 600 }}>Completo</span>
+                    : <span className="body-xs" style={{ color: "var(--alert)", fontWeight: 600 }}>Incompleto -- faltam arquivos</span>}
+                </div>
+              )}
+              {isOOH && !isViewer && completeness && !allComplete && (
+                <div className="row gap-2" style={{ flexWrap: "wrap", marginBottom: 4, padding: "6px 10px", background: "var(--alert-soft)", borderRadius: 8, border: "1px dashed color-mix(in srgb, var(--alert) 40%, transparent)" }}>
+                  <span className="body-xs" style={{ alignSelf: "center", color: "var(--alert-ink)", fontWeight: 600, marginRight: 4 }}>Reanexar para este endereco:</span>
+                  {completeness.filter(c => !c.found).map((c, ci) => {
+                    const kindMap = { perto: ["foto", "de perto"], longe: ["foto", "de longe"], noturna: ["foto", "noturna"], video: ["video", "diurno"] };
+                    const pair = kindMap[c.key] || ["foto", c.key];
+                    return <button key={ci} className="pill pill-alert" style={{ cursor: "pointer", fontSize: 11, padding: "3px 10px", gap: 4 }} onClick={() => addReupload(pair[0], pair[1], group.endereco)}>
+                      <Icon name="plus" size={10}/> {c.label}
+                    </button>;
+                  })}
                 </div>
               )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
@@ -484,8 +498,8 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                 <Button variant="primary" size="sm" icon="plus" disabled={!linkDraft.trim()} onClick={addLink}>Registrar link</Button>
               </div>
               <div className="row gap-2" style={{ marginBottom: links.length ? 14 : 0, flexWrap: "wrap" }}>
-                <span className="tb-view-lbl" style={{ alignSelf: "center" }}>Reanexar:</span>
-                {(() => {
+                <span className="body-xs muted" style={{ alignSelf: "center" }}>Para reanexar arquivos, use os botoes dentro de cada bloco de endereco acima.</span>
+                {(() => { return null; // Botoes movidos para blocos de endereco
                   // Regras de reanexar dinâmicas conforme tipo de mídia (meio) do checking
                   const meio = (checking.meio || "").trim().toUpperCase();
                   const REUPLOAD_MAP = {
