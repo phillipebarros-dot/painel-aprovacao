@@ -23,6 +23,8 @@ function VizTip({ tip }) {
 // Linha continua conectando somente pontos com valor > 0 (pula zeros)
 const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 }) => {
   const [ref, w] = useWidth();
+  // TODOS os hooks ANTES de qualquer return condicional (regra do React)
+  const gid = (React.useId || (() => "ag" + Math.random().toString(36).slice(2)))();
   if (!data || !data.length) return <div ref={ref} style={{ height }}/>;
   const max = Math.max(1, ...data.map(d => d.v));
   const stepX = w / (data.length - 1 || 1);
@@ -34,8 +36,6 @@ const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 })
   const pts = live.map(p => `${p.x},${p.y}`).join(" ");
   const area = `M ${live[0].x},${height} L ${pts} L ${live[live.length - 1].x},${height} Z`;
   const len = w * 1.4;
-  // Bug 4.2 fix: gerar id unico por instancia (evita colisao de gradientes)
-  const gid = (React.useId || (() => "ag" + Math.random().toString(36).slice(2)))();
   return (
     <div ref={ref} style={{ width: "100%", height }}>
       <svg width={w} height={height} className="spark">
