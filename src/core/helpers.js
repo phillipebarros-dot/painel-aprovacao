@@ -21,6 +21,30 @@
   // Bug 1.2 fix: chave de data em horario LOCAL (nao UTC) para evitar troca de dia a noite
   const localDateKey = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
+  // ── SLA: calculo centralizado (regra Marlene Guimaraes, jun/2026) ──
+  // Regra: a revisao so comeca APOS o termino da veiculacao (dt_fim_veic).
+  // Se a campanha ainda esta veiculando (hoje < dt_fim_veic), SLA = 0.
+  // Se dt_fim_veic nao existe, fallback para submittedAt (comportamento antigo).
+  function slaAgeH(c) {
+    const now = Date.now();
+    // Tenta usar dt_fim_veic (data fim da veiculacao)
+    const fimRaw = c.dt_fim_veic;
+    if (fimRaw) {
+      const fimDate = new Date(fimRaw);
+      if (!isNaN(fimDate.getTime())) {
+        // O deadline comeca no dia seguinte ao fim da veiculacao (meia-noite)
+        const slaStart = new Date(fimDate);
+        slaStart.setDate(slaStart.getDate() + 1);
+        slaStart.setHours(0, 0, 0, 0);
+        // Se ainda nao chegou a data de inicio do SLA, nao ha atraso
+        if (now < slaStart.getTime()) return 0;
+        return (now - slaStart.getTime()) / 3600000;
+      }
+    }
+    // Fallback: submittedAt (para PIs sem dt_fim_veic)
+    return (now - (c.submittedAt || now)) / 3600000;
+  }
+
   function computeStats(checkings) {
     const total = checkings.length;
     const pending = checkings.filter(c => norm(c.status) === 'pending').length;
@@ -244,7 +268,7 @@
     return { rows, totals };
   }
 
-  window.H = { fmtRelTime, fmtTime, fmtDate, fmtDateLong, fmtNum, fmtPct, fmtHours, fmtDur, norm, computeStats, buildVolumeSeries, buildMonthSeries, recentMonths, topRanking, extractList, supplierRating, agingBuckets, distribution, slaHeatmap, calendarData, funnelData, teamProductivity };
+  window.H = { fmtRelTime, fmtTime, fmtDate, fmtDateLong, fmtNum, fmtPct, fmtHours, fmtDur, norm, slaAgeH, computeStats, buildVolumeSeries, buildMonthSeries, recentMonths, topRanking, extractList, supplierRating, agingBuckets, distribution, slaHeatmap, calendarData, funnelData, teamProductivity };
 
   // Exportação PDF genérica (abre janela de impressão com tabela estilizada)
   window.H.exportPDF = function (title, columns, rows, subtitle) {

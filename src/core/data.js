@@ -70,6 +70,9 @@
       approval_user: c.approval_user || "",
       webViewLink,
       drive_folder_id,
+      // SLA: datas de veiculacao (regra Marlene: revisao comeca apos dt_fim_veic)
+      dt_inicio_veic: c.dt_inicio_veic || c.dt_inicio || null,
+      dt_fim_veic: c.dt_fim_veic || c.dt_fim || null,
     };
   }
 

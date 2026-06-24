@@ -256,7 +256,8 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
   const totalAssets = assets.reduce((s, e) => s + (e.files?.length || 0), 0);
   const onlyPhotos = !filesLoading && totalAssets > 0 && assets.every(g => (g.files || []).every(f => f.isImage));
   const slaProfile = React.useMemo(() => (window.AI && window.AI.loadProfile) ? window.AI.loadProfile() : { slaWarnH: 4 }, []);
-  const ageH = (Date.now() - checking.submittedAt) / 3600000;
+  // SLA: usa H.slaAgeH que conta a partir de dt_fim_veic (regra Marlene)
+  const ageH = H.slaAgeH(checking);
   const isLate = H.norm(checking.status) === "pending" && ageH >= (slaProfile.slaWarnH || 4);
   const hasLateNote = notes.some(n => n.tag === "atraso");
   const needLate = isLate && !hasLateNote;
@@ -679,7 +680,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
           {needLate && (
             <div style={{ marginBottom: 16 }}>
               <div className="row gap-2" style={{ alignItems: "center", marginBottom: 6 }}><Icon name="clock" size={13} style={{ color: "var(--warn-ink)" }}/><span className="eyebrow" style={{ color: "var(--warn-ink)" }}>Justificativa do atraso (obrigatória)</span></div>
-              <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "0 0 8px" }}>Este PI está em fila há {H.fmtDur(ageH)}, acima do limite de {slaProfile.slaWarnH}h. Registre o motivo no histórico antes de decidir.</p>
+              <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "0 0 8px" }}>Periodo de revisao aberto ha {H.fmtDur(ageH)} (contado a partir do fim da veiculacao). Registre o motivo no historico antes de decidir.</p>
               <textarea className="input" rows={2} placeholder="Ex: veículo reenviou comprovante 2 vezes; aguardava mapa de mídia." value={lateReason} onChange={e => setLateReason(e.target.value)}/>
             </div>
           )}
@@ -700,7 +701,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
           {needLate && (
             <div style={{ marginTop: 16 }}>
               <div className="row gap-2" style={{ alignItems: "center", marginBottom: 6 }}><Icon name="clock" size={13} style={{ color: "var(--warn-ink)" }}/><span className="eyebrow" style={{ color: "var(--warn-ink)" }}>Justificativa do atraso (obrigatória)</span></div>
-              <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "0 0 8px" }}>Este PI está em fila há {H.fmtDur(ageH)}, acima do limite de {slaProfile.slaWarnH}h. Registre o motivo no histórico antes de decidir.</p>
+              <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "0 0 8px" }}>Periodo de revisao aberto ha {H.fmtDur(ageH)} (contado a partir do fim da veiculacao). Registre o motivo no historico antes de decidir.</p>
               <textarea className="input" rows={2} placeholder="Ex: veículo reenviou comprovante 2 vezes; aguardava mapa de mídia." value={lateReason} onChange={e => setLateReason(e.target.value)}/>
             </div>
           )}

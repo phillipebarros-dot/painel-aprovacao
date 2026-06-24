@@ -25,21 +25,22 @@
     "Painel": 2,
   };
   const CHECKS = {
-    "TV Aberta":      "Conferir mapa de horários e espelho de veiculação",
-    "TV Fechada":     "Conferir mapa de horários e print/espelho",
-    "Rádio":          "Conferir mapa de inserções e roteiro",
-    "Impresso":       "Conferir comprovante de página e edição",
-    "Revista":        "Conferir comprovante de página e edição",
+    "TV Aberta": "Conferir mapa de horários e espelho de veiculação",
+    "TV Fechada": "Conferir mapa de horários e print/espelho",
+    "Rádio": "Conferir mapa de inserções e roteiro",
+    "Impresso": "Conferir comprovante de página e edição",
+    "Revista": "Conferir comprovante de página e edição",
     "Mídia Exterior": "Conferir foto do painel no local + mapa",
-    "Digital":        "Conferir print da peça + relatório de entrega",
-    "Cinema":         "Conferir certificado de exibição",
-    "Painel":         "Conferir foto + mapa de localização",
+    "Digital": "Conferir print da peça + relatório de entrega",
+    "Cinema": "Conferir certificado de exibição",
+    "Painel": "Conferir foto + mapa de localização",
   };
 
   function copilotScore(c) {
     let conf = 80;
     const reasons = [];
-    const ageH = (Date.now() - c.submittedAt) / 3600000;
+    // SLA: usa H.slaAgeH que conta a partir de dt_fim_veic (regra Marlene)
+    const ageH = window.H ? window.H.slaAgeH(c) : (Date.now() - c.submittedAt) / 3600000;
     const meio = c.meio || "";
     const minFiles = MIN_FILES[meio] || 3;
 
@@ -78,7 +79,8 @@
     if (c.rejection_count > 0) return { tag: 'Reincidência', color: 'var(--alert)' };
     if (c.total_arquivos < 5) return { tag: 'Comprovação incompleta', color: 'var(--warn)' };
     if (c.is_complement === 1) return { tag: 'Complemento', color: 'var(--info)' };
-    const ageH = (Date.now() - c.submittedAt) / 3600000;
+    // SLA: usa H.slaAgeH que conta a partir de dt_fim_veic (regra Marlene)
+    const ageH = window.H ? window.H.slaAgeH(c) : (Date.now() - c.submittedAt) / 3600000;
     if (norm(c.status) === 'pending' && ageH > 12) return { tag: 'SLA crítico', color: 'var(--alert)' };
     if (c.total_arquivos >= 10 && (c.observacoes || '').length > 10) return { tag: 'Pronto para aprovar', color: 'var(--accent)' };
     return { tag: 'Conferência padrão', color: 'var(--ink-3)' };
@@ -110,7 +112,8 @@
     const alerts = [];
 
     pending.forEach(c => {
-      const ageH = (now - c.submittedAt) / 3600000;
+      // SLA: usa H.slaAgeH que conta a partir de dt_fim_veic (regra que a Marlene pediu)
+      const ageH = window.H ? window.H.slaAgeH(c) : (now - c.submittedAt) / 3600000;
       const D = window.H.fmtDur;
       if (ageH >= p.slaBreachH) alerts.push({ id: "sla_" + c.submission_id, sev: 'critical', type: 'SLA estourado', c, detail: `${D(ageH)} em fila · limite ${p.slaBreachH}h`, metric: ageH, wait: ageH });
       else if (ageH >= p.slaWarnH) alerts.push({ id: "slaw_" + c.submission_id, sev: 'warning', type: 'SLA em risco', c, detail: `${D(ageH)} em fila · alerta a ${p.slaWarnH}h`, metric: ageH, wait: ageH });
