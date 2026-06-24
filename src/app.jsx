@@ -431,7 +431,7 @@ function App() {
     setReviewing(null); setTriageQueue(q);
   };
   const handleDecide = (checking, decision, reason, silent) => {
-    if (user?.role === "viewer") { addToast({ type: "error", message: "Sem permissão para decidir." }); return; }
+    if (user?.role === "viewer") { addToast({ type: "error", message: "Sem permissao para decidir." }); return; }
     const now = Date.now();
     if (decision === "revert") {
       const who = user.nome || user.name;
@@ -442,11 +442,28 @@ function App() {
     }
     const isApprove = decision === "approve" || decision === "ressalva";
 
-    const label = decision === "ressalva" ? "Aprovado com sugestões" : decision === "sem_checking" ? "Sem checking" : "";
+    const label = decision === "ressalva" ? "Aprovado com sugestoes" : decision === "sem_checking" ? "Sem checking" : "";
     const who = user.nome || user.name;
-    if (isApprove) window.PainelAPI?.approve(checking.submission_id, who).catch(err => addToast({ type: "error", message: "Falha ao aprovar: " + (err.message || "") }));
-    else window.PainelAPI?.reject(checking.submission_id, who, reason || "").catch(err => addToast({ type: "error", message: "Falha ao reprovar: " + (err.message || "") }));
-    setCheckings(prev => prev.map(c => c.submission_id === checking.submission_id ? { ...c, status: isApprove ? "approved" : "rejected", approvedAt: isApprove ? now : null, rejectedAt: isApprove ? null : now, approval_user: user.nome || user.name, rejection_reason: (decision === "reject" || decision === "ressalva") ? reason : "", decision_label: label } : c));
+    // Salvar estado anterior para reverter se a API falhar
+    const prevStatus = checking.status;
+    const prevApprovedAt = checking.approvedAt;
+    const prevRejectedAt = checking.rejectedAt;
+    const prevApprovalUser = checking.approval_user;
+    const prevRejectionReason = checking.rejection_reason;
+    const prevLabel = checking.decision_label;
+    const sid = checking.submission_id;
+
+    // Callback de rollback: reverte estado local se API falhar
+    const rollback = (err) => {
+      addToast({ type: "error", message: (isApprove ? "Falha ao aprovar: " : "Falha ao reprovar: ") + (err.message || "Erro interno") });
+      setCheckings(prev => prev.map(c => c.submission_id === sid ? { ...c, status: prevStatus, approvedAt: prevApprovedAt, rejectedAt: prevRejectedAt, approval_user: prevApprovalUser, rejection_reason: prevRejectionReason, decision_label: prevLabel } : c));
+    };
+
+    if (isApprove) window.PainelAPI?.approve(sid, who).catch(rollback);
+    else window.PainelAPI?.reject(sid, who, reason || "").catch(rollback);
+
+    // Update otimista (sera revertido pelo rollback se a API falhar)
+    setCheckings(prev => prev.map(c => c.submission_id === sid ? { ...c, status: isApprove ? "approved" : "rejected", approvedAt: isApprove ? now : null, rejectedAt: isApprove ? null : now, approval_user: who, rejection_reason: (decision === "reject" || decision === "ressalva") ? reason : "", decision_label: label } : c));
     if (!silent) {
       const msg = decision === "approve" ? `${checking.n_pi} aprovado!` : decision === "ressalva" ? `${checking.n_pi} aprovado com ressalva.` : decision === "sem_checking" ? `${checking.n_pi} marcado como sem checking.` : `${checking.n_pi} reprovado.`;
       addToast({ type: isApprove ? "success" : "info", color: isApprove ? undefined : "#ef4444", message: msg });
