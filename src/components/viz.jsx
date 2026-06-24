@@ -26,8 +26,11 @@ const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 })
   const max = Math.max(1, ...data.map(d => d.v));
   const stepX = w / (data.length - 1 || 1);
   const yOf = (v) => height - 5 - (v / max) * (height - 14);
-  const pts = data.map((d, i) => `${(i * stepX).toFixed(1)},${yOf(Number(d.v) || 0).toFixed(1)}`).join(" ");
-  const area = `M 0,${height} L ${pts} L ${w},${height} Z`;
+  // Area fill: todos os pontos (incluindo zeros)
+  const allPts = data.map((d, i) => `${(i * stepX).toFixed(1)},${yOf(Number(d.v) || 0).toFixed(1)}`).join(" ");
+  const area = `M 0,${height} L ${allPts} L ${w},${height} Z`;
+  // Linha: somente pontos com valor > 0 (nao cai para zero)
+  const linePts = data.map((d, i) => d.v > 0 ? `${(i * stepX).toFixed(1)},${yOf(d.v).toFixed(1)}` : null).filter(Boolean).join(" ");
   const len = w * 1.4;
   // Bug 4.2 fix: gerar id unico por instancia (evita colisao de gradientes)
   const gid = (React.useId || (() => "ag" + Math.random().toString(36).slice(2)))();
@@ -38,7 +41,7 @@ const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 })
           <stop offset="0%" stopColor={color} stopOpacity="0.28"/><stop offset="100%" stopColor={color} stopOpacity="0"/>
         </linearGradient></defs>
         <path key={"a" + animKey} className="area-rise" d={area} fill={`url(#${gid})`}/>
-        <polyline key={"l" + animKey} className="line-draw" style={{ "--len": len }} points={pts} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/>
+        {linePts && <polyline key={"l" + animKey} className="line-draw" style={{ "--len": len }} points={linePts} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/>}
       </svg>
     </div>
   );
@@ -54,8 +57,14 @@ const TrendLine = ({ series, height = 280 }) => {
   const max = Math.max(2, ...series.map(d => d.total));
   const xOf = (i) => padL + (i / (series.length - 1 || 1)) * innerW;
   const yOf = (v) => padT + innerH - (v / max) * innerH;
-  const pts = series.map((d, i) => `${xOf(i).toFixed(1)},${yOf(Number(d.total) || 0).toFixed(1)}`).join(" ");
-  const area = `M ${padL},${padT + innerH} L ${pts} L ${padL + innerW},${padT + innerH} Z`;
+  // Area fill: todos os dias (incluindo zeros, para mostrar a base correta)
+  const allPts = series.map((d, i) => `${xOf(i).toFixed(1)},${yOf(Number(d.total) || 0).toFixed(1)}`).join(" ");
+  const area = `M ${padL},${padT + innerH} L ${allPts} L ${padL + innerW},${padT + innerH} Z`;
+  // Linha: conectar SOMENTE dias com dados (total > 0)
+  // Isso evita que a linha caia para zero nos fins de semana/feriados
+  const dataPoints = [];
+  series.forEach((d, i) => { if (d.total > 0) dataPoints.push({ i, total: d.total }); });
+  const linePts = dataPoints.map(p => `${xOf(p.i).toFixed(1)},${yOf(p.total).toFixed(1)}`).join(" ");
   const len = innerW * 1.5;
   const onMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -74,7 +83,7 @@ const TrendLine = ({ series, height = 280 }) => {
           return <g key={i}><line className="grid-line" x1={padL} x2={w - padR} y1={y} y2={y}/><text className="axis-text" x={padL - 8} y={y + 3} textAnchor="end">{Math.round(max * p)}</text></g>;
         })}
         <path className="area-rise" d={area} fill="url(#trendg)"/>
-        <polyline className="line-draw" style={{ "--len": len }} points={pts} fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>
+        {linePts && <polyline className="line-draw" style={{ "--len": len }} points={linePts} fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>}
         {series.map((d, i) => i % Math.ceil(series.length / 8) === 0 && (
           <text key={"x" + i} className="axis-text" x={xOf(i)} y={height - 9} textAnchor="middle">
             {new Date(d.ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
