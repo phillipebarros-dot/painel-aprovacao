@@ -404,7 +404,7 @@
                                                            "value":  "checking-grupoom",
                                                            "mode":  "list"
                                                        },
-                                         "sqlQuery":  "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET\n  status = \u0027pending\u0027,\n  approval_user = NULL,\n  approved_at = NULL,\n  rejected_at = NULL\nWHERE submission_id = @submission_id",
+                                         "sqlQuery":  "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET\n  status = \u0027pending\u0027,\n  approval_user = NULL,\n  approved_at = NULL,\n  rejected_at = NULL\nWHERE submission_id = \u0027{{ $json.body.submission_id || $json.body.id }}\u0027",
                                          "options":  {
 
                                                      }
@@ -930,7 +930,7 @@
                                                            "value":  "checking-grupoom",
                                                            "mode":  "list"
                                                        },
-                                         "sqlQuery":  "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET\n  status        = \u0027approved\u0027,\n  approval_user = @approval_user,\n  approved_at   = CURRENT_TIMESTAMP()\nWHERE submission_id = @submission_id\n  AND (status = \u0027pending\u0027 OR status IS NULL OR status = \u0027\u0027)",
+                                         "sqlQuery":  "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET\n  status        = \u0027approved\u0027,\n  approval_user = \u0027{{ $json.body.approval_user }}\u0027,\n  approved_at   = CURRENT_TIMESTAMP()\nWHERE submission_id = \u0027{{ $json.body.id }}\u0027\n  AND (status = \u0027pending\u0027 OR status IS NULL OR status = \u0027\u0027)",
                                          "options":  {
 
                                                      }
@@ -1365,7 +1365,7 @@
                                                            "value":  "checking-grupoom",
                                                            "mode":  "list"
                                                        },
-                                         "sqlQuery":  "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET\n  status           = \u0027rejected\u0027,\n  approval_user    = @approval_user,\n  rejection_reason = @rejection_reason,\n  rejection_count  = COALESCE(rejection_count, 0) + 1,\n  rejected_at      = CURRENT_TIMESTAMP(),\n  pdf_link         = @pdf_link\nWHERE submission_id = @submission_id\n  AND (status = \u0027pending\u0027 OR status IS NULL OR status = \u0027\u0027)",
+                                         "sqlQuery":  "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET\n  status           = \u0027rejected\u0027,\n  approval_user    = \u0027{{ $items(\u0027Webhook POST1\u0027)[0].json.body.approval_user }}\u0027,\n  rejection_reason = \u0027{{ ($items(\u0027Webhook POST1\u0027)[0].json.body.reason || \u0027\u0027).replace(/\u0027/g, \u0027\u0027) }}\u0027,\n  rejection_count  = COALESCE(rejection_count, 0) + 1,\n  rejected_at      = CURRENT_TIMESTAMP(),\n  pdf_link         = \u0027{{ $json.pdfLink || \u0027\u0027 }}\u0027\nWHERE submission_id = \u0027{{ $items(\u0027Webhook POST1\u0027)[0].json.body.id }}\u0027\n  AND (status = \u0027pending\u0027 OR status IS NULL OR status = \u0027\u0027)",
                                          "options":  {
 
                                                      }
