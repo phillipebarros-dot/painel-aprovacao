@@ -739,13 +739,16 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                 <button onClick={() => setLightbox(null)} style={{ color: "#fff", fontSize: 22, padding: "2px 12px", background: "rgba(255,255,255,0.1)", borderRadius: 8, border: "none", cursor: "pointer" }} title="Fechar (ESC)">✕</button>
               </div>
             </div>
-            <div style={{ flex: 1, display: "grid", placeItems: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden" }}>
+            {/* FIX: container usa flex com dimensoes explicitas para que a imagem preencha o espaco */}
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: `radial-gradient(circle at 50% 40%, #16181d, #060708)`, overflow: "hidden", padding: 16 }}>
               {lightbox.isImage && (lightbox.thumbnailUrl || lightbox.id_imagem) ? (
                 (() => {
-                  const hiRes = lightbox.id_imagem ? `https://lh3.googleusercontent.com/d/${lightbox.id_imagem}=w1200` : lightbox.thumbnailUrl;
-                  const fallback1 = lightbox.thumbnailUrl || (lightbox.id_imagem ? `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w800` : null);
+                  // FIX: resolucao aumentada de w1200 para w2400 para telas de alta densidade
+                  const hiRes = lightbox.id_imagem ? `https://lh3.googleusercontent.com/d/${lightbox.id_imagem}=w2400` : lightbox.thumbnailUrl;
+                  const fallback1 = lightbox.thumbnailUrl || (lightbox.id_imagem ? `https://drive.google.com/thumbnail?id=${lightbox.id_imagem}&sz=w1600` : null);
                   const fallback2 = lightbox.id_imagem ? `https://drive.google.com/uc?id=${lightbox.id_imagem}&export=view` : null;
-                  return <img src={hiRes} alt={lightbox.detalhe} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} referrerPolicy="no-referrer" onError={(e) => {
+                  // FIX: width/height 100% + object-fit contain = imagem preenche o lightbox inteiro
+                  return <img src={hiRes} alt={lightbox.detalhe} style={{ width: "100%", height: "100%", objectFit: "contain" }} referrerPolicy="no-referrer" onError={(e) => {
                     const cur = e.target.src;
                     if (cur.includes('lh3.googleusercontent') && fallback1 && cur !== fallback1) { e.target.src = fallback1; }
                     else if (fallback2 && cur !== fallback2) { e.target.src = fallback2; }
