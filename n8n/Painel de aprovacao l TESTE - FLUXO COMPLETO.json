@@ -55,6 +55,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -123,6 +147,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -205,6 +253,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -371,6 +443,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -411,6 +507,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -474,6 +594,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -536,6 +680,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -663,6 +831,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -818,6 +1010,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -883,6 +1099,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -963,6 +1203,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -1072,6 +1336,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -1521,6 +1809,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -1561,6 +1873,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -1616,6 +1952,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -1681,6 +2041,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -1746,6 +2130,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -1838,6 +2246,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -1890,6 +2322,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -2008,6 +2464,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -2074,6 +2554,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -2140,6 +2644,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -2239,6 +2767,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -2334,6 +2886,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -2606,6 +3182,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -3812,6 +4412,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -3947,6 +4571,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4012,6 +4660,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4135,6 +4807,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4175,6 +4871,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4399,6 +5119,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4599,6 +5343,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4639,6 +5407,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4706,6 +5498,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4772,6 +5588,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4845,6 +5685,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4902,6 +5766,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -4960,6 +5848,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -5017,6 +5929,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -5075,6 +6011,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -5158,6 +6118,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -5216,6 +6200,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -5273,6 +6281,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -5305,6 +6337,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -5374,6 +6430,30 @@
               {
                 "name": "Cache-Control",
                 "value": "no-store, no-cache, must-revalidate"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
@@ -5515,6 +6595,30 @@
               {
                 "name": "X-Content-Type-Options",
                 "value": "nosniff"
+              },
+              {
+                "name": "X-Frame-Options",
+                "value": "DENY"
+              },
+              {
+                "name": "X-XSS-Protection",
+                "value": "0"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              },
+              {
+                "name": "Permissions-Policy",
+                "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+              },
+              {
+                "name": "Content-Security-Policy",
+                "value": "default-src 'none'; frame-ancestors 'none'"
+              },
+              {
+                "name": "Strict-Transport-Security",
+                "value": "max-age=31536000; includeSubDomains; preload"
               }
             ]
           }
