@@ -38,11 +38,14 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
   const heat = React.useMemo(() => H.slaHeatmap(periodCheckings), [periodCheckings]);
   const funnel = React.useMemo(() => H.funnelData(periodCheckings), [periodCheckings]);
 
+  // FIX A: normalizar status nas exportacoes (CSV e PDF)
+  const statusLabel = (raw) => { const n = H.norm(raw); return n === "approved" ? "Aprovado" : n === "rejected" ? "Reprovado" : "Pendente"; };
   const exportCsv = () => {
     // Bug 4.3 fix: escapar aspas internas (duplicando) e adicionar BOM UTF-8 para Excel
     const esc = (v) => String(v == null ? '' : v).replace(/"/g, '""');
     const header = "Status,Cliente,PI,Veículo,Meio,Praça,Arquivos,Recebido,Aprovador\n";
-    const rows = checkings.map(c => `"${esc(c.status)}","${esc(c.cliente)}","${esc(c.n_pi)}","${esc(c.veiculo)}","${esc(c.meio)}","${esc(c.praca)}","${esc(c.total_arquivos)}","${esc(new Date(c.submittedAt).toLocaleString("pt-BR"))}","${esc(c.approval_user)}"`).join("\n");
+    // FIX A: status passa por H.norm -> label traduzido (antes usava c.status cru)
+    const rows = checkings.map(c => `"${esc(statusLabel(c.status))}","${esc(c.cliente)}","${esc(c.n_pi)}","${esc(c.veiculo)}","${esc(c.meio)}","${esc(c.praca)}","${esc(c.total_arquivos)}","${esc(new Date(c.submittedAt).toLocaleString("pt-BR"))}","${esc(c.approval_user)}"`).join("\n");
     const bom = '\uFEFF';
     const blob = new Blob([bom + header + rows], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `dashboard_${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
@@ -66,8 +69,8 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
             </select>
           </div>
           <ExportMenu onCsv={exportCsv} onPdf={() => {
-            const labels = { pending: "Pendente", approved: "Aprovado", rejected: "Reprovado" };
-            H.exportPDF("Resumo operacional", ["Status", "Cliente", "PI", "Veículo", "Meio", "Praça", "Arq.", "Recebido"], checkings.slice(0, 200).map(c => [labels[c.status] || c.status, c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt)]), `${stats.total} checkings`);
+            // FIX A: PDF agora usa statusLabel (H.norm -> traduzido) em vez de labels[c.status] cru
+            H.exportPDF("Resumo operacional", ["Status", "Cliente", "PI", "Veículo", "Meio", "Praça", "Arq.", "Recebido"], checkings.slice(0, 200).map(c => [statusLabel(c.status), c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt)]), `${stats.total} checkings`);
           }}/>
           <Button variant="primary" icon="bolt" onClick={() => onStartTriage ? onStartTriage() : onNavigate("approvals")}>Revisar em sequência</Button>
         </div>
@@ -104,7 +107,8 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
           </div>
           {/* Bug 4.5 fix: total historico (nao depende do filtro de periodo) */}
           <div style={{ marginTop: 8, fontSize: 11.5, color: "rgba(245,244,239,0.5)" }}>Total historico: <b style={{ color: "rgba(245,244,239,0.8)" }}>{H.fmtNum(checkings.length)}</b> PIs</div>
-          <div style={{ marginTop: 14 }}><AreaSpark data={sparkPen} height={46} color="#5DD9A1" animKey={period}/></div>
+          {/* FIX B: cor trocada de #5DD9A1 (verde menta fora da paleta) para token do design system */}
+          <div style={{ marginTop: 14 }}><AreaSpark data={sparkPen} height={46} color="var(--accent)" animKey={period}/></div>
           <div className="eyebrow" style={{ color: "rgba(245,244,239,0.4)", marginTop: 6 }}>volume · {periodLabel}</div>
         </div>
 

@@ -8,6 +8,8 @@ function LightboxEmbed({ file }) {
   // Estados: 'loading' | 'ready' | 'error'
   const [status, setStatus] = React.useState('loading');
   const [blobUrl, setBlobUrl] = React.useState(null);
+  // FIX C: ref para rastrear o blobUrl atual (evita stale closure no cleanup)
+  const blobRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!id) { setStatus('error'); return; }
@@ -18,7 +20,13 @@ function LightboxEmbed({ file }) {
         const API = window.PainelAPI;
         if (!API || !API.fetchFileBlob) { setStatus('error'); return; }
         const url = await API.fetchFileBlob(id);
-        if (!cancelled && url) { setBlobUrl(url); setStatus('ready'); }
+        if (!cancelled && url) {
+          // Revogar blob anterior se existir (troca de arquivo)
+          if (blobRef.current) URL.revokeObjectURL(blobRef.current);
+          blobRef.current = url;
+          setBlobUrl(url);
+          setStatus('ready');
+        }
         else if (!cancelled) { setStatus('error'); }
       } catch (e) {
         console.warn('[LightboxEmbed] fetch blob failed:', id, e);
@@ -26,7 +34,8 @@ function LightboxEmbed({ file }) {
       }
     })();
 
-    return () => { cancelled = true; };
+    // FIX C: revogar blob ao desmontar via ref (nunca stale)
+    return () => { cancelled = true; if (blobRef.current) { URL.revokeObjectURL(blobRef.current); blobRef.current = null; } };
   }, [id]);
 
   // Loading
@@ -108,7 +117,7 @@ function AssetCard({ file: f, index, group, onOpen, onDelete }) {
 
   return (
     <div className="asset-card" onClick={() => onOpen({ ...f, address: group.endereco })}>
-      <div className={"asset-thumb " + typeClass} style={{ background: (f.isImage && (!imgSrc || imgError)) ? fallbackBg : undefined, position: "relative", overflow: "hidden" }}>
+      <div className="asset-thumb" style={{ background: (f.isImage && (!imgSrc || imgError)) ? fallbackBg : undefined, position: "relative", overflow: "hidden", aspectRatio: "4/3" }}>
         {f.isImage && imgSrc && !imgError ? (
           <img src={imgSrc} alt={f.detalhe} onError={handleImgError} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" referrerPolicy="no-referrer"/>
         ) : f.isVideo ? (
@@ -121,11 +130,13 @@ function AssetCard({ file: f, index, group, onOpen, onDelete }) {
         ) : (
           <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%" }}><div style={{ fontSize: 32, fontWeight: 600, color: "rgba(255,255,255,0.5)", fontVariantNumeric: "tabular-nums" }}>{String(index + 1).padStart(2, "0")}</div></div>
         )}
-        <span className="tag">{f.tag}</span>
+        {/* FIX 4: removido <span class="tag">{f.tag}</span> que criava rotulo duplicado com o rodape */}
         {onDelete && <button className="asset-del" title="Excluir arquivo" onClick={(e) => { e.stopPropagation(); onDelete(); }}><Icon name="x" size={13} strokeWidth={2.4}/></button>}
-        <div className="asset-overlay"><span className="label">Visualizar</span></div>
+        {/* FIX 4: cursor zoom-in para indicar que abre em tela cheia */}
+        <div className="asset-overlay" style={{ cursor: "zoom-in" }}><span className="label">Visualizar</span></div>
       </div>
-      <div className="asset-meta"><span>{f.detalhe}</span><span className="muted-2">{typeLabel}</span></div>
+      {/* FIX 4: rodape mostra nome real do arquivo (detalhe) com ellipsis, sem rotulo de tipo duplicado */}
+      <div className="asset-meta"><span title={f.detalhe} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.detalhe || "Arquivo"}</span><span className="muted-2">{typeLabel}</span></div>
     </div>
   );
 }
@@ -333,58 +344,89 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
             </div>
           )}
           {assets.map((group, gi) => {
-            // Análise de completude por endereço (OOH: foto perto, longe, noturna, vídeo)
+            // FIX 1: Analise de completude revisada. Nao depende exclusivamente de keyword.
+            // Para OOH, exige QUANTIDADE minima de imagens por endereco (regra do meio).
+            // Keyword matching serve como DICA, nao como veredito final.
             const meio = (checking.meio || "").trim().toUpperCase();
             const isOOH = ["OD", "FL", "DO"].includes(meio);
+            const imageCount = group.files.filter(f => f.isImage).length;
+            const videoCount = group.files.filter(f => f.isVideo).length;
+            const fileDetails = group.files.map(f => (f.detalhe || f.tag || "").toLowerCase());
+
+            // Regras de quantidade minima por meio OOH
             const requiredTags = isOOH ? (() => {
               const tags = [
-                { key: "perto", label: "Foto perto", icon: "image" },
-                { key: "longe", label: "Foto longe", icon: "image" },
+                { key: "perto", label: "Foto perto", icon: "image", kind: "image" },
+                { key: "longe", label: "Foto longe", icon: "image", kind: "image" },
               ];
-              if (meio === "FL") tags.push({ key: "noturna", label: "Noturna", icon: "image" });
-              if (meio === "DO") tags.push({ key: "video", label: "Vídeo", icon: "play" });
+              if (meio === "FL") tags.push({ key: "noturna", label: "Noturna", icon: "image", kind: "image" });
+              if (meio === "DO") tags.push({ key: "video", label: "Video", icon: "play", kind: "video" });
               return tags;
             })() : null;
-            // Checa se o endereço tem os tipos obrigatórios
-            const fileDetails = group.files.map(f => (f.detalhe || f.tag || "").toLowerCase());
-            const completeness = requiredTags?.map(t => ({
-              ...t,
-              found: fileDetails.some(d => d.includes(t.key))
-            }));
-            const allComplete = completeness?.every(c => c.found);
+
+            // FIX 1: contagem minima por tipo. Se ha imagens suficientes, marca como atendido
+            // mesmo que o fornecedor nao tenha nomeado como "perto"/"longe".
+            const minPhotosNeeded = requiredTags ? requiredTags.filter(t => t.kind === "image").length : 0;
+            const minVideosNeeded = requiredTags ? requiredTags.filter(t => t.kind === "video").length : 0;
+            const photosOk = imageCount >= minPhotosNeeded;
+            const videosOk = videoCount >= minVideosNeeded;
+
+            const completeness = requiredTags?.map(t => {
+              // Tenta keyword match primeiro (dica)
+              const keywordFound = fileDetails.some(d => d.includes(t.key));
+              // FIX 1: se nao encontrou por keyword mas ha quantidade suficiente,
+              // marca como "atendido por quantidade" (nao vermelho)
+              const countOk = t.kind === "image" ? photosOk : videosOk;
+              return { ...t, found: keywordFound, countOk };
+            });
+            // FIX 1: allComplete agora considera QUANTIDADE, nao so keyword
+            const allComplete = completeness?.every(c => c.found || c.countOk);
+            // FIX 1: reallyMissing = quantidade de arquivos abaixo do exigido
+            const reallyMissing = isOOH && (!photosOk || !videosOk);
             return (
             <div key={gi} className="col gap-3">
               <div className="row gap-3" style={{ alignItems: "baseline" }}>
-                <span style={{ fontSize: 22, lineHeight: 1, fontWeight: 600, color: allComplete ? "var(--ok)" : isOOH ? "var(--alert)" : "var(--ink-3)" }}>{String(gi + 1).padStart(2, "0")}</span>
-                <div className="col" style={{ gap: 2 }}><div className="eyebrow">Endereço</div><div style={{ fontSize: 15, fontWeight: 500 }}>{group.endereco || "(sem endereço)"}</div></div>
-                <div className="spacer"/><span className="cell-mono muted">{group.files.length} arquivos</span>
+                {/* FIX 3: numero do bloco em cor neutra (antes era vermelho para incompletos) */}
+                <span style={{ fontSize: 22, lineHeight: 1, fontWeight: 600, color: "var(--ink-3)" }}>{String(gi + 1).padStart(2, "0")}</span>
+                {/* FIX 3: endereco com mais peso visual, rotulo discreto acima */}
+                <div className="col" style={{ gap: 2, flex: 1, minWidth: 0 }}>
+                  <div className="eyebrow" style={{ fontSize: 9 }}>ENDERECO</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.endereco || "(sem endereco)"}</div>
+                </div>
+                <span className="cell-mono muted">{group.files.length} arquivo{group.files.length !== 1 ? "s" : ""}</span>
               </div>
+              {/* FIX 3+5: status e reanexar fundidos numa unica linha. Chips sao dica, nao veredito */}
               {isOOH && completeness && (
-                <div className="row gap-2" style={{ flexWrap: "wrap", marginBottom: 2 }}>
-                  {completeness.map((c, ci) => (
-                    <span key={ci} className={`pill ${c.found ? "pill-ok" : "pill-alert"}`} style={{ fontSize: 11, padding: "3px 10px", gap: 4 }}>
-                      <Icon name={c.found ? "check" : "x"} size={11}/> {c.label}
-                    </span>
-                  ))}
-                  {allComplete
-                    ? <span className="body-xs" style={{ color: "var(--ok)", fontWeight: 600 }}>Completo</span>
-                    : <span className="body-xs" style={{ color: "var(--alert)", fontWeight: 600 }}>Incompleto -- faltam arquivos</span>}
-                </div>
-              )}
-              {isOOH && !isViewer && completeness && !allComplete && (
-                <div className="row gap-2" style={{ flexWrap: "wrap", marginBottom: 4, padding: "6px 10px", background: "var(--alert-soft)", borderRadius: 8, border: "1px dashed color-mix(in srgb, var(--alert) 40%, transparent)" }}>
-                  <span className="body-xs" style={{ alignSelf: "center", color: "var(--alert-ink)", fontWeight: 600, marginRight: 4 }}>Reanexar para este endereco:</span>
-                  {completeness.filter(c => !c.found).map((c, ci) => {
-                    const kindMap = { perto: ["foto", "de perto"], longe: ["foto", "de longe"], noturna: ["foto", "noturna"], video: ["video", "diurno"] };
-                    const pair = kindMap[c.key] || ["foto", c.key];
-                    return <button key={ci} className="pill pill-alert" style={{ cursor: "pointer", fontSize: 11, padding: "3px 10px", gap: 4 }} onClick={() => addReupload(pair[0], pair[1], group.endereco)}>
-                      <Icon name="plus" size={10}/> {c.label}
-                    </button>;
+                <div className="row gap-2" style={{ flexWrap: "wrap", alignItems: "center" }}>
+                  {completeness.map((c, ci) => {
+                    const isOk = c.found || c.countOk;
+                    // FIX 1: chip clicavel = acao de reanexar se faltando E ha arquivos insuficientes
+                    if (!isOk && reallyMissing && !isViewer) {
+                      const kindMap = { perto: ["foto", "de perto"], longe: ["foto", "de longe"], noturna: ["foto", "noturna"], video: ["video", "diurno"] };
+                      const pair = kindMap[c.key] || ["foto", c.key];
+                      return <button key={ci} className="pill pill-alert" style={{ cursor: "pointer", fontSize: 11, padding: "3px 10px", gap: 4 }}
+                        aria-label={`Reanexar ${c.label} para o endereco ${group.endereco || ""}`}
+                        onClick={() => addReupload(pair[0], pair[1], group.endereco)}>
+                        <Icon name="plus" size={10}/> {c.label}
+                      </button>;
+                    }
+                    // Chip de status (nao clicavel)
+                    return <span key={ci} className={`pill ${isOk ? "pill-ok" : "pill-neutral"}`} style={{ fontSize: 11, padding: "3px 10px", gap: 4 }}>
+                      <Icon name={isOk ? "check" : "info"} size={11}/> {c.label}
+                      {!c.found && c.countOk && <span style={{ fontSize: 9, opacity: 0.7 }}>(por qtd)</span>}
+                    </span>;
                   })}
+                  {/* FIX 2+3: texto limpo sem travessao. So aparece vermelho quando REALMENTE faltam arquivos */}
+                  {reallyMissing
+                    ? <span className="body-xs" style={{ color: "var(--alert)", fontWeight: 600 }}>Faltam arquivos</span>
+                    : allComplete
+                      ? <span className="body-xs" style={{ color: "var(--ok)", fontWeight: 600 }}>Completo</span>
+                      : <span className="body-xs" style={{ color: "var(--ink-3)" }}>{imageCount} foto{imageCount !== 1 ? "s" : ""} enviada{imageCount !== 1 ? "s" : ""}</span>}
                 </div>
               )}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
-                {group.files.map((f, fi) => <AssetCard key={f.id_imagem || f.id || fi} file={f} index={fi} group={group} onOpen={setLightbox} onDelete={!isViewer ? () => removeFile(group, f) : null}/>)}
+              {/* FIX 5: padronizar proporcao das miniaturas + gap coerente */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "var(--gap, 16px)" }}>
+                {(group.files || []).map((f, fi) => <AssetCard key={f.id_imagem || f.id || fi} file={f} index={fi} group={group} onOpen={setLightbox} onDelete={!isViewer ? () => removeFile(group, f) : null}/>)}
               </div>
             </div>
           );})}
