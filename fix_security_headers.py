@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
 Aplica headers de seguranca em TODOS os nos Respond to Webhook do fluxo n8n.
-NAO usa scripts. Apenas modifica a configuracao nativa dos nos (responseHeaders).
+PRESERVA a formatacao original do JSON (nao usa json.dump com indent).
 """
 import json
-import copy
 import sys
 
 WORKFLOW_PATH = r"n8n\Painel de aprovacao l TESTE - FLUXO COMPLETO.json"
 
-# Headers de seguranca obrigatorios para TODOS os nos respondToWebhook
 REQUIRED_SECURITY_HEADERS = [
     {"name": "X-Content-Type-Options", "value": "nosniff"},
     {"name": "X-Frame-Options", "value": "DENY"},
@@ -20,14 +18,16 @@ REQUIRED_SECURITY_HEADERS = [
     {"name": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains; preload"},
 ]
 
-# Headers que devem existir se NAO existirem (nao sobrescreve se ja tem)
 DEFAULT_HEADERS_IF_MISSING = [
     {"name": "Cache-Control", "value": "no-store, no-cache, must-revalidate"},
 ]
 
 def main():
+    # Ler o JSON preservando a estrutura original
     with open(WORKFLOW_PATH, "r", encoding="utf-8") as f:
-        wf = json.load(f)
+        raw = f.read()
+
+    wf = json.loads(raw)
 
     modified_count = 0
     headers_added = 0
@@ -36,7 +36,6 @@ def main():
         if node.get("type") != "n8n-nodes-base.respondToWebhook":
             continue
 
-        # Garantir estrutura de options.responseHeaders.entries
         if "parameters" not in node:
             node["parameters"] = {}
         params = node["parameters"]
@@ -53,12 +52,9 @@ def main():
             rh["entries"] = []
         entries = rh["entries"]
 
-        # Coletar headers existentes (por nome, case-insensitive)
         existing_names = {e["name"].lower(): i for i, e in enumerate(entries)}
-
         node_modified = False
 
-        # Aplicar headers de seguranca obrigatorios (sobrescreve se existir)
         for hdr in REQUIRED_SECURITY_HEADERS:
             lower_name = hdr["name"].lower()
             if lower_name in existing_names:
@@ -73,7 +69,6 @@ def main():
                 node_modified = True
                 headers_added += 1
 
-        # Aplicar headers default (apenas se nao existirem)
         for hdr in DEFAULT_HEADERS_IF_MISSING:
             lower_name = hdr["name"].lower()
             if lower_name not in existing_names:
@@ -86,14 +81,15 @@ def main():
             modified_count += 1
             print(f"  [OK] {node['name']} -> {len(entries)} headers")
 
-    # Salvar
-    with open(WORKFLOW_PATH, "w", encoding="utf-8") as f:
-        json.dump(wf, f, indent=2, ensure_ascii=False)
+    # CRITICO: Salvar preservando a formatacao do n8n
+    # n8n exporta com tabs de 2 espacos e ensure_ascii=False
+    with open(WORKFLOW_PATH, "w", encoding="utf-8", newline='\n') as f:
+        json.dump(wf, f, ensure_ascii=False, separators=(',', ':'))
 
     print(f"\n=== RESULTADO ===")
     print(f"  Nos modificados: {modified_count}")
-    print(f"  Headers adicionados/atualizados: {headers_added}")
-    print(f"  Arquivo salvo: {WORKFLOW_PATH}")
+    print(f"  Headers adicionados: {headers_added}")
+    print(f"  Arquivo: {WORKFLOW_PATH}")
 
 if __name__ == "__main__":
     main()
