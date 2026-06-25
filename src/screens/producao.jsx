@@ -7,8 +7,9 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const [divOpen, setDivOpen] = React.useState(false);
   const [divMonth, setDivMonth] = React.useState("all");
   const [divConta, setDivConta] = React.useState(null);
-  const [divPage, setDivPage] = React.useState(50); // paginação virtual
+  const [divPage, setDivPage] = React.useState(50);
   const [customFrom, setCustomFrom] = React.useState("");
+  const [filterConta, setFilterConta] = React.useState("all");
   const [customTo, setCustomTo] = React.useState("");
   const changePeriod = (v) => { if (React.startTransition) React.startTransition(() => setPeriod(v)); else setPeriod(v); };
 
@@ -38,13 +39,21 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
     return Infinity;
   }, [period, customTo]);
 
+  // Contas unicas para o filtro
+  const contaOptions = React.useMemo(() => {
+    const s = new Set(); checkings.forEach(c => { if (c.conta) s.add(c.conta); });
+    return [...s].sort();
+  }, [checkings]);
+
   const filteredCheckings = React.useMemo(() => {
-    if (period !== "custom" || (!customFrom && !customTo)) return checkings;
-    return checkings.filter(c => {
+    let list = checkings;
+    if (filterConta !== "all") list = list.filter(c => (c.conta || "") === filterConta);
+    if (period !== "custom" || (!customFrom && !customTo)) return list;
+    return list.filter(c => {
       const t = c.submittedAt || c.ingestion_time;
       return (!customFrom || t >= sinceTs) && (!customTo || t <= untilTs);
     });
-  }, [checkings, period, sinceTs, untilTs, customFrom, customTo]);
+  }, [checkings, filterConta, period, sinceTs, untilTs, customFrom, customTo]);
 
   const prod = React.useMemo(() => H.teamProductivity(filteredCheckings, period === "custom" ? 0 : sinceTs), [filteredCheckings, sinceTs, period]);
   const maxBaixados = Math.max(1, ...prod.rows.map(r => r.baixados));
@@ -114,7 +123,13 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
           <div className="eyebrow">Produção · {isManager ? "gestão da equipe" : "minhas demandas"}</div>
           <h1 className="display-1">{isManager ? "Produção da equipe" : "Minhas tarefas"}</h1>
         </div>
-        <div className="row gap-3" style={{ flex: "0 0 auto" }}>
+        <div className="row gap-3" style={{ flex: "0 0 auto", flexWrap: "wrap" }}>
+          {isManager && contaOptions.length > 1 && (
+            <select className="input sm" value={filterConta} onChange={e => setFilterConta(e.target.value)} style={{ width: 180, fontSize: 12, height: 32 }}>
+              <option value="all">Todas as contas ({checkings.length})</option>
+              {contaOptions.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
           <Segmented value={period} onChange={changePeriod} options={[{ value: "hoje", label: "Hoje" }, { value: "semana", label: "7d" }, { value: "mes", label: "30d" }, { value: "tudo", label: "Tudo" }, { value: "custom", label: "Período" }]}/>
           {period === "custom" && (
             <div className="row gap-2" style={{ alignItems: "center" }}>
@@ -358,20 +373,29 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   const inMonth = (c) => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === mes; };
   const poolAll = React.useMemo(() => checkings.filter(c => H.norm(c.status) === "pending" && inMonth(c)), [checkings, mes]);
 
-  // ── Por conta: cada conta (aba) recebe um responsável para o mês ──
+  // ── Por conta: cada conta pode ter MULTIPLOS responsaveis com quantidades ──
   const contasGrupo = React.useMemo(() => {
     const m = {};
     poolAll.forEach(c => { const k = c.conta || c.cliente || "Sem conta"; (m[k] = m[k] || { conta: k, pis: [], pracas: new Set() }).pis.push(c); m[k].pracas.add(c.praca); });
     return Object.values(m).sort((a, b) => b.pis.length - a.pis.length);
   }, [poolAll]);
-  const [contaResp, setContaResp] = React.useState({});
+  // contaSplit: { "BOT SP": [{ name: "Marlene", qty: 76 }, { name: "Brenda", qty: 41 }] }
+  const [contaSplit, setContaSplit] = React.useState({});
   React.useEffect(() => {
     const init = {};
-    contasGrupo.forEach(g => { const counts = {}; g.pis.forEach(c => { if (c.assigned_to) counts[c.assigned_to] = (counts[c.assigned_to] || 0) + 1; }); init[g.conta] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || ""; });
-    setContaResp(init);
+    contasGrupo.forEach(g => {
+      const counts = {};
+      g.pis.forEach(c => { if (c.assigned_to) counts[c.assigned_to] = (counts[c.assigned_to] || 0) + 1; });
+      const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      init[g.conta] = entries.length ? entries.map(([name, qty]) => ({ name, qty })) : [{ name: "", qty: g.pis.length }];
+    });
+    setContaSplit(init);
   }, [contasGrupo]);
-  const contasAtribuidas = contasGrupo.filter(g => contaResp[g.conta]).length;
-  const pisAtribuidos = contasGrupo.reduce((s, g) => s + (contaResp[g.conta] ? g.pis.length : 0), 0);
+  const addPerson = (conta) => setContaSplit(p => ({ ...p, [conta]: [...(p[conta] || []), { name: "", qty: 0 }] }));
+  const rmPerson = (conta, idx) => setContaSplit(p => ({ ...p, [conta]: (p[conta] || []).filter((_, i) => i !== idx) }));
+  const setPerson = (conta, idx, field, val) => setContaSplit(p => ({ ...p, [conta]: (p[conta] || []).map((x, i) => i === idx ? { ...x, [field]: field === "qty" ? Math.max(0, Number(val) || 0) : val } : x) }));
+  const contasAtribuidas = contasGrupo.filter(g => (contaSplit[g.conta] || []).some(s => s.name && s.qty > 0)).length;
+  const pisAtribuidos = contasGrupo.reduce((s, g) => s + (contaSplit[g.conta] || []).filter(x => x.name).reduce((a, x) => a + x.qty, 0), 0);
 
   // ── Equilibrar: divide a fila igualmente entre pessoas ──
   const [people, setPeople] = React.useState(() => team.slice());
@@ -382,10 +406,19 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   const confirm = () => {
     const map = {};
     if (mode === "conta") {
-      contasGrupo.forEach(g => { const r = contaResp[g.conta]; if (r) g.pis.forEach(c => { map[c.submission_id] = r; }); });
+      contasGrupo.forEach(g => {
+        const splits = (contaSplit[g.conta] || []).filter(s => s.name && s.qty > 0);
+        if (!splits.length) return;
+        let idx = 0;
+        splits.forEach(s => {
+          for (let i = 0; i < s.qty && idx < g.pis.length; i++, idx++) {
+            map[g.pis[idx].submission_id] = s.name;
+          }
+        });
+      });
       onAssign && onAssign(map);
       onClose();
-      onToast?.({ type: "success", message: `${pisAtribuidos} PIs de ${contasAtribuidas} contas atribuídos para o mês.` });
+      onToast?.({ type: "success", message: `${Object.keys(map).length} PIs de ${contasAtribuidas} contas atribuidos.` });
     } else {
       if (!people.length) return;
       poolAll.forEach((c, i) => { map[c.submission_id] = people[i % people.length]; });
@@ -417,21 +450,35 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
         </div>
 
         {mode === "conta" ? (<>
-          <p className="body-sm" style={{ margin: 0 }}>Cada conta (aba da pauta) recebe um responsável para o mês, como na planilha. Todos os PIs daquela conta ficam travados no login de quem recebeu. Só vale a partir do mês selecionado, sem mexer no que já está em andamento.</p>
-          {contasGrupo.length === 0 ? <Empty title="Sem PIs pendentes neste mês" icon="layers"/> : (
+          <p className="body-sm" style={{ margin: 0 }}>Cada conta pode ser dividida entre multiplas pessoas. Defina a quantidade de PIs para cada responsavel, como na planilha.</p>
+          {contasGrupo.length === 0 ? <Empty title="Sem PIs pendentes neste mes" icon="layers"/> : (
             <div className="div-conta-list">
-              {contasGrupo.map(g => (
-                <div key={g.conta} className={"div-conta-row " + (contaResp[g.conta] ? "set" : "")}>
-                  <div className="col" style={{ gap: 2, minWidth: 0, flex: 1 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>{g.conta}</span>
-                    <span className="body-xs muted">{g.pis.length} PIs · {g.pracas.size} praças</span>
+              {contasGrupo.map(g => {
+                const splits = contaSplit[g.conta] || [];
+                const totalAssigned = splits.reduce((s, x) => s + (x.qty || 0), 0);
+                const remaining = g.pis.length - totalAssigned;
+                return (
+                <div key={g.conta} className={"div-conta-row " + (splits.some(s => s.name && s.qty > 0) ? "set" : "")} style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+                  <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                    <div className="col" style={{ gap: 2, minWidth: 0, flex: 1 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>{g.conta}</span>
+                      <span className="body-xs muted">{g.pis.length} PIs · {g.pracas.size} pracas {remaining !== 0 && <span style={{ color: remaining > 0 ? "var(--warn)" : "var(--alert)" }}>({remaining > 0 ? `${remaining} sem responsavel` : `${Math.abs(remaining)} a mais`})</span>}</span>
+                    </div>
+                    <button className="btn btn-quiet sm" onClick={() => addPerson(g.conta)} style={{ flexShrink: 0 }}><Icon name="plus" size={12}/> Pessoa</button>
                   </div>
-                  <select className="input" value={contaResp[g.conta] || ""} onChange={e => setContaResp(p => ({ ...p, [g.conta]: e.target.value }))} style={{ width: 168, height: 34, flexShrink: 0 }}>
-                    <option value="">Sem responsável</option>
-                    {team.map(name => <option key={name} value={name}>{name}</option>)}
-                  </select>
+                  {splits.map((s, si) => (
+                    <div key={si} className="row gap-2" style={{ alignItems: "center" }}>
+                      <select className="input" value={s.name} onChange={e => setPerson(g.conta, si, "name", e.target.value)} style={{ flex: 1, height: 32, fontSize: 12 }}>
+                        <option value="">Selecionar</option>
+                        {team.map(name => <option key={name} value={name}>{name}</option>)}
+                      </select>
+                      <input type="number" className="input" value={s.qty} min={0} max={g.pis.length} onChange={e => setPerson(g.conta, si, "qty", e.target.value)} style={{ width: 64, height: 32, fontSize: 12, textAlign: "center" }} title="Quantidade de PIs"/>
+                      <span className="body-xs muted" style={{ width: 20 }}>PIs</span>
+                      {splits.length > 1 && <button className="icon-btn" onClick={() => rmPerson(g.conta, si)} title="Remover" style={{ flexShrink: 0 }}><Icon name="x" size={12}/></button>}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              );})}
             </div>
           )}
         </>) : (<>
