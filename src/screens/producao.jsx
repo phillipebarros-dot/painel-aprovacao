@@ -10,6 +10,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const [divPage, setDivPage] = React.useState(50);
   const [customFrom, setCustomFrom] = React.useState("");
   const [filterConta, setFilterConta] = React.useState("all");
+  const [filterCliente, setFilterCliente] = React.useState("all");
+  const [filterMeio, setFilterMeio] = React.useState("all");
   const [customTo, setCustomTo] = React.useState("");
   const changePeriod = (v) => { if (React.startTransition) React.startTransition(() => setPeriod(v)); else setPeriod(v); };
 
@@ -39,21 +41,31 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
     return Infinity;
   }, [period, customTo]);
 
-  // Contas unicas para o filtro
+  // Opcoes unicas para filtros
   const contaOptions = React.useMemo(() => {
     const s = new Set(); checkings.forEach(c => { if (c.conta) s.add(c.conta); });
+    return [...s].sort();
+  }, [checkings]);
+  const clienteOptions = React.useMemo(() => {
+    const s = new Set(); checkings.forEach(c => { if (c.cliente) s.add(c.cliente); });
+    return [...s].sort();
+  }, [checkings]);
+  const meioOptions = React.useMemo(() => {
+    const s = new Set(); checkings.forEach(c => { if (c.meio) s.add(c.meio); });
     return [...s].sort();
   }, [checkings]);
 
   const filteredCheckings = React.useMemo(() => {
     let list = checkings;
     if (filterConta !== "all") list = list.filter(c => (c.conta || "") === filterConta);
+    if (filterCliente !== "all") list = list.filter(c => (c.cliente || "") === filterCliente);
+    if (filterMeio !== "all") list = list.filter(c => (c.meio || "") === filterMeio);
     if (period !== "custom" || (!customFrom && !customTo)) return list;
     return list.filter(c => {
       const t = c.submittedAt || c.ingestion_time;
       return (!customFrom || t >= sinceTs) && (!customTo || t <= untilTs);
     });
-  }, [checkings, filterConta, period, sinceTs, untilTs, customFrom, customTo]);
+  }, [checkings, filterConta, filterCliente, filterMeio, period, sinceTs, untilTs, customFrom, customTo]);
 
   const prod = React.useMemo(() => H.teamProductivity(filteredCheckings, period === "custom" ? 0 : sinceTs), [filteredCheckings, sinceTs, period]);
   const maxBaixados = Math.max(1, ...prod.rows.map(r => r.baixados));
@@ -125,12 +137,27 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
         </div>
         <div className="row gap-3" style={{ flex: "0 0 auto", flexWrap: "wrap" }}>
           {isManager && contaOptions.length > 1 && (
-            <select className="input sm" value={filterConta} onChange={e => setFilterConta(e.target.value)} style={{ width: 180, fontSize: 12, height: 32 }}>
-              <option value="all">Todas as contas ({checkings.length})</option>
+            <select className="input sm" value={filterConta} onChange={e => setFilterConta(e.target.value)} style={{ width: 160, fontSize: 12, height: 32 }}>
+              <option value="all">Conta: Todas</option>
               {contaOptions.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           )}
+          {isManager && clienteOptions.length > 1 && (
+            <select className="input sm" value={filterCliente} onChange={e => setFilterCliente(e.target.value)} style={{ width: 160, fontSize: 12, height: 32 }}>
+              <option value="all">Cliente: Todos</option>
+              {clienteOptions.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
+          {isManager && meioOptions.length > 1 && (
+            <select className="input sm" value={filterMeio} onChange={e => setFilterMeio(e.target.value)} style={{ width: 120, fontSize: 12, height: 32 }}>
+              <option value="all">Meio: Todos</option>
+              {meioOptions.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          )}
           <Segmented value={period} onChange={changePeriod} options={[{ value: "hoje", label: "Hoje" }, { value: "semana", label: "7d" }, { value: "mes", label: "30d" }, { value: "tudo", label: "Tudo" }, { value: "custom", label: "Período" }]}/>
+          {(filterConta !== "all" || filterCliente !== "all" || filterMeio !== "all") && (
+            <button className="btn btn-quiet sm" onClick={() => { setFilterConta("all"); setFilterCliente("all"); setFilterMeio("all"); }} style={{ fontSize: 11 }}>Limpar filtros</button>
+          )}
           {period === "custom" && (
             <div className="row gap-2" style={{ alignItems: "center" }}>
               <input type="date" className="input sm" value={customFrom} onChange={e => setCustomFrom(e.target.value)} style={{ width: 140, fontSize: 12 }}/>
