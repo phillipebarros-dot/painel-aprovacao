@@ -462,6 +462,12 @@ body::before {
 .plan-resp { appearance: none; -webkit-appearance: none; font: inherit; font-size: 12px; font-weight: 600; color: var(--ink); background: var(--surface-2); border: 1px solid var(--rule); border-radius: 7px; padding: 5px 24px 5px 9px; cursor: pointer; min-width: 130px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
 .plan-resp:hover { border-color: var(--accent); }
 .plan-resp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.plan-edit { cursor: pointer; }
+.plan-edit:hover { background: var(--glass); }
+.plan-input { font: inherit; font-size: 12px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--rule); border-radius: 7px; padding: 5px 9px; width: 100%; min-width: 100px; transition: border-color 140ms; }
+.plan-input::placeholder { color: var(--ink-4, #aaa); }
+.plan-input:hover { border-color: var(--accent); }
+.plan-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
 .page { margin: 0 auto; padding: 46px 32px 72px; flex: 1; width: 100%; max-width: 1480px; }
 [data-density="compact"] .page { padding: 38px 24px 48px; }
