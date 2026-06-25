@@ -217,7 +217,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
           reader.onerror = reject;
           reader.readAsDataURL(file);
         });
-        await window.PainelAPI?.call("upload_supplement", {
+        const res = await window.PainelAPI?.call("upload_supplement", {
           submission_id: checking.submission_id,
           n_pi: checking.n_pi || "",
           file_name: file.name,
@@ -227,8 +227,8 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
           uploaded_by: author,
           endereco: endereco || "",
         });
-        // Marca como concluido
-        const done = { ...item, uploading: false, success: true };
+        // Marca como concluido e salva link do Drive
+        const done = { ...item, uploading: false, success: true, url: res?.link || "" };
         const updated = [done, ...links.filter(l => l.id !== item.id)];
         setLinks(updated); localStorage.setItem(lkey, JSON.stringify(updated));
       } catch (err) {
@@ -604,7 +604,9 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                       <span className="rule-ic" style={{ width: 26, height: 26, background: "var(--accent-soft)", color: "var(--accent)" }}><Icon name={l.kind === "link" ? "folder" : l.kind === "pdf" ? "pdf" : l.kind === "video" ? "play" : "image"} size={13}/></span>
                       {l.kind === "link"
                         ? <a href={l.url} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "var(--accent-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, fontFamily: "var(--font-mono)" }}>{l.url}</a>
-                        : <span style={{ fontSize: 12.5, color: "var(--ink-2)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.label}</span>}
+                        : l.url
+                          ? <a href={l.url} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "var(--accent-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{l.label}</a>
+                          : <span style={{ fontSize: 12.5, color: "var(--ink-2)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.label}</span>}
                       {l.uploading && <span className="pill pill-blue" style={{ fontSize: 10, padding: "2px 8px" }}>enviando...</span>}
                       {l.success === true && !l.uploading && <span style={{ color: "var(--ok)", fontSize: 13 }} title="Enviado">✓</span>}
                       {l.success === false && !l.uploading && <span style={{ color: "var(--alert)", fontSize: 11 }} title="Falha no upload (registrado como comentario)">falhou</span>}
