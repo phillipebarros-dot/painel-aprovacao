@@ -4218,24 +4218,24 @@
     },
     {
       "parameters": {
-        "modelName": "models/gemini-2.0-flash",
+        "model": "gpt-4o-mini",
         "options": {
-          "maxOutputTokens": 1024,
+          "maxTokens": 1024,
           "temperature": 0.2
         }
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1,
       "position": [
         22560,
         19712
       ],
       "id": "ac2748a2-c10a-4da3-b5be-df80c3ab4f6d",
-      "name": "Copiloto - Gemini",
+      "name": "Copiloto - OpenAI",
       "credentials": {
-        "googlePalmApi": {
-          "id": "HqMdT731KFpBl6X8",
-          "name": "Google Gemini(PaLM) Api account 7"
+        "openAiApi": {
+          "id": "",
+          "name": ""
         }
       }
     },
@@ -4376,7 +4376,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ (() => { const ia = $('Copiloto - Analise IA').first(); const output = ia?.json?.output; if (output && typeof output === 'object' && output.score != null) return { success: true, analysis: output }; return { success: false, error: ia?.json?.error || 'Gemini indisponível - cota excedida ou erro de API', fallback: true }; })() }}",
+        "responseBody": "={{ (() => { const ia = $('Copiloto - Analise IA').first(); const output = ia?.json?.output; if (output && typeof output === 'object' && output.score != null) return { success: true, analysis: output }; return { success: false, error: ia?.json?.error || 'IA indisponivel - cota excedida ou erro de API', fallback: true }; })() }}",
         "options": {
           "responseHeaders": {
             "entries": [
@@ -6845,7 +6845,7 @@
         ]
       ]
     },
-    "Copiloto - Gemini": {
+    "Copiloto - OpenAI": {
       "ai_languageModel": [
         [
           {
