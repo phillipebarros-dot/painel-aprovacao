@@ -150,10 +150,15 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
   const [ackPhotos, setAckPhotos] = React.useState(false);
   const [lateReason, setLateReason] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
-  const [lightbox, setLightbox] = React.useState(null);
+  const [lightboxIdx, setLightboxIdx] = React.useState(-1);
 
   const [filesLoading, setFilesLoading] = React.useState(true);
   const [assets, setAssets] = React.useState([]);
+  const allFiles = React.useMemo(() => assets.flatMap(g => (g.files || []).map(f => ({ ...f, address: g.endereco || g.address || '' }))), [assets]);
+  const lightbox = lightboxIdx >= 0 && lightboxIdx < allFiles.length ? allFiles[lightboxIdx] : null;
+  const setLightbox = (file) => { if (!file) { setLightboxIdx(-1); return; } const idx = allFiles.findIndex(f => f.id_imagem === file.id_imagem); setLightboxIdx(idx >= 0 ? idx : -1); };
+  const lbPrev = () => setLightboxIdx(i => i > 0 ? i - 1 : allFiles.length - 1);
+  const lbNext = () => setLightboxIdx(i => i < allFiles.length - 1 ? i + 1 : 0);
   const ckey = "painel_notes_" + checking.submission_id;
   const [notes, setNotes] = React.useState(() => { try { return JSON.parse(localStorage.getItem(ckey) || "[]"); } catch { return []; } });
   const [draft, setDraft] = React.useState("");
@@ -242,6 +247,8 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
   React.useEffect(() => {
     const h = (e) => {
       if (e.key === "Escape" && lightbox) { setLightbox(null); return; }
+      if (e.key === "ArrowLeft" && lightbox) { lbPrev(); return; }
+      if (e.key === "ArrowRight" && lightbox) { lbNext(); return; }
       if (e.key === "Escape" && decision) { setDecision(null); return; }
       if (checking.status !== "pending" || isViewer) return;
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
@@ -735,7 +742,11 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
           <div style={{ width: "min(1180px,94vw)", height: "min(860px,90vh)", background: "#0a0a0c", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.6)", animation: "modalIn 360ms var(--ease-out)", cursor: "default" }} onClick={e => e.stopPropagation()}>
             <div className="row" style={{ justifyContent: "space-between", padding: "14px 18px", background: "rgba(255,255,255,0.05)" }}>
               <div><span style={{ color: "#fff", fontSize: 15, fontWeight: 500 }}>{lightbox.detalhe}</span><span style={{ color: "#999", fontSize: 12.5, marginLeft: 8 }}>{lightbox.address}</span></div>
-              <div className="row gap-2">
+              <div className="row gap-2" style={{ alignItems: "center" }}>
+                <span style={{ color: "#9ca3af", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>{lightboxIdx + 1} de {allFiles.length}</span>
+                <button onClick={(e) => { e.stopPropagation(); lbPrev(); }} style={{ color: "#fff", fontSize: 18, padding: "2px 10px", background: "rgba(255,255,255,0.08)", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }} title="Anterior (←)">‹</button>
+                <button onClick={(e) => { e.stopPropagation(); lbNext(); }} style={{ color: "#fff", fontSize: 18, padding: "2px 10px", background: "rgba(255,255,255,0.08)", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }} title="Proximo (→)">›</button>
+                <a href={lightbox.id_imagem ? `https://drive.google.com/uc?id=${lightbox.id_imagem}&export=download` : '#'} target="_blank" rel="noreferrer" style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)" }} title="Baixar arquivo">Baixar ↓</a>
                 <a href={lightbox.viewUrl || lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)" }}>Abrir no Drive ↗</a>
                 <button onClick={() => setLightbox(null)} style={{ color: "#fff", fontSize: 22, padding: "2px 12px", background: "rgba(255,255,255,0.1)", borderRadius: 8, border: "none", cursor: "pointer" }} title="Fechar (ESC)">✕</button>
               </div>
