@@ -117,9 +117,8 @@
   // Normaliza um arquivo vindo do BigQuery/n8n para formato consistente.
   function normalizeFile(f) {
     let id = f.id_imagem || f.id || f.fileId || f.file_id || '';
-    // IDs validos do Google Drive: 25-44 chars alfanumericos (com - e _).
-    // Rejeita timestamps (so digitos), submission_ids corrompidos, etc.
-    if (id && (!/^[a-zA-Z0-9_-]{10,}$/.test(id) || /^\d{10,}$/.test(id))) id = '';
+    // Rejeita IDs que sao claramente timestamps (13+ digitos puros), nao IDs do Drive.
+    if (id && /^\d{13,}/.test(id)) id = '';
     const mime = (f.mimeType || f.mime_type || '').toLowerCase();
     const name = (f.nome || f.name || f.detalhe || '').toLowerCase();
 
