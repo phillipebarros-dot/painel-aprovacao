@@ -208,24 +208,30 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
       const fileNames = Array.from(inp.files).map(f => f.name).join(", ");
       const item = { id: Date.now(), kind, label: label + ": " + fileNames, author, ts: Date.now(), uploading: true, endereco: endereco || "" };
       const next = [item, ...links]; setLinks(next); localStorage.setItem(lkey, JSON.stringify(next));
-      // Upload real via FormData
+      // Upload via JSON com base64 (n8n espera file_base64 + file_name)
       try {
-        const fd = new FormData();
-        fd.append("action", "upload_supplement");
-        fd.append("submission_id", checking.submission_id);
-        fd.append("n_pi", checking.n_pi || "");
-        fd.append("category", kind);
-        fd.append("detail", detail || "");
-        fd.append("uploaded_by", author);
-        if (endereco) fd.append("endereco", endereco);
-        Array.from(inp.files).forEach(f => fd.append("files", f));
-        const uploadRes = await window.PainelAPI?.uploadSupplement?.(checking.submission_id, fd);
+        const file = inp.files[0]; // n8n processa 1 arquivo por vez
+        const b64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]); // remove data:...;base64, prefix
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        await window.PainelAPI?.call("upload_supplement", {
+          submission_id: checking.submission_id,
+          n_pi: checking.n_pi || "",
+          file_name: file.name,
+          file_base64: b64,
+          category: kind,
+          detail: detail || "",
+          uploaded_by: author,
+          endereco: endereco || "",
+        });
         // Marca como concluido
         const done = { ...item, uploading: false, success: true };
         const updated = [done, ...links.filter(l => l.id !== item.id)];
         setLinks(updated); localStorage.setItem(lkey, JSON.stringify(updated));
       } catch (err) {
-        // Fallback: registra como comentario se endpoint nao existe
         const failed = { ...item, uploading: false, success: false };
         const updated = [failed, ...links.filter(l => l.id !== item.id)];
         setLinks(updated); localStorage.setItem(lkey, JSON.stringify(updated));
@@ -603,7 +609,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                       {l.success === true && !l.uploading && <span style={{ color: "var(--ok)", fontSize: 13 }} title="Enviado">✓</span>}
                       {l.success === false && !l.uploading && <span style={{ color: "var(--alert)", fontSize: 11 }} title="Falha no upload (registrado como comentario)">falhou</span>}
                       <span className="cell-time">{H.fmtRelTime(l.ts)}</span>
-                      <button className="note-del" title="Remover" onClick={() => delLink(l.id)}><Icon name="x" size={12} strokeWidth={2.2}/></button>
+                      <button className="icon-btn" title="Remover" onClick={() => delLink(l.id)} style={{ flexShrink: 0, width: 24, height: 24, color: "var(--ink-3)" }}><Icon name="x" size={12} strokeWidth={2.2}/></button>
                     </div>
                   ))}
                 </div>
