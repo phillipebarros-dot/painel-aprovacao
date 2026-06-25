@@ -288,13 +288,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                             )}
                           </div>
                         </td>
-                        <td className="plan-edit" onClick={e => e.stopPropagation()}>
-                          {!isManager ? <span className="cell-secondary">{c.assigned_to || "-"}</span> : (
-                            <select className="plan-resp" value={c.assigned_to || ""} onChange={e => e.target.value && assignOne(c.submission_id, e.target.value)}>
-                              <option value="">Selecionar</option>
-                              {team.map(n => <option key={n} value={n}>{n}</option>)}
-                            </select>
-                          )}
+                        <td>
+                          <span className="cell-secondary" style={{ fontSize: 12 }}>{c.assigned_to || <span className="muted">Sem resp.</span>}</span>
                         </td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
                           {!isManager ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.comentario || "-"}</span> : (
