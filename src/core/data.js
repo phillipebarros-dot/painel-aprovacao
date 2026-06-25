@@ -117,10 +117,8 @@
   // Normaliza um arquivo vindo do BigQuery/n8n para formato consistente.
   function normalizeFile(f) {
     let id = f.id_imagem || f.id || f.fileId || f.file_id || '';
-    // DEBUG: ver o que vem do n8n
-    if (id) console.log('[normalizeFile] id_imagem:', id, 'starts13digits:', /^\d{13,}/.test(id));
-    // Rejeita IDs que sao claramente timestamps (13+ digitos puros), nao IDs do Drive.
-    if (id && /^\d{13,}/.test(id)) { console.warn('[normalizeFile] REJEITADO como timestamp:', id); id = ''; }
+    // Rejeita IDs que sao claramente timestamps (13+ digitos puros no inicio).
+    if (id && /^\d{13,}/.test(id)) id = '';
     const mime = (f.mimeType || f.mime_type || '').toLowerCase();
     const name = (f.nome || f.name || f.detalhe || '').toLowerCase();
 
