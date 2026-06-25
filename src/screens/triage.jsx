@@ -14,6 +14,16 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
   const total = queue.length;
   const c = queue[idx];
 
+  // Regras e alertas (mesma logica do Review)
+  const RA = window.RULES_API;
+  const rInfo = React.useMemo(() => RA && c ? RA.rulesForChecking(c) : { codes: [], isUninter: false }, [c]);
+  const meio = (c?.meio || "").trim().toUpperCase();
+  const isOOH = ["OD", "FL", "DO"].includes(meio);
+  const totalFiles = assets.reduce((s, g) => s + g.files.length, 0);
+  const onlyPhotos = !loadingFiles && totalFiles > 0 && assets.every(g => g.files.every(f => f.isImage));
+  const ageH = c ? H.slaAgeH(c) : 0;
+  const isLate = c ? H.norm(c.status) === "pending" && ageH >= 4 : false;
+
   React.useEffect(() => {
     if (!c) return;
     setLoadingFiles(true); setAssets([]); setReasonOpen(false); setReason("");
@@ -116,7 +126,6 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
                 ))}
               </div>
               {(() => {
-                const totalFiles = assets.reduce((s, g) => s + g.files.length, 0);
                 return <>
                   <div className="eyebrow" style={{ marginBottom: 10 }}>{loadingFiles ? "Carregando arquivos…" : `${totalFiles || c.total_arquivos || 0} assets do Drive`}</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
@@ -133,6 +142,23 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
                 </>;
               })()}
               {c.observacoes && <div className="card card-pad" style={{ background: "var(--surface-2)", marginTop: 18 }}><div className="eyebrow" style={{ marginBottom: 6 }}>Observação do fornecedor</div><p style={{ margin: 0, fontSize: 13.5, color: "var(--ink-2)" }}>"{c.observacoes}"</p></div>}
+              {/* Alertas */}
+              {isLate && <div className="card card-pad" style={{ background: "var(--alert-soft)", border: "1px solid color-mix(in srgb, var(--alert) 30%, var(--rule))", padding: "10px 14px", marginTop: 12 }}><div className="row gap-2" style={{ alignItems: "center" }}><Icon name="warn" size={14} style={{ color: "var(--alert-ink)" }}/><span style={{ fontSize: 12.5, color: "var(--alert-ink)" }}><b>SLA {ageH.toFixed(0)}h</b> desde o fim da veiculacao. Priorize a decisao.</span></div></div>}
+              {onlyPhotos && <div className="card card-pad" style={{ background: "var(--warn-soft)", border: "1px solid color-mix(in srgb, var(--warn) 30%, var(--rule))", padding: "10px 14px", marginTop: 12 }}><div className="row gap-2" style={{ alignItems: "center" }}><Icon name="warn" size={14} style={{ color: "var(--warn-ink)" }}/><span style={{ fontSize: 12.5, color: "var(--warn-ink)" }}><b>Atencao:</b> apenas fotos. Exija comprovante de veiculacao (PDF/mapa).</span></div></div>}
+              {/* Chips completude Uninter */}
+              {isOOH && rInfo.isUninter && !loadingFiles && assets.map((group, gi) => {
+                const imgCount = group.files.filter(f => f.isImage).length;
+                const vidCount = group.files.filter(f => f.isVideo).length;
+                const tags = [{ key: "perto", label: "Foto perto", need: 1, have: imgCount >= 1 }, { key: "longe", label: "Foto longe", need: 1, have: imgCount >= 2 }];
+                if (meio === "FL") tags.push({ key: "noturna", label: "Noturna", need: 1, have: imgCount >= 3 });
+                if (meio === "DO") tags.push({ key: "video", label: "Video", need: 0, have: vidCount > 0, optional: true });
+                const allOk = tags.filter(t => !t.optional).every(t => t.have);
+                return <div key={gi} className="row gap-2" style={{ flexWrap: "wrap", marginTop: gi === 0 ? 12 : 4 }}>
+                  <span className="eyebrow" style={{ fontSize: 10, width: "100%" }}>{group.endereco || `Endereco ${gi + 1}`}</span>
+                  {tags.map(t => <span key={t.key} className={"pill " + (t.have ? "pill-ok" : t.optional ? "pill-neutral" : "pill-alert")} style={{ fontSize: 10 }}>{t.have ? "\u2713" : "\u2717"} {t.label}</span>)}
+                  {!allOk && <span style={{ fontSize: 11, color: "var(--alert)", fontWeight: 600 }}>Faltam arquivos</span>}
+                </div>;
+              })}
             </div>
 
             {/* Decision rail */}
@@ -156,6 +182,25 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
                 </div>
               )}
               <div className="hr" style={{ margin: "18px 0" }}/>
+              {/* Card de regras compacto */}
+              {(() => {
+                if (!rInfo.codes.length) return null;
+                return <div className="col gap-2">
+                  <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                    <div className="eyebrow">Regras · {c.meio}</div>
+                    {rInfo.isUninter && <span className="pill pill-info" style={{ fontSize: 9 }}>Uninter</span>}
+                  </div>
+                  {rInfo.codes.map(rule => {
+                    const fields = (rInfo.isUninter && rule.uninter) ? rule.uninter : rule.generico;
+                    return <div key={rule.code} style={{ fontSize: 12, color: "var(--ink-2)" }}>
+                      {fields.map((f, i) => <div key={i} className="row gap-2" style={{ alignItems: "center", padding: "2px 0" }}>
+                        <Icon name={f.req ? "check" : "info"} size={11} style={{ color: f.req ? "var(--accent)" : "var(--ink-3)", flexShrink: 0 }}/>
+                        <span>{f.label} {f.req ? <b style={{ color: "var(--accent-ink)", fontSize: 10 }}>obr.</b> : <span className="muted" style={{ fontSize: 10 }}>opc.</span>}</span>
+                      </div>)}
+                    </div>;
+                  })}
+                </div>;
+              })()}
               <div className="col gap-3">
                 <div className="eyebrow">Contato</div>
                 <div className="row gap-2"><Avatar user={{ nome: c.nome_contato, email: c.email_contato, avatar: c.avatar, color: "#0E7490" }} size={26}/><div className="col" style={{ minWidth: 0 }}><span style={{ fontSize: 13, fontWeight: 500 }}>{c.nome_contato || "—"}</span><span style={{ fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis" }}>{c.email_contato || "—"}</span></div></div>
