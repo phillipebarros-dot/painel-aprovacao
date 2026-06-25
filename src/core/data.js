@@ -49,11 +49,16 @@
   // Normaliza um checking do BigQuery para a forma usada pelas telas.
   function normalizeChecking(c) {
     let status = (c.status || "").toLowerCase().trim();
-    if (!status || status === "null" || status === "undefined") status = "pending";
+    const hadNoStatus = !status || status === "null" || status === "undefined";
+    if (hadNoStatus) status = "pending";
     const parseTs = (v) => { if (!v) return null; const ms = new Date(v).getTime(); return (!isNaN(ms) && ms > 946684800000) ? ms : null; };
     let submittedAt = parseTs(c.created_at) || parseTs(c.submitted_at);
     if (!submittedAt && c.submission_id) { const n = parseInt(String(c.submission_id).split("_")[0], 10); if (!isNaN(n) && n > 1e12) submittedAt = n; }
     if (!submittedAt) submittedAt = Date.now();
+    // PIs antigos (>90 dias) sem status no BigQuery sao historicos, nao pendentes.
+    // Evita que PIs orfaos do sistema antigo poluam a fila de triagem.
+    const AGE_LIMIT_MS = 90 * 24 * 60 * 60 * 1000; // 90 dias
+    if (hadNoStatus && (Date.now() - submittedAt) > AGE_LIMIT_MS) status = "sem_checking";
     // Normaliza webViewLink de diferentes nomes de campo possíveis
     const webViewLink = c.webViewLink || c.web_view_link || c.drive_link || c.driveLink || c.link_pasta || '';
     // Extrai folder_id do link se disponível
