@@ -189,7 +189,17 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
               const head = "Pessoa,Demanda,Baixados,Aprovados,Reprovados,Pendentes,Conclusao %,SLA medio h\n";
               const rows = prod.rows.map(r => `"${r.name}",${r.demanda},${r.baixados},${r.approved},${r.rejected},${r.pendentes},${Math.round((r.pct || 0) * 100)},${(Number(r.avgSla) || 0).toFixed(1)}`).join("\n");
               const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([head + rows], { type: "text/csv" })); a.download = `producao_${period}.csv`; a.click(); URL.revokeObjectURL(a.href);
-            }} onPdf={() => H.exportPDF("Produtividade por pessoa", ["Pessoa", "Demanda", "Baixados", "Aprovados", "Reprovados", "Pendentes", "Conclusão", "SLA médio"], prod.rows.map(r => [r.name, r.demanda, r.baixados, r.approved, r.rejected, r.pendentes, Math.round((r.pct || 0) * 100) + "%", ((Number(r.avgSla) || 0).toFixed(1) + "h")]), periodLabel)}/>
+            }} onXlsx={() => {
+              const cols = ["Pessoa", "Demanda", "Baixados", "Aprovados", "Reprovados", "Pendentes", "Conclusao %", "SLA medio h"];
+              const rows = prod.rows.map(r => [r.name, r.demanda, r.baixados, r.approved, r.rejected, r.pendentes, Math.round((r.pct || 0) * 100), Number((Number(r.avgSla) || 0).toFixed(1))]);
+              H.exportXLSX("Producao", cols, rows, `producao_${period}`);
+            }} onPdf={() => H.exportPDF("Produtividade por pessoa", ["Pessoa", "Demanda", "Baixados", "Aprovados", "Reprovados", "Pendentes", "Conclusão", "SLA médio"], prod.rows.map(r => [r.name, r.demanda, r.baixados, r.approved, r.rejected, r.pendentes, Math.round((r.pct || 0) * 100) + "%", ((Number(r.avgSla) || 0).toFixed(1) + "h")]), periodLabel, [
+              { label: "Demanda total", value: String(prod.totals.demanda) },
+              { label: "Baixados", value: String(prod.totals.baixados) },
+              { label: "Pendentes", value: String(prod.totals.pendentes) },
+              { label: "Conclusao", value: Math.round(prod.totals.demanda ? (prod.totals.baixados / prod.totals.demanda) * 100 : 0) + "%" },
+              { label: "Equipe", value: String(prod.rows.length) },
+            ])}/>
           </div>
           <table className="tbl">
             <thead><tr><th>Pessoa</th><th style={{ width: 240 }}>Baixas</th><th style={{ textAlign: "right" }}>Demanda</th><th style={{ textAlign: "right" }}>Baixados</th><th style={{ textAlign: "right" }}>Pendentes</th><th style={{ textAlign: "right" }}>SLA médio</th><th style={{ width: 110, textAlign: "right" }}>Conclusão</th></tr></thead>

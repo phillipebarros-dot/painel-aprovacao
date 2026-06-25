@@ -68,9 +68,18 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
               {months.map(m => <option key={m.value} value={"m:" + m.value}>{m.label}</option>)}
             </select>
           </div>
-          <ExportMenu onCsv={exportCsv} onPdf={() => {
-            // FIX A: PDF agora usa statusLabel (H.norm -> traduzido) em vez de labels[c.status] cru
-            H.exportPDF("Resumo operacional", ["Status", "Cliente", "PI", "Veículo", "Meio", "Praça", "Arq.", "Recebido"], checkings.slice(0, 200).map(c => [statusLabel(c.status), c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt)]), `${stats.total} checkings`);
+          <ExportMenu onCsv={exportCsv} onXlsx={() => {
+            const cols = ["Status", "Cliente", "PI", "Veiculo", "Meio", "Praca", "Arquivos", "Recebido"];
+            const rows = checkings.slice(0, 500).map(c => [statusLabel(c.status), c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt)]);
+            H.exportXLSX("Resumo", cols, rows, "resumo_operacional");
+          }} onPdf={() => {
+            H.exportPDF("Resumo operacional", ["Status", "Cliente", "PI", "Veículo", "Meio", "Praça", "Arq.", "Recebido"], checkings.slice(0, 200).map(c => [statusLabel(c.status), c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt)]), `${stats.total} checkings`, [
+              { label: "Total", value: String(stats.total) },
+              { label: "Pendentes", value: String(stats.pending) },
+              { label: "Aprovados", value: String(stats.approved) },
+              { label: "Reprovados", value: String(stats.rejected) },
+              { label: "SLA medio", value: stats.avgSlaHours.toFixed(1) + "h" },
+            ]);
           }}/>
           <Button variant="primary" icon="bolt" onClick={() => onStartTriage ? onStartTriage() : onNavigate("approvals")}>Revisar em sequência</Button>
         </div>

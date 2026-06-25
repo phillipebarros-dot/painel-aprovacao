@@ -194,7 +194,7 @@ const CountUp = ({ value, format, dur = 1100 }) => {
 Object.assign(window, { Icon, Pill, Avatar, Button, Segmented, SearchInput, Empty, NumDot, Toggle, useCountUp, CountUp });
 
 // Export menu (CSV / PDF)
-function ExportMenu({ onCsv, onPdf, label = "Exportar" }) {
+function ExportMenu({ onCsv, onPdf, onXlsx, label = "Exportar" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => { const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, []);
@@ -204,6 +204,7 @@ function ExportMenu({ onCsv, onPdf, label = "Exportar" }) {
       {open && (
         <div className="dropdown" style={{ top: 42, right: 0, minWidth: 180 }}>
           <div className="dropdown-item" onClick={() => { setOpen(false); onCsv && onCsv(); }}><Icon name="reports" size={15}/><span>Exportar CSV</span></div>
+          {onXlsx && <div className="dropdown-item" onClick={() => { setOpen(false); onXlsx(); }}><Icon name="reports" size={15}/><span>Exportar Excel</span></div>}
           <div className="dropdown-item" onClick={() => { setOpen(false); onPdf && onPdf(); }}><Icon name="pdf" size={15}/><span>Exportar PDF</span></div>
         </div>
       )}

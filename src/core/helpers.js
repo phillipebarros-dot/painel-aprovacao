@@ -271,12 +271,48 @@
   window.H = { fmtRelTime, fmtTime, fmtDate, fmtDateLong, fmtNum, fmtPct, fmtHours, fmtDur, norm, slaAgeH, computeStats, buildVolumeSeries, buildMonthSeries, recentMonths, topRanking, extractList, supplierRating, agingBuckets, distribution, slaHeatmap, calendarData, funnelData, teamProductivity };
 
   // Exportação PDF genérica (abre janela de impressão com tabela estilizada)
-  window.H.exportPDF = function (title, columns, rows, subtitle) {
-    const w = window.open("", "_blank");
+  // ─── Exportar XLSX (XML Spreadsheet, sem dependencia externa) ───
+  window.H.exportXLSX = function (title, columns, rows, filename) {
+    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const cellType = (v) => typeof v === 'number' ? 'Number' : 'String';
+    const cellVal = (v) => typeof v === 'number' ? v : esc(v);
+    const headerCells = columns.map(c => `<Cell ss:StyleID="hdr"><Data ss:Type="String">${esc(c)}</Data></Cell>`).join('');
+    const dataRows = rows.map(r =>
+      '<Row>' + r.map(c => `<Cell><Data ss:Type="${cellType(c)}">${cellVal(c)}</Data></Cell>`).join('') + '</Row>'
+    ).join('\n');
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+  <Style ss:ID="Default"><Font ss:FontName="Calibri" ss:Size="11"/></Style>
+  <Style ss:ID="hdr"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#059669" ss:Pattern="Solid"/></Style>
+</Styles>
+<Worksheet ss:Name="${esc(title).substring(0, 31)}">
+<Table>
+${columns.map((_, i) => `<Column ss:Width="120"/>`).join('')}
+<Row>${headerCells}</Row>
+${dataRows}
+</Table>
+</Worksheet>
+</Workbook>`;
+    const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (filename || title.replace(/[^a-zA-Z0-9]/g, '_')) + '.xls';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  // ─── Exportar PDF (abre janela printavel) ───
+  // summary: array de { label, value } para sumario executivo no topo
+  window.H.exportPDF = function (title, columns, rows, subtitle, summary) {
+    const w = window.open('', '_blank');
     if (!w) return;
-    const esc = (s) => String(s == null ? "" : s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
-    const head = columns.map(c => `<th>${esc(c)}</th>`).join("");
-    const body = rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("");
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    const head = columns.map(c => `<th>${esc(c)}</th>`).join('');
+    const body = rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('');
+    const summaryHtml = summary && summary.length ? `<div class="summary">${summary.map(s => `<div class="skpi"><div class="skpi-val">${esc(s.value)}</div><div class="skpi-label">${esc(s.label)}</div></div>`).join('')}</div>` : '';
     w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(title)}</title>
       <style>
         @page { size: A4 landscape; margin: 16mm; }
@@ -288,14 +324,19 @@
         .meta { font-size: 11px; color: #666; text-align: right; }
         h1 { font-size: 15px; margin: 0 0 2px; }
         .sub { font-size: 11px; color: #666; }
+        .summary { display: flex; gap: 24px; margin: 12px 0 16px; padding: 14px 18px; background: #f8f9fa; border: 1px solid #e5e5e5; border-radius: 6px; }
+        .skpi { text-align: center; min-width: 80px; }
+        .skpi-val { font-size: 22px; font-weight: 700; color: #059669; }
+        .skpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #666; margin-top: 2px; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
         th { text-align: left; text-transform: uppercase; font-size: 9.5px; letter-spacing: 0.05em; color: #555; border-bottom: 1px solid #999; padding: 7px 8px; }
         td { padding: 6px 8px; border-bottom: 1px solid #e5e5e5; color: #222; }
         tr:nth-child(even) td { background: #fafafa; }
         .ft { margin-top: 18px; font-size: 10px; color: #999; display: flex; justify-content: space-between; }
       </style></head><body>
-      <div class="hd"><div><div class="brand">Grupo OM <span>·</span> Painel de Checking</div><h1 style="margin-top:8px">${esc(title)}</h1>${subtitle ? `<div class="sub">${esc(subtitle)}</div>` : ""}</div>
-      <div class="meta">Gerado em<br>${new Date().toLocaleString("pt-BR")}</div></div>
+      <div class="hd"><div><div class="brand">Grupo OM <span>·</span> Painel de Checking</div><h1 style="margin-top:8px">${esc(title)}</h1>${subtitle ? `<div class="sub">${esc(subtitle)}</div>` : ''}</div>
+      <div class="meta">Gerado em<br>${new Date().toLocaleString('pt-BR')}</div></div>
+      ${summaryHtml}
       <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
       <div class="ft"><span>painelchecking.grupoom.com.br</span><span>${rows.length} registros</span></div>
       <script>window.onload=()=>{setTimeout(()=>window.print(),300)}<\/script>

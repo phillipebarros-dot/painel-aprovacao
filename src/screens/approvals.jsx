@@ -105,13 +105,26 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
     const cols = ["Status", "Cliente", "PI", "Veículo", "Meio", "Praça", "Arq.", "Recebido", "Responsável"];
     const labels = { pending: "Pendente", approved: "Aprovado", rejected: "Reprovado" };
     const rows = filtered.map(c => [labels[c.status] || c.status, c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt), c.approval_user || "-"]);
-    H.exportPDF("Aprovações", cols, rows, `Filtro: ${tab === "all" ? "todos" : tab}`);
+    const stats = H.computeStats(filtered);
+    H.exportPDF("Aprovações", cols, rows, `Filtro: ${tab === "all" ? "todos" : tab}`, [
+      { label: "Total", value: String(filtered.length) },
+      { label: "Pendentes", value: String(stats.pending) },
+      { label: "Aprovados", value: String(stats.approved) },
+      { label: "Reprovados", value: String(stats.rejected) },
+      { label: "Taxa aprov.", value: stats.total ? Math.round(stats.approved / stats.total * 100) + "%" : "0%" },
+    ]);
   };
   const exportCsv = () => {
     const header = "Status,Cliente,PI,Veículo,Meio,Praça,Arquivos,Recebido,Aprovador\n";
     const rows = filtered.map(c => `"${c.status}","${c.cliente}","${c.n_pi}","${c.veiculo}","${c.meio}","${c.praca}","${c.total_arquivos}","${new Date(c.submittedAt).toLocaleString("pt-BR")}","${c.approval_user}"`).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `aprovacoes_${tab}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  };
+  const exportXlsx = () => {
+    const cols = ["Status", "Cliente", "PI", "Veiculo", "Meio", "Praca", "Arquivos", "Recebido", "Aprovador"];
+    const labels = { pending: "Pendente", approved: "Aprovado", rejected: "Reprovado" };
+    const rows = filtered.map(c => [labels[c.status] || c.status, c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt), c.approval_user || "-"]);
+    H.exportXLSX("Aprovacoes", cols, rows, `aprovacoes_${tab}`);
   };
 
   const SortHead = ({ k, children, style }) => (
@@ -128,7 +141,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
         <div className="row gap-3">
           {!isViewer && tab === "pending" && stats.pending > 0 && onStartTriage && <Button variant="accent" icon="bolt" onClick={onStartTriage}>Revisar em sequência</Button>}
           {!isViewer && <Button variant={compareMode ? "accent" : "ghost"} icon="columns" onClick={() => { setCompareMode(m => !m); setPicks([]); }}>{compareMode ? "Comparando" : "Comparar"}</Button>}
-          <ExportMenu onCsv={exportCsv} onPdf={exportPdf}/>
+          <ExportMenu onCsv={exportCsv} onPdf={exportPdf} onXlsx={exportXlsx}/>
         </div>
       </div>
 
