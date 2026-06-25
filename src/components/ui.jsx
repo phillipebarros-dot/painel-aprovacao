@@ -143,12 +143,48 @@ const Segmented = ({ value, onChange, options }) => {
   );
 };
 
-const SearchInput = ({ value, onChange, placeholder = "Buscar…", style = {} }) => (
-  <div className="input-wrap" style={style}>
-    <Icon name="search"/>
-    <input className="input search" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)}/>
-  </div>
-);
+const SearchInput = ({ value, onChange, placeholder = "Buscar…", style = {} }) => {
+  const HISTORY_KEY = 'painel_search_history';
+  const [focused, setFocused] = useState(false);
+  const ref = useRef(null);
+  const history = React.useMemo(() => {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]').slice(0, 8); } catch { return []; }
+  }, [focused]);
+  const saveSearch = (term) => {
+    if (!term || !term.trim()) return;
+    const t = term.trim();
+    const prev = history.filter(h => h !== t);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([t, ...prev].slice(0, 8)));
+  };
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setFocused(false); };
+    document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h);
+  }, []);
+  return (
+    <div ref={ref} className="input-wrap" style={{ ...style, position: 'relative' }}>
+      <Icon name="search"/>
+      <input className="input search" value={value} placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && value.trim()) { saveSearch(value); setFocused(false); } }}
+      />
+      {value && <button className="icon-btn" style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }} onClick={() => onChange('')}><Icon name="x" size={13}/></button>}
+      {focused && !value && history.length > 0 && (
+        <div className="dropdown" style={{ top: 42, left: 0, right: 0, minWidth: 200 }}>
+          <div style={{ padding: '6px 12px', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--ink-3)' }}>Buscas recentes</div>
+          {history.map((h, i) => (
+            <div key={i} className="dropdown-item" onClick={() => { onChange(h); saveSearch(h); setFocused(false); }}>
+              <Icon name="clock" size={13}/><span>{h}</span>
+            </div>
+          ))}
+          <div className="dropdown-item" style={{ color: 'var(--alert)', fontSize: 12 }} onClick={() => { localStorage.removeItem(HISTORY_KEY); setFocused(false); }}>
+            <Icon name="x" size={12}/><span>Limpar historico</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Empty = ({ title, hint, icon = "search" }) => (
   <div className="empty-wrap">
