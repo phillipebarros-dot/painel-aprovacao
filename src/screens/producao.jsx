@@ -391,7 +391,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   const H = window.H;
   const monthOpts = React.useMemo(() => { const a = []; const now = new Date(); for (let i = 0; i < 3; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); a.push({ v: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) }); } return a; }, []);
   const [mes, setMes] = React.useState(monthOpts[0].v);
-  const [mode, setMode] = React.useState("conta");
+  // Modo unico: por conta (Marlene/Anne pediu divisao por conta, nao equilibrar)
   const inMonth = (c) => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === mes; };
   const poolAll = React.useMemo(() => checkings.filter(c => H.norm(c.status) === "pending" && inMonth(c)), [checkings, mes]);
 
@@ -419,35 +419,23 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   const contasAtribuidas = contasGrupo.filter(g => (contaSplit[g.conta] || []).some(s => s.name && s.qty > 0)).length;
   const pisAtribuidos = contasGrupo.reduce((s, g) => s + (contaSplit[g.conta] || []).filter(x => x.name).reduce((a, x) => a + x.qty, 0), 0);
 
-  // ── Equilibrar: divide a fila igualmente entre pessoas ──
-  const [people, setPeople] = React.useState(() => team.slice());
-  const per = people.length ? Math.floor(poolAll.length / people.length) : 0;
-  const resto = people.length ? poolAll.length % people.length : 0;
-  const toggle = (name) => setPeople(p => p.includes(name) ? p.filter(x => x !== name) : [...p, name]);
+
 
   const confirm = () => {
     const map = {};
-    if (mode === "conta") {
-      contasGrupo.forEach(g => {
-        const splits = (contaSplit[g.conta] || []).filter(s => s.name && s.qty > 0);
-        if (!splits.length) return;
-        let idx = 0;
-        splits.forEach(s => {
-          for (let i = 0; i < s.qty && idx < g.pis.length; i++, idx++) {
-            map[g.pis[idx].submission_id] = s.name;
-          }
-        });
+    contasGrupo.forEach(g => {
+      const splits = (contaSplit[g.conta] || []).filter(s => s.name && s.qty > 0);
+      if (!splits.length) return;
+      let idx = 0;
+      splits.forEach(s => {
+        for (let i = 0; i < s.qty && idx < g.pis.length; i++, idx++) {
+          map[g.pis[idx].submission_id] = s.name;
+        }
       });
-      onAssign && onAssign(map);
-      onClose();
-      onToast?.({ type: "success", message: `${Object.keys(map).length} PIs de ${contasAtribuidas} contas atribuidos.` });
-    } else {
-      if (!people.length) return;
-      poolAll.forEach((c, i) => { map[c.submission_id] = people[i % people.length]; });
-      onAssign && onAssign(map);
-      onClose();
-      onToast?.({ type: "success", message: `${poolAll.length} PIs divididos entre ${people.length} pessoas (~${per} cada).` });
-    }
+    });
+    onAssign && onAssign(map);
+    onClose();
+    onToast?.({ type: "success", message: `${Object.keys(map).length} PIs de ${contasAtribuidas} contas atribuidos.` });
   };
 
   const userColor = (name) => window.MOCK.users.find(u => u.name === name)?.color || "#0E7490";
@@ -465,14 +453,9 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
             <label className="eyebrow" style={{ fontSize: 10 }}>Mês da demanda</label>
             <select className="input" value={mes} onChange={e => setMes(e.target.value)} style={{ textTransform: "capitalize" }}>{monthOpts.map(m => <option key={m.v} value={m.v}>{m.label}</option>)}</select>
           </div>
-          <div className="col" style={{ gap: 6, flex: 1 }}>
-            <label className="eyebrow" style={{ fontSize: 10 }}>Modo</label>
-            <Segmented value={mode} onChange={setMode} options={[{ value: "conta", label: "Por conta" }, { value: "equilibrar", label: "Equilibrar" }]}/>
-          </div>
         </div>
 
-        {mode === "conta" ? (<>
-          <p className="body-sm" style={{ margin: 0 }}>Cada conta pode ser dividida entre multiplas pessoas. Defina a quantidade de PIs para cada responsavel, como na planilha.</p>
+        <p className="body-sm" style={{ margin: 0 }}>Cada conta pode ser dividida entre multiplas pessoas. Defina a quantidade de PIs para cada responsavel.</p>
           {contasGrupo.length === 0 ? <Empty title="Sem PIs pendentes neste mes" icon="layers"/> : (
             <div className="div-conta-list">
               {contasGrupo.map(g => {
@@ -503,32 +486,12 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
               );})}
             </div>
           )}
-        </>) : (<>
-          <p className="body-sm" style={{ margin: 0 }}>Divide a fila pendente do mês igualmente entre as pessoas selecionadas. Cada PI fica travado no login de quem recebeu.</p>
-          <div className="col" style={{ gap: 8 }}>
-            <label className="eyebrow" style={{ fontSize: 10 }}>Pessoas ({people.length})</label>
-            <div className="row gap-2" style={{ flexWrap: "wrap" }}>
-              {team.map(name => (
-                <button key={name} className="chip" style={{ cursor: "pointer", opacity: people.includes(name) ? 1 : 0.45 }} onClick={() => toggle(name)}>
-                  <Avatar user={{ nome: name, color: userColor(name) }} size={18}/> {name.split(" ")[0]}
-                  {people.includes(name) && <Icon name="check" size={11} strokeWidth={2.4} style={{ color: "var(--accent)" }}/>}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="card" style={{ background: "var(--surface-2)", padding: "14px 16px" }}>
-            <div className="row" style={{ justifyContent: "space-between" }}>
-              <span className="body-sm">{poolAll.length} PIs ÷ {people.length} pessoas</span>
-              <span className="cell-mono" style={{ fontWeight: 600 }}>{per}{resto ? ` a ${per + 1}` : ""} por pessoa</span>
-            </div>
-          </div>
-        </>)}
       </div>
       <div className="row gap-3" style={{ justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid var(--rule)" }}>
-        <span className="body-xs muted">{mode === "conta" ? `${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs` : `${poolAll.length} PIs no mês`}</span>
+        <span className="body-xs muted">{`${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs`}</span>
         <div className="row gap-3">
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button variant="primary" icon="check" disabled={mode === "conta" ? !contasAtribuidas : (!people.length || !poolAll.length)} onClick={confirm}>Confirmar divisão</Button>
+          <Button variant="primary" icon="check" disabled={!contasAtribuidas} onClick={confirm}>Confirmar divisão</Button>
         </div>
       </div>
     </div>
