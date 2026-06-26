@@ -62,7 +62,7 @@ const iconPaths = {
   google:     <><path d="M14.5 8c0-.5-.05-1-.13-1.5H8v3h3.7c-.16.9-.65 1.65-1.4 2.16v1.8h2.27c1.32-1.22 2.08-3.02 2.08-5.46z" fill="#4285F4"/><path d="M8 14.5c1.89 0 3.48-.62 4.64-1.7L10.3 11c-.65.43-1.47.69-2.3.69-1.77 0-3.27-1.2-3.8-2.81H1.78v1.81A6.99 6.99 0 0 0 8 14.5z" fill="#34A853"/><path d="M4.2 8.88a4.2 4.2 0 0 1 0-2.76V4.3H1.78a7 7 0 0 0 0 6.4l2.42-1.82z" fill="#FBBC05"/><path d="M8 4.43c1 0 1.9.34 2.6 1.02L12.65 3.4A6.97 6.97 0 0 0 8 1.5a6.99 6.99 0 0 0-6.22 3.8L4.2 7.12c.53-1.6 2.03-2.81 3.8-2.81z" fill="#EA4335"/></>,
 };
 
-const Icon = ({ name, size = 16, className = "ico", style = {}, strokeWidth = 1.5 }) => {
+const Icon = ({ name, size = 16, className = "ico", style = {}, strokeWidth = 1.8 }) => {
   const p = iconPaths[name];
   if (!p) return null;
   const isGoogle = name === "google";

@@ -573,7 +573,8 @@ select.input {
 /* inline quick actions in table rows */
 .inline-act { opacity: 0; transform: translateX(6px); transition: all 160ms var(--ease); }
 .tbl tbody tr:hover .inline-act { opacity: 1; transform: none; }
-.inline-act .btn.sm { padding: 5px 9px; }
+.inline-act .btn.sm { padding: 6px 11px; min-height: 30px; min-width: 30px; }
+.inline-act .btn.sm .ico { width: 15px; height: 15px; }
 @media (hover: none) { .inline-act { opacity: 1; transform: none; } }
 
 /* ════════ Co-piloto ════════ */

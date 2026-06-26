@@ -101,10 +101,17 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
     setSelected(new Set()); onRefresh?.();
   };
 
+  // Formata data de decisão (aprovação/reprovação) de forma absoluta
+  const fmtDecisionDate = (c) => {
+    const ts = c.approvedAt || c.rejectedAt;
+    if (!ts || isNaN(ts)) return "";
+    return new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " + new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  };
+
   const exportPdf = () => {
-    const cols = ["Status", "Cliente", "PI", "Veículo", "Meio", "Praça", "Arq.", "Recebido", "Responsável"];
+    const cols = ["Status", "Cliente", "Campanha", "PI", "Veículo", "Meio", "Praça", "Arq.", "Recebido", "Aprovado em", "Responsável"];
     const labels = { pending: "Pendente", approved: "Aprovado", rejected: "Reprovado" };
-    const rows = filtered.map(c => [labels[c.status] || c.status, c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt), c.approval_user || "-"]);
+    const rows = filtered.map(c => [labels[c.status] || c.status, c.cliente, c.campanha || "-", c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt), fmtDecisionDate(c) || "-", c.approval_user || "-"]);
     const stats = H.computeStats(filtered);
     H.exportPDF("Aprovações", cols, rows, `Filtro: ${tab === "all" ? "todos" : tab}`, [
       { label: "Total", value: String(filtered.length) },
@@ -115,15 +122,15 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
     ]);
   };
   const exportCsv = () => {
-    const header = "Status,Cliente,PI,Veículo,Meio,Praça,Arquivos,Recebido,Aprovador\n";
-    const rows = filtered.map(c => `"${c.status}","${c.cliente}","${c.n_pi}","${c.veiculo}","${c.meio}","${c.praca}","${c.total_arquivos}","${new Date(c.submittedAt).toLocaleString("pt-BR")}","${c.approval_user}"`).join("\n");
+    const header = "Status,Cliente,Campanha,PI,Veículo,Meio,Praça,Arquivos,Recebido,Aprovado em,Aprovador\n";
+    const rows = filtered.map(c => `"${c.status}","${c.cliente}","${c.campanha || ""}","${c.n_pi}","${c.veiculo}","${c.meio}","${c.praca}","${c.total_arquivos}","${new Date(c.submittedAt).toLocaleString("pt-BR")}","${fmtDecisionDate(c)}","${c.approval_user}"`).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `aprovacoes_${tab}.csv`; a.click(); URL.revokeObjectURL(a.href);
   };
   const exportXlsx = () => {
-    const cols = ["Status", "Cliente", "PI", "Veiculo", "Meio", "Praca", "Arquivos", "Recebido", "Aprovador"];
+    const cols = ["Status", "Cliente", "Campanha", "PI", "Veiculo", "Meio", "Praca", "Arquivos", "Recebido", "Aprovado em", "Aprovador"];
     const labels = { pending: "Pendente", approved: "Aprovado", rejected: "Reprovado" };
-    const rows = filtered.map(c => [labels[c.status] || c.status, c.cliente, c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt), c.approval_user || "-"]);
+    const rows = filtered.map(c => [labels[c.status] || c.status, c.cliente, c.campanha || "-", c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt), fmtDecisionDate(c) || "-", c.approval_user || "-"]);
     H.exportXLSX("Aprovacoes", cols, rows, `aprovacoes_${tab}`);
   };
 
@@ -222,12 +229,14 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
                 <th style={{ width: 54 }}>Status</th>
                 <SortHead k="submittedAt">Recebido</SortHead>
                 <SortHead k="cliente">Cliente</SortHead>
+                <SortHead k="campanha">Campanha</SortHead>
                 <SortHead k="n_pi">PI</SortHead>
                 <SortHead k="veiculo">Veículo</SortHead>
                 <SortHead k="meio">Meio</SortHead>
                 <SortHead k="praca">Praça</SortHead>
                 <SortHead k="total_arquivos" style={{ width: 70, textAlign: "right" }}>Arq.</SortHead>
                 {copilotOn && <th style={{ width: 96 }}>Confiança</th>}
+                {(tab === "approved" || tab === "rejected") && <th style={{ width: 130 }}>Data decisão</th>}
                 <th style={{ width: 130 }}>Responsável</th>
                 {!isViewer && !compareMode && <th style={{ width: 150 }}/>}
                 <th style={{ width: 40 }}/>
@@ -242,12 +251,14 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
                       <td><span title={c.status} style={{ width: 8, height: 8, borderRadius: 99, display: "inline-block", background: statusColor(c.status) }}/></td>
                       <td className="cell-time">{H.fmtRelTime(c.submittedAt)} <span style={{ color: "var(--ink-4)" }}>· {H.fmtTime(c.submittedAt)}</span></td>
                       <td style={{ fontWeight: 500 }}>{c.cliente}{c.is_complement === 1 && <span className="pill pill-info" style={{ marginLeft: 6 }}>compl</span>}{c.rejection_count > 0 && c.status !== "approved" && <span className="pill pill-rejected" style={{ marginLeft: 6 }}>×{c.rejection_count + 1}</span>}</td>
+                      <td className="cell-secondary" style={{ fontSize: 12.5, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={c.campanha || ""}>{c.campanha || <span style={{ color: "var(--ink-4)" }}>—</span>}</td>
                       <td className="cell-pi"><span className="row gap-2" style={{ alignItems: "center" }}><PubliFlag sit={c.sit_publi} compact/>{c.n_pi}</span></td>
                       <td>{c.veiculo}</td>
                       <td className="cell-secondary">{c.meio}</td>
                       <td className="cell-secondary" style={{ fontSize: 12 }}>{c.praca}</td>
                       <td className="cell-mono" style={{ textAlign: "right", color: "var(--ink-2)" }}>{c.total_arquivos}</td>
                       {copilotOn && <td>{c.status === "pending" ? <CopilotBadge checking={c} size="sm"/> : <span className="muted" style={{ fontSize: 12 }}>·</span>}</td>}
+                      {(tab === "approved" || tab === "rejected") && <td className="cell-time" style={{ fontSize: 12, whiteSpace: "nowrap" }}>{c.status === "approved" && c.approvedAt ? <span style={{ color: "var(--accent)" }}><Icon name="check" size={11} style={{ verticalAlign: "middle", marginRight: 3 }}/>{new Date(c.approvedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })} {new Date(c.approvedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span> : c.status === "rejected" && c.rejectedAt ? <span style={{ color: "var(--alert)" }}><Icon name="x" size={11} style={{ verticalAlign: "middle", marginRight: 3 }}/>{new Date(c.rejectedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })} {new Date(c.rejectedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span> : <span style={{ color: "var(--ink-4)" }}>—</span>}</td>}
                       <td>{c.approval_user ? <div className="row gap-2"><Avatar user={{ nome: c.approval_user, color: "#0E7490" }} size={22}/><span className="cell-secondary" style={{ fontSize: 12.5 }}>{c.approval_user.split(" ")[0]}</span></div> : <span className="row gap-2" style={{ fontSize: 12, color: "var(--ink-4)" }}><span style={{ width: 6, height: 6, borderRadius: 99, background: "var(--warn)", display: "inline-block", opacity: 0.6 }}/>Pendente</span>}</td>
                       {!isViewer && !compareMode && <td onClick={(e) => e.stopPropagation()}>{c.status === "pending" ? <div className="row gap-2 inline-act"><button className="btn btn-accent sm" title="Aprovar" onClick={() => onDecide(c, "approve")}><Icon name="check"/></button><button className="btn btn-ghost sm" title="Reprovar" onClick={() => { const r = prompt("Motivo da reprovação:"); if (r) onDecide(c, "reject", r); }}><Icon name="x"/></button></div> : null}</td>}
                       <td><span className="row-arrow"><Icon name={compareMode ? "plus" : "arrow_right"}/></span></td>
@@ -276,8 +287,10 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
                     <span className="check-time">{H.fmtRelTime(c.submittedAt)}</span>
                   </div>
                   <div className="check-client">{c.cliente}{c.is_complement === 1 && <span className="pill pill-info" style={{ marginLeft: 8, verticalAlign: "middle" }}>compl</span>}</div>
+                  {c.campanha && <div style={{ fontSize: 11.5, color: "var(--info)", fontWeight: 500, marginBottom: 2 }}><Icon name="layers" size={11} style={{ verticalAlign: "middle", marginRight: 4 }}/>{c.campanha}</div>}
                   <div className="check-pi"><span className="cell-pi">{c.n_pi}</span> · {c.veiculo}</div>
                   <div className="check-meta">{c.meio} · {c.praca} · {c.total_arquivos} arquivos</div>
+                  {c.status !== "pending" && (c.approvedAt || c.rejectedAt) && <div style={{ fontSize: 11, color: c.status === "approved" ? "var(--accent)" : "var(--alert)", marginTop: 4 }}>{c.status === "approved" ? "✓" : "✗"} {new Date(c.approvedAt || c.rejectedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })} {new Date(c.approvedAt || c.rejectedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>}
                   {copilotOn && c.status === "pending" && (() => {
                     const s = window.AI.copilotScore(c);
                     const col = s.level === "high" ? "var(--accent)" : s.level === "mid" ? "var(--warn)" : "var(--alert)";
@@ -330,6 +343,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
                         <span className="check-time">{H.fmtRelTime(c.submittedAt)}</span>
                       </div>
                       <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 3 }}>{c.cliente}</div>
+                      {c.campanha && <div style={{ fontSize: 11, color: "var(--info)", fontWeight: 500, marginBottom: 2 }}>{c.campanha}</div>}
                       <div style={{ fontSize: 12, color: "var(--ink-3)" }}>{c.veiculo} · {c.meio}</div>
                       <div className="row gap-2" style={{ marginTop: 9, alignItems: "center" }}>
                         {st === "pending" && copilotOn && (() => { const s = window.AI.copilotScore(c); const cc = s.level === "high" ? "var(--accent)" : s.level === "mid" ? "var(--warn)" : "var(--alert)"; return <span className="copilot-chip" style={{ background: "transparent", color: cc, padding: 0 }}><span className="copilot-dot" style={{ background: cc }}/>{s.conf}%</span>; })()}
@@ -380,7 +394,7 @@ function CompareView({ a, b, onClose, onOpenReview }) {
     );
   };
   const rows = [
-    ["PI", a.n_pi, b.n_pi, true], ["Veículo", a.veiculo, b.veiculo], ["Meio", a.meio, b.meio], ["Praça", a.praca, b.praca],
+    ["PI", a.n_pi, b.n_pi, true], ["Campanha", a.campanha || "—", b.campanha || "—"], ["Veículo", a.veiculo, b.veiculo], ["Meio", a.meio, b.meio], ["Praça", a.praca, b.praca],
     ["Submarca", a.submarca, b.submarca], ["Arquivos", a.total_arquivos, b.total_arquivos, true],
     ["Recebido", H.fmtDate(a.submittedAt), H.fmtDate(b.submittedAt), true], ["Contato", a.nome_contato, b.nome_contato],
   ];
