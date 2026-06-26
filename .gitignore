@@ -1,18 +1,61 @@
+# ===================================================
+# DEPENDENCIAS — npm install recria, nao versionar
+# ===================================================
 node_modules/
+
+# ===================================================
+# ARTEFATOS DE BUILD — Docker/CI rebuilda, nao versionar
+# ===================================================
 dist/
 build/
-.DS_Store
-*.log
-.env
-.env.local
+*.tsbuildinfo
 
-# n8n workflow (contem credenciais)
+# ===================================================
+# SEGREDOS — chaves, tokens, variaveis de ambiente
+# Vazar .env = acesso total ao backend
+# ===================================================
+.env
+.env.*
+!.env.example
+
+# ===================================================
+# n8n WORKFLOWS — contêm IDs de credenciais OAuth
+# (BigQuery, Google Drive, Sheets, SMTP)
+# Se vazar: atacante sabe quais serviços estão conectados
+# ===================================================
 n8n/
 
-# Pentest (nao versionar)
+# ===================================================
+# PENTEST / SEGURANÇA — NUNCA versionar
+# Estes arquivos revelam vulnerabilidades conhecidas,
+# payloads de ataque e resultados de varredura.
+# Se vazar: atacante tem mapa completo de onde atacar
+# ===================================================
 pentest_full.py
 pentest_results.json
 sqlmap_request.txt
 fix_security_headers.py
 
+# ===================================================
+# REFERENCIA INTERNA — cópia do outro sistema
+# ===================================================
 _ref_sistema_checking/
+
+# ===================================================
+# SISTEMA OPERACIONAL / IDE
+# ===================================================
+.DS_Store
+Thumbs.db
+.thumbnail
+*.log
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===================================================
+# GEMINI / AI — workspace local da IA
+# ===================================================
+.gemini/
+.agents/
