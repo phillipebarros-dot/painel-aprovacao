@@ -35,8 +35,9 @@ function ScreenAlerts({ checkings, currentUser, onOpenReview, onStartTriage, onD
   // Central de alertas referente às tarefas do usuário: analista vê só os seus PIs; admin vê todos (reunião 22/06)
   const scoped = React.useMemo(() => {
     if (isAdmin) return checkings;
-    const me = currentUser?.nome || currentUser?.name;
-    return checkings.filter(c => c.assigned_to === me);
+    /* FIX A7.4: normalizar name matching (trim+toLowerCase) */
+    const me = (currentUser?.nome || currentUser?.name || "").trim().toLowerCase();
+    return checkings.filter(c => (c.assigned_to || "").trim().toLowerCase() === me);
   }, [checkings, currentUser, isAdmin]);
 
   const alerts = React.useMemo(() => (isAdmin && preAlerts) ? preAlerts : AI.computeAlerts(scoped, profile), [scoped, profile, isAdmin, preAlerts]);

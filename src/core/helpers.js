@@ -286,7 +286,8 @@
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
 <Styles>
   <Style ss:ID="Default"><Font ss:FontName="Calibri" ss:Size="11"/></Style>
-  <Style ss:ID="hdr"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#059669" ss:Pattern="Solid"/></Style>
+  /* FIX A1.2: esmeralda -> accent claro */
+  <Style ss:ID="hdr"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#009d93" ss:Pattern="Solid"/></Style>
 </Styles>
 <Worksheet ss:Name="${esc(title).substring(0, 31)}">
 <Table>
@@ -320,13 +321,15 @@ ${dataRows}
         body { color: #111; margin: 0; padding: 28px; }
         .hd { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 16px; }
         .brand { font-weight: 700; font-size: 18px; letter-spacing: -0.02em; }
-        .brand span { color: #059669; }
+        /* FIX A1.2: esmeralda -> accent claro */
+        .brand span { color: #009d93; }
         .meta { font-size: 11px; color: #666; text-align: right; }
         h1 { font-size: 15px; margin: 0 0 2px; }
         .sub { font-size: 11px; color: #666; }
         .summary { display: flex; gap: 24px; margin: 12px 0 16px; padding: 14px 18px; background: #f8f9fa; border: 1px solid #e5e5e5; border-radius: 6px; }
         .skpi { text-align: center; min-width: 80px; }
-        .skpi-val { font-size: 22px; font-weight: 700; color: #059669; }
+        /* FIX A1.2: esmeralda -> accent claro */
+        .skpi-val { font-size: 22px; font-weight: 700; color: #009d93; }
         .skpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #666; margin-top: 2px; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
         th { text-align: left; text-transform: uppercase; font-size: 9.5px; letter-spacing: 0.05em; color: #555; border-bottom: 1px solid #999; padding: 7px 8px; }

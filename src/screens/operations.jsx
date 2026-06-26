@@ -4,7 +4,8 @@ function FlowNode({ node, idx, hover, onHover }) {
     entry: { bg: "rgba(37,99,235,0.08)", fg: "var(--info)", border: "rgba(37,99,235,0.25)" },
     security: { bg: "rgba(124,58,237,0.08)", fg: "#7C3AED", border: "rgba(124,58,237,0.25)" },
     logic: { bg: "var(--glass-2)", fg: "var(--ink)", border: "var(--rule-strong)" },
-    data: { bg: "var(--accent-soft)", fg: "var(--accent-ink)", border: "rgba(5,150,105,0.25)" },
+    /* FIX A1.2: esmeralda -> accent token */
+    data: { bg: "var(--accent-soft)", fg: "var(--accent-ink)", border: "color-mix(in srgb, var(--accent) 25%, transparent)" },
     notify: { bg: "var(--warn-soft)", fg: "var(--warn-ink)", border: "rgba(217,119,6,0.25)" },
   };
   const kind = node.kind || (idx === 0 ? "entry" : idx >= 4 ? "notify" : "logic");
@@ -42,7 +43,8 @@ function ScreenOperations({ onToast, checkings }) {
       {tab === "flow" && (<>
         <div className="card card-glass card-pad" style={{ marginBottom: 22, padding: "18px 22px" }}>
           <div className="row gap-4">
-            <div style={{ width: 40, height: 40, borderRadius: 11, background: "var(--accent-soft)", border: "1px solid rgba(5,150,105,0.3)", display: "grid", placeItems: "center" }}><Icon name="lock" size={18} style={{ color: "var(--accent)" }}/></div>
+            {/* FIX A1.2: esmeralda -> accent token */}
+            <div style={{ width: 40, height: 40, borderRadius: 11, background: "var(--accent-soft)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)", display: "grid", placeItems: "center" }}><Icon name="lock" size={18} style={{ color: "var(--accent)" }}/></div>
             <div className="col" style={{ gap: 2, flex: 1 }}><div className="h2">Frontend nunca fala diretamente com BigQuery, Drive ou SMTP</div><div style={{ fontSize: 13, color: "var(--ink-2)" }}>Toda requisição passa pelo n8n. CORS restrito + JWT obrigatório.</div></div>
             <Pill status="approved">9 camadas de segurança</Pill>
           </div>

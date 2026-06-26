@@ -77,7 +77,13 @@ function ColumnsMenu({ cols, visible, onToggle }) {
 
 function UserDrawer({ user, checkings, onClose, onRole, onStatus }) {
   const H = window.H;
-  const mine = React.useMemo(() => checkings.filter(c => c.assigned_to === user.nome || c.approval_user === user.nome), [checkings, user]);
+  /* FIX A7.4: normalizar name matching */
+  const uName = (user.nome || "").trim().toLowerCase();
+  const mine = React.useMemo(() => checkings.filter(c => {
+    const a = (c.assigned_to || "").trim().toLowerCase();
+    const p = (c.approval_user || "").trim().toLowerCase();
+    return a === uName || p === uName;
+  }), [checkings, uName]);
   const pend = mine.filter(c => H.norm(c.status) === "pending");
   const done = mine.filter(c => c.approvedAt || c.rejectedAt);
   const avgSla = done.length ? done.reduce((s, c) => s + ((c.approvedAt || c.rejectedAt) - c.submittedAt) / 3600000, 0) / done.length : 0;

@@ -20,7 +20,27 @@ function ScreenReports({ checkings, currentUser, onToast }) {
   const submarcas = React.useMemo(() => H.topRanking(rows, "submarca", 6).map(r => ({ ...r, color: "var(--ink)" })), [rows]);
   const byMeio = React.useMemo(() => H.topRanking(rows, "meio", 6).map(r => ({ ...r, color: "var(--accent)" })), [rows]);
 
-  const gen = (kind) => { setGenLoading(kind); setTimeout(() => { setGenLoading(null); onToast?.({ type: "success", message: kind === "pptx" ? "Slides PPTX gerados. Abrindo…" : "PDF exportado com sucesso." }); }, 1600); };
+  /* FIX A7.5: gen() PDF real via H.exportPDF; PPTX desabilitado ate Cloud Function existir */
+  const gen = (kind) => {
+    if (kind === "pptx") { onToast?.({ type: "info", message: "Geração PPTX ainda não implementada no backend." }); return; }
+    setGenLoading(kind);
+    try {
+      const cols = ["Status", "Cliente", "Campanha", "PI", "Veiculo", "Meio", "Praca", "Arquivos", "Recebido"];
+      const labels = { pending: "Pendente", approved: "Aprovado", rejected: "Reprovado" };
+      const pdfRows = rows.map(c => [labels[H.norm(c.status)] || c.status, c.cliente, c.campanha || "-", c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt)]);
+      H.exportPDF("Relatorio", cols, pdfRows, `${startDate} a ${endDate}`, [
+        { label: "Total", value: String(localStats.total) },
+        { label: "Aprovados", value: String(localStats.approved) },
+        { label: "Reprovados", value: String(localStats.rejected) },
+        { label: "Pendentes", value: String(localStats.pending) },
+        { label: "SLA medio", value: (Number(localStats.avgSlaHours) || 0).toFixed(1) + "h" },
+      ]);
+      onToast?.({ type: "success", message: "PDF exportado com sucesso." });
+    } catch (err) {
+      onToast?.({ type: "error", message: "Falha ao gerar PDF: " + (err.message || "") });
+    }
+    setGenLoading(null);
+  };
 
   return (
     <div className="page fade-in">
@@ -47,7 +67,8 @@ function ScreenReports({ checkings, currentUser, onToast }) {
             <div className="hr" style={{ margin: "20px 0" }}/>
             <div className="eyebrow" style={{ marginBottom: 12 }}>Formato</div>
             <div className="col gap-2">
-              <Button variant="primary" icon="upload" disabled={isViewer} loading={genLoading === "pptx"} onClick={() => gen("pptx")}>Gerar slides (PPTX)</Button>
+              {/* FIX A7.5: PPTX desabilitado ate backend existir */}
+              <Button variant="primary" icon="upload" disabled={true} loading={genLoading === "pptx"} onClick={() => gen("pptx")}>Gerar slides (em breve)</Button>
               <Button variant="ghost" icon="download" disabled={isViewer} loading={genLoading === "pdf"} onClick={() => gen("pdf")}>Exportar PDF</Button>
               {isViewer && <div style={{ fontSize: 11, color: "var(--ink-3)", textAlign: "center", marginTop: 4 }}>Somente visualização</div>}
             </div>

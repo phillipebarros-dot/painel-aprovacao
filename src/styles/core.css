@@ -29,6 +29,9 @@
   --accent:      #00C4B9;
   --accent-ink:  #7FE8E0;
   --accent-soft: rgba(0, 196, 185, 0.15);
+
+  /* FIX A2: token --ok (usado em review.jsx para 'Completo' e checkmark) */
+  --ok: var(--accent-ink);
   --accent-2:    #2BD3C8;
 
   /* Status hues alinhados ao spectrum OM */
@@ -112,6 +115,7 @@
   --accent-ink:  #007a70;
   --accent-soft: rgba(0, 157, 147, 0.10);
   --accent-2:    #00b6aa;
+  --ok: var(--accent-ink);
 
   --alert:       #be000a;  --alert-ink: #8a0007;  --alert-soft: rgba(190, 0, 10, 0.09);
   --warn:        #a9790a;  --warn-ink:  #7a5600;  --warn-soft:  rgba(235, 185, 0, 0.14);
@@ -261,7 +265,8 @@ body::before {
 }
 .sidebar::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse 200px 400px at 0% 30%, rgba(93,217,161,0.05), transparent 70%);
+  /* FIX A1.1: mint -> accent */
+  background: radial-gradient(ellipse 200px 400px at 0% 30%, rgba(0,196,185,0.05), transparent 70%);
 }
 
 /* ===== Rail (camada 1) ===== */
@@ -364,7 +369,8 @@ body::before {
 
 /* Light overrides */
 .content .pill-pending  { background: rgba(217,119,6,0.1);  color: #92400E; border-color: rgba(217,119,6,0.2); }
-.content .pill-approved { background: rgba(5,150,105,0.1);  color: #065F46; border-color: rgba(5,150,105,0.2); }
+/* FIX A1.2: esmeralda -> accent tokens no tema claro */
+.content .pill-approved { background: rgba(0,157,147,0.1);  color: #007a70; border-color: rgba(0,157,147,0.2); }
 .content .pill-rejected { background: rgba(220,38,38,0.08); color: #991B1B; border-color: rgba(220,38,38,0.2); }
 .content .pill-neutral  { background: rgba(0,0,0,0.04);     color: var(--ink-2); border-color: rgba(0,0,0,0.1); }
 .content .pill-info     { background: rgba(37,99,235,0.08); color: #1E40AF; border-color: rgba(37,99,235,0.18); }
@@ -568,7 +574,8 @@ body::before {
 .online-strip { display: flex; align-items: center; gap: 0; padding: 0 4px 0 0; }
 .online-strip .avatar {
   margin-left: -8px; width: 26px; height: 26px; font-size: 10px;
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px rgba(93, 217, 161, 0.35);
+  /* FIX A1.1: mint -> accent */
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px rgba(0, 196, 185, 0.35);
 }
 .online-strip .avatar:first-child { margin-left: 0; }
 .online-strip-label { font-size: 11.5px; color: var(--ink-3); margin-left: 12px; font-variant-numeric: tabular-nums; }
@@ -639,21 +646,25 @@ body:has(.login-split)::before { display: none; }
 .login-aurora { display: none; position: absolute; inset: -20%; z-index: 0; pointer-events: none; }
 .login-aurora .ray {
   position: absolute; top: -30%; left: 50%; width: 60%; height: 160%;
-  background: conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(93,217,161,0.30) 8deg, transparent 18deg);
+  /* FIX A1.1: mint -> accent */
+  background: conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(0,196,185,0.30) 8deg, transparent 18deg);
   transform-origin: 50% 0%; mix-blend-mode: screen; filter: blur(8px);
   animation: rayspin 28s linear infinite;
 }
 .login-aurora .ray.r2 { background: conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(45,212,191,0.26) 6deg, transparent 14deg); animation-duration: 40s; animation-direction: reverse; opacity: 0.85; }
-.login-aurora .ray.r3 { background: conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(99,102,241,0.22) 5deg, transparent 11deg); animation-duration: 52s; opacity: 0.7; }
+/* FIX A3: indigo -> info token */
+.login-aurora .ray.r3 { background: conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(63,160,220,0.22) 5deg, transparent 11deg); animation-duration: 52s; opacity: 0.7; }
 @keyframes rayspin { to { transform: rotate(360deg); } }
 .login-aurora .glow {
   position: absolute; top: -28%; left: 55%; width: 620px; height: 620px; transform: translateX(-50%);
-  background: radial-gradient(circle, rgba(93,217,161,0.42), rgba(45,212,191,0.12) 45%, transparent 64%);
+  /* FIX A1.1: mint -> accent */
+  background: radial-gradient(circle, rgba(0,196,185,0.42), rgba(0,196,185,0.12) 45%, transparent 64%);
   filter: blur(30px); animation: glowpulse 7s var(--ease-in-out) infinite;
 }
 @keyframes glowpulse { 0%,100% { opacity: 0.7; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.1); } }
 .login-aurora .blob { position: absolute; border-radius: 50%; filter: blur(64px); mix-blend-mode: screen; }
-.login-aurora .b1 { width: 460px; height: 460px; top: 2%; left: 22%; background: radial-gradient(circle, rgba(52,211,153,0.50), transparent 66%); animation: drift1 17s var(--ease-in-out) infinite; }
+/* FIX A1.1: mint -> accent */
+.login-aurora .b1 { width: 460px; height: 460px; top: 2%; left: 22%; background: radial-gradient(circle, rgba(0,196,185,0.50), transparent 66%); animation: drift1 17s var(--ease-in-out) infinite; }
 .login-aurora .b2 { width: 400px; height: 400px; top: 40%; left: 58%; background: radial-gradient(circle, rgba(20,184,166,0.42), transparent 66%); animation: drift2 21s var(--ease-in-out) infinite; }
 .login-aurora .b3 { width: 360px; height: 360px; top: 66%; left: 16%; background: radial-gradient(circle, rgba(27,91,136,0.40), transparent 68%); animation: drift1 25s var(--ease-in-out) infinite reverse; }
 @keyframes drift1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-44px,34px) scale(1.14); } }
@@ -661,7 +672,8 @@ body:has(.login-split)::before { display: none; }
 .login-aurora .mesh {
   position: absolute; inset: 0;
   background-image:
-    radial-gradient(ellipse 600px 400px at 20% 92%, rgba(99,102,241,0.16), transparent 65%),
+    /* FIX A3: indigo -> info */
+    radial-gradient(ellipse 600px 400px at 20% 92%, rgba(63,160,220,0.16), transparent 65%),
     radial-gradient(ellipse 520px 360px at 92% 78%, rgba(45,212,191,0.12), transparent 70%);
 }
 .login-noise {
@@ -672,7 +684,8 @@ body:has(.login-split)::before { display: none; }
   position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: linear-gradient(180deg, rgba(8,9,11,0.4) 0%, rgba(8,9,11,0.04) 32%, rgba(8,9,11,0.12) 64%, rgba(8,9,11,0.7) 100%);
 }
-.hero-accent { background: linear-gradient(115deg, #67a14e 0%, #00C4B9 52%, #3FA0DC 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* FIX A1.3: oliva -> rainbow oficial */
+.hero-accent { background: linear-gradient(115deg, #00a651 0%, #00C4B9 52%, #3FA0DC 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .login-left-body > * { animation: none; }
 .login-aurora .ray, .login-aurora .glow, .login-aurora .blob { animation: none; }
 .login-cap { transition: padding-left 260ms var(--ease), border-color 260ms var(--ease); }

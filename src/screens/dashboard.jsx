@@ -78,7 +78,8 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
               { label: "Pendentes", value: String(stats.pending) },
               { label: "Aprovados", value: String(stats.approved) },
               { label: "Reprovados", value: String(stats.rejected) },
-              { label: "SLA medio", value: stats.avgSlaHours.toFixed(1) + "h" },
+              /* FIX B1.2: blindar toFixed contra undefined */
+              { label: "SLA medio", value: (Number(stats.avgSlaHours) || 0).toFixed(1) + "h" },
             ]);
           }}/>
           <Button variant="primary" icon="bolt" onClick={() => onStartTriage ? onStartTriage() : onNavigate("approvals")}>Revisar em sequência</Button>
@@ -89,7 +90,8 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
       {resumido && (
         <div className="card fade-in" style={{ marginBottom: "var(--gap)" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", borderBottom: "1px solid var(--rule)" }}>
-            {[["Pendentes", stats.pending, "var(--warn)"], ["Aprovados", stats.approved, "var(--accent)"], ["Reprovados", stats.rejected, "var(--alert)"], ["SLA médio", stats.avgSlaHours.toFixed(1) + "h", "var(--ink)"], ["Recebidos hoje", stats.recebidosHoje, "var(--info)"]].map(([l, v, c], i) => (
+            {/* FIX B1.2: blindar toFixed contra undefined */}
+            {[["Pendentes", stats.pending, "var(--warn)"], ["Aprovados", stats.approved, "var(--accent)"], ["Reprovados", stats.rejected, "var(--alert)"], ["SLA medio", (Number(stats.avgSlaHours) || 0).toFixed(1) + "h", "var(--ink)"], ["Recebidos hoje", stats.recebidosHoje, "var(--info)"]].map(([l, v, c], i) => (
               <div key={l} style={{ padding: "16px 18px", borderLeft: i ? "1px solid var(--rule)" : "none" }}>
                 <div className="kpi-label">{l}</div>
                 <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-0.02em", color: c, fontVariantNumeric: "tabular-nums", marginTop: 2 }}>{v}</div>
@@ -146,7 +148,8 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
             <div className="kpi-label">SLA médio</div>
             <Ring pct={Math.min(1, 4 / (stats.avgSlaHours || 1))} size={46} color={stats.avgSlaHours <= 4 ? "var(--accent)" : "var(--warn)"} stroke={5}><Icon name="clock" size={15}/></Ring>
           </div>
-          <div className="kpi-value"><CountUp value={stats.avgSlaHours} format={v => v.toFixed(1)}/><span className="unit">h</span></div>
+          {/* FIX B1.2: blindar toFixed */}
+          <div className="kpi-value"><CountUp value={Number(stats.avgSlaHours) || 0} format={v => (Number(v) || 0).toFixed(1)}/><span className="unit">h</span></div>
           <div className="kpi-meta">meta <strong>4h</strong> · <span style={{ color: stats.slaCompliance >= 0.7 ? "var(--accent)" : "var(--warn)" }}>{H.fmtPct(stats.slaCompliance)} dentro</span></div>
           <div style={{ marginTop: 14, height: 4, borderRadius: 99, background: "var(--surface-3)", position: "relative" }}>
             <div className="rank-fill" style={{ width: `${Math.min(100, (4 / (stats.avgSlaHours || 1)) * 100)}%`, height: "100%", borderRadius: 99, background: stats.avgSlaHours <= 4 ? "var(--accent)" : "var(--warn)" }}/>
@@ -277,7 +280,8 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
                 <div className="row gap-2" style={{ alignItems: "center" }}>
                   {s.stars != null ? <>
                     <span className="sup-stars">{[1, 2, 3, 4, 5].map(n => <Icon key={n} name="star" size={13} style={{ color: n <= Math.round(s.stars) ? "var(--warn)" : "var(--ink-4)", fill: n <= Math.round(s.stars) ? "var(--warn)" : "none" }}/>)}</span>
-                    <span className="cell-mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>{s.stars.toFixed(1)}</span>
+                    {/* FIX B1.2: blindar toFixed */}
+                    <span className="cell-mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>{(Number(s.stars) || 0).toFixed(1)}</span>
                   </> : <span style={{ fontSize: 11.5, color: "var(--ink-4)", fontStyle: "italic" }}>Sem avaliação</span>}
                 </div>
               </div>

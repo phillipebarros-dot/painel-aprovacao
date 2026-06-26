@@ -42,7 +42,8 @@ function LightboxEmbed({ file }) {
   if (status === 'loading') {
     return <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: "#888", fontSize: 13 }}>
       <div style={{ textAlign: "center" }}>
-        <div className="spinner" style={{ width: 32, height: 32, border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }}/>
+        {/* FIX A3: indigo -> accent */}
+        <div className="spinner" style={{ width: 32, height: 32, border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }}/>
         Carregando arquivo...
       </div>
     </div>;
@@ -72,8 +73,9 @@ function LightboxEmbed({ file }) {
 
   if (file.isAudio) {
     return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-      <div style={{ width: 88, height: 88, borderRadius: 20, background: "rgba(99,102,241,0.1)", display: "grid", placeItems: "center" }}>
-        <Icon name="audio" size={42} style={{ color: "#6366f1" }}/>
+      {/* FIX A3: indigo -> accent */}
+      <div style={{ width: 88, height: 88, borderRadius: 20, background: "var(--accent-soft)", display: "grid", placeItems: "center" }}>
+        <Icon name="audio" size={42} style={{ color: "var(--accent)" }}/>
       </div>
       <p style={{ fontSize: 15, fontWeight: 500, margin: 0, color: "#ccc" }}>{file.detalhe || "Audio"}</p>
       <audio controls src={blobUrl} style={{ width: "80%", maxWidth: 400 }}/>
@@ -422,7 +424,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                     return <span key={ci} className={`pill ${isOk ? "pill-ok" : "pill-neutral"}`} style={{ fontSize: 11, padding: "3px 10px", gap: 4 }}>
                       <Icon name={isOk ? "check" : "info"} size={11}/> {c.label}
                       {c.optional && <span style={{ fontSize: 9, opacity: 0.7 }}>(opcional)</span>}
-                      {!c.found && c.countOk && !c.optional && <span style={{ fontSize: 9, opacity: 0.7 }}>(por qtd)</span>}
+                      {/* FIX A4.1: remover jargao tecnico '(por qtd)' que confunde usuario */}
                     </span>;
                   })}
                   {reallyMissing

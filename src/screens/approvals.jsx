@@ -130,10 +130,13 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
       { label: "Taxa aprov.", value: stats.total ? Math.round(stats.approved / stats.total * 100) + "%" : "0%" },
     ]);
   };
+  /* FIX A7.1: CSV com BOM UTF-8, escape aspas, H.norm em status */
   const exportCsv = () => {
-    const header = "Status,Cliente,Campanha,PI,Veículo,Meio,Praça,Arquivos,Recebido,Aprovado em,Aprovador\n";
-    const rows = filtered.map(c => `"${c.status}","${c.cliente}","${c.campanha || ""}","${c.n_pi}","${c.veiculo}","${c.meio}","${c.praca}","${c.total_arquivos}","${new Date(c.submittedAt).toLocaleString("pt-BR")}","${fmtDecisionDate(c)}","${c.approval_user}"`).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const labels = { pending: "Pendente", approved: "Aprovado", rejected: "Reprovado" };
+    const esc = (v) => String(v ?? "").replace(/"/g, '""');
+    const header = "Status,Cliente,Campanha,PI,Veiculo,Meio,Praca,Arquivos,Recebido,Aprovado em,Aprovador\n";
+    const rows = filtered.map(c => `"${esc(labels[H.norm(c.status)] || c.status)}","${esc(c.cliente)}","${esc(c.campanha)}","${esc(c.n_pi)}","${esc(c.veiculo)}","${esc(c.meio)}","${esc(c.praca)}","${c.total_arquivos}","${new Date(c.submittedAt).toLocaleString("pt-BR")}","${esc(fmtDecisionDate(c))}","${esc(c.approval_user)}"`).join("\n");
+    const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `aprovacoes_${tab}.csv`; a.click(); URL.revokeObjectURL(a.href);
   };
   const exportXlsx = () => {
@@ -345,7 +348,8 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
               <div key={st} className="kanban-col" onDragOver={(e) => { if (!isViewer) { e.preventDefault(); e.currentTarget.classList.add("kanban-over"); } }} onDragLeave={(e) => e.currentTarget.classList.remove("kanban-over")} onDrop={(e) => {
                 e.preventDefault(); e.currentTarget.classList.remove("kanban-over");
                 const id = e.dataTransfer.getData("text/plain"); const c = checkings.find(x => x.submission_id === id);
-                if (!c || isViewer || c.status === st) return;
+                /* FIX A7.2: kanban onDrop usa H.norm em vez de status cru */
+                if (!c || isViewer || H.norm(c.status) === st) return;
                 if (st === "rejected") { const rr = prompt("Motivo da reprovação:"); if (rr) onDecide(c, "reject", rr); }
                 else if (st === "approved") onDecide(c, "approve");
                 else onDecide(c, "revert");
