@@ -20,7 +20,7 @@ function VizTip({ tip }) {
 }
 
 // ── Area sparkline (animated draw) ──
-// Linha continua conectando somente pontos com valor > 0 (pula zeros)
+// Inclui TODOS os pontos — zeros ficam na baseline (sem gaps visuais)
 const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 }) => {
   const [ref, w] = useWidth();
   // TODOS os hooks ANTES de qualquer return condicional (regra do React)
@@ -28,13 +28,10 @@ const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 })
   if (!data || !data.length) return <div ref={ref} style={{ height }}/>;
   const max = Math.max(1, ...data.map(d => d.v));
   const stepX = w / (data.length - 1 || 1);
-  const yOf = (v) => height - 5 - (v / max) * (height - 14);
-  // Filtrar somente pontos com valor > 0, manter posicao X original
-  const live = [];
-  data.forEach((d, i) => { if (d.v > 0) live.push({ x: (i * stepX).toFixed(1), y: yOf(d.v).toFixed(1) }); });
-  if (!live.length) return <div ref={ref} style={{ width: "100%", height }}/>;
-  const pts = live.map(p => `${p.x},${p.y}`).join(" ");
-  const area = `M ${live[0].x},${height} L ${pts} L ${live[live.length - 1].x},${height} Z`;
+  const yOf = (v) => height - 5 - ((v || 0) / max) * (height - 14);
+  const allPts = data.map((d, i) => ({ x: (i * stepX).toFixed(1), y: yOf(d.v).toFixed(1) }));
+  const pts = allPts.map(p => `${p.x},${p.y}`).join(" ");
+  const area = `M ${allPts[0].x},${height} L ${pts} L ${allPts[allPts.length - 1].x},${height} Z`;
   const len = w * 1.4;
   return (
     <div ref={ref} style={{ width: "100%", height }}>
@@ -63,11 +60,10 @@ const TrendLine = ({ series, height = 280 }) => {
   const yOf = (v) => padT + innerH - (v / max) * innerH;
   const bottom = padT + innerH;
 
-  // Filtrar somente dias com dados, mantendo posicao X original
-  const live = [];
-  series.forEach((d, i) => { if (d.total > 0) live.push({ i, x: xOf(i).toFixed(1), y: yOf(d.total).toFixed(1) }); });
-  const pts = live.map(p => `${p.x},${p.y}`).join(" ");
-  const area = live.length ? `M ${live[0].x},${bottom} L ${pts} L ${live[live.length - 1].x},${bottom} Z` : "";
+  // Incluir TODOS os dias — zeros ficam na baseline (sem gaps na linha)
+  const allPts = series.map((d, i) => ({ i, x: xOf(i).toFixed(1), y: yOf(d.total).toFixed(1) }));
+  const pts = allPts.map(p => `${p.x},${p.y}`).join(" ");
+  const area = allPts.length ? `M ${allPts[0].x},${bottom} L ${pts} L ${allPts[allPts.length - 1].x},${bottom} Z` : "";
 
   const len = innerW * 1.5;
   const onMove = (e) => {
