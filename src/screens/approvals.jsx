@@ -11,6 +11,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
   const [search, setSearch] = React.useState("");
   const [filterClient, setFilterClient] = React.useState("all");
   const [filterMeio, setFilterMeio] = React.useState("all");
+  const [filterCampanha, setFilterCampanha] = React.useState("all");
   const [sort, setSort] = React.useState({ key: "submittedAt", dir: "desc" });
   const [selected, setSelected] = React.useState(new Set());
   const [page, setPage] = React.useState(0);
@@ -21,6 +22,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
   const perPage = view === "cards" ? 12 : 15;
 
   const clientes = React.useMemo(() => H.extractList(checkings, "cliente"), [checkings]);
+  const campanhas = React.useMemo(() => { const s = new Set(); checkings.forEach(c => { if (c.campanha) s.add(c.campanha); }); return [...s].sort(); }, [checkings]);
   const contas = React.useMemo(() => {
     const m = {}; checkings.forEach(c => { if (c.conta) m[c.conta] = (m[c.conta] || 0) + 1; });
     return Object.keys(m).sort().map(k => ({ name: k, count: m[k] }));
@@ -34,6 +36,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
     if (search) { const q = search.toLowerCase(); rows = rows.filter(r => r.cliente?.toLowerCase().includes(q) || r.n_pi?.toLowerCase().includes(q) || r.veiculo?.toLowerCase().includes(q) || r.praca?.toLowerCase().includes(q)); }
     if (filterClient !== "all") rows = rows.filter(r => r.cliente === filterClient);
     if (filterMeio !== "all") rows = rows.filter(r => r.meio === filterMeio);
+    if (filterCampanha !== "all") rows = rows.filter(r => r.campanha === filterCampanha);
     if (view === "planilha" && planAccount !== "all") rows = rows.filter(r => r.conta === planAccount);
     const dir = sort.dir === "asc" ? 1 : -1;
     rows.sort((a, b) => {
@@ -42,9 +45,9 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
       if (va < vb) return -dir; if (va > vb) return dir; return 0;
     });
     return rows;
-  }, [checkings, tab, search, filterClient, filterMeio, sort, view, planAccount]);
+  }, [checkings, tab, search, filterClient, filterMeio, filterCampanha, sort, view, planAccount]);
 
-  React.useEffect(() => { setPage(0); setSelected(new Set()); }, [tab, search, filterClient, filterMeio, viewMode]);
+  React.useEffect(() => { setPage(0); setSelected(new Set()); }, [tab, search, filterClient, filterMeio, filterCampanha, viewMode]);
 
   const pageRows = filtered.slice(page * perPage, (page + 1) * perPage);
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
@@ -54,6 +57,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
   if (search) activeChips.push({ k: "search", label: "Busca", val: search, clear: () => setSearch("") });
   if (filterClient !== "all") activeChips.push({ k: "client", label: "Cliente", val: filterClient, clear: () => setFilterClient("all") });
   if (filterMeio !== "all") activeChips.push({ k: "meio", label: "Meio", val: filterMeio, clear: () => setFilterMeio("all") });
+  if (filterCampanha !== "all") activeChips.push({ k: "campanha", label: "Campanha", val: filterCampanha, clear: () => setFilterCampanha("all") });
 
   const toggleSort = (key) => setSort(s => s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" });
   const toggleSel = (id) => { const n = new Set(selected); n.has(id) ? n.delete(id) : n.add(id); setSelected(n); };
@@ -72,11 +76,11 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
     if (!activeChips.length && tab === "all") { onToast?.({ type: "info", message: "Defina filtros antes de salvar." }); return; }
     const name = prompt("Nome do filtro salvo:", `${tab !== "all" ? tab : ""} ${filterClient !== "all" ? filterClient : ""} ${filterMeio !== "all" ? filterMeio : ""}`.trim() || "Filtro");
     if (!name) return;
-    const f = { id: Date.now(), name, tab, filterClient, filterMeio, search };
+    const f = { id: Date.now(), name, tab, filterClient, filterMeio, filterCampanha, search };
     const next = [...saved, f]; setSaved(next); localStorage.setItem("painel_saved_filters", JSON.stringify(next));
     onToast?.({ type: "success", message: `Filtro "${name}" salvo.` });
   };
-  const applyFilter = (f) => { setTab(f.tab); setFilterClient(f.filterClient); setFilterMeio(f.filterMeio); setSearch(f.search || ""); };
+  const applyFilter = (f) => { setTab(f.tab); setFilterClient(f.filterClient); setFilterMeio(f.filterMeio); setFilterCampanha(f.filterCampanha || "all"); setSearch(f.search || ""); };
   const delFilter = (id) => { const next = saved.filter(f => f.id !== id); setSaved(next); localStorage.setItem("painel_saved_filters", JSON.stringify(next)); };
 
   const bulkApprove = async () => {
@@ -171,6 +175,9 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
         <select className="input" value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ width: "auto" }}>
           <option value="all">Todos os clientes</option>{clientes.map(c => <option key={c}>{c}</option>)}
         </select>
+        <select className="input" value={filterCampanha} onChange={e => setFilterCampanha(e.target.value)} style={{ width: "auto" }}>
+          <option value="all">Todas as campanhas</option>{campanhas.map(c => <option key={c}>{c}</option>)}
+        </select>
         <select className="input" value={filterMeio} onChange={e => setFilterMeio(e.target.value)} style={{ width: "auto" }}>
           <option value="all">Todos os meios</option>{window.MOCK.meios.map(m => <option key={m}>{m}</option>)}
         </select>
@@ -186,7 +193,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
           {activeChips.map(c => (
             <span key={c.k} className="chip">{c.label}: <b>{c.val}</b><span className="chip-x" onClick={c.clear}><Icon name="x" size={11} strokeWidth={2}/></span></span>
           ))}
-          {activeChips.length > 0 && <button className="btn-quiet sm btn" onClick={() => { setSearch(""); setFilterClient("all"); setFilterMeio("all"); }}>Limpar tudo</button>}
+          {activeChips.length > 0 && <button className="btn-quiet sm btn" onClick={() => { setSearch(""); setFilterClient("all"); setFilterMeio("all"); setFilterCampanha("all"); }}>Limpar tudo</button>}
           {saved.length > 0 && <div className="divider-v" style={{ margin: "0 4px" }}/>}
           {saved.map(f => (
             <span key={f.id} className="chip" style={{ background: "var(--info-soft)", borderColor: "rgba(37,99,235,0.2)", cursor: "pointer" }} onClick={() => applyFilter(f)}>
