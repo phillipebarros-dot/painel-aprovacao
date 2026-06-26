@@ -6,42 +6,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
-  /* Base canvas — dark, slight blue undertone */
-  --bg:           #08090B;
-  --bg-deep:      #050507;
-  --surface:      #0F1014;
-  --surface-2:    #15171C;
-  --surface-3:    #1B1E25;
-  --glass:        rgba(255, 255, 255, 0.025);
-  --glass-2:      rgba(255, 255, 255, 0.04);
-  --glass-strong: rgba(255, 255, 255, 0.06);
+  /* Base canvas — dark navy (azul profundo, melhor contraste p/ ícones) */
+  --bg:           #0B1221;
+  --bg-deep:      #070D19;
+  --surface:      #0F1A2E;
+  --surface-2:    #152238;
+  --surface-3:    #1A2944;
+  --glass:        rgba(148, 190, 255, 0.03);
+  --glass-2:      rgba(148, 190, 255, 0.05);
+  --glass-strong: rgba(148, 190, 255, 0.08);
 
-  --ink:    #F7F8F8;
-  --ink-2:  rgba(247, 248, 248, 0.72);
-  --ink-3:  rgba(247, 248, 248, 0.46);
-  --ink-4:  rgba(247, 248, 248, 0.24);
+  --ink:    #F0F4FA;
+  --ink-2:  rgba(240, 244, 250, 0.75);
+  --ink-3:  rgba(240, 244, 250, 0.50);
+  --ink-4:  rgba(240, 244, 250, 0.28);
 
-  --rule:        rgba(255, 255, 255, 0.06);
-  --rule-strong: rgba(255, 255, 255, 0.12);
-  --rule-bright: rgba(255, 255, 255, 0.18);
+  --rule:        rgba(148, 190, 255, 0.07);
+  --rule-strong: rgba(148, 190, 255, 0.14);
+  --rule-bright: rgba(148, 190, 255, 0.22);
 
   /* Accent = GRUPO OM primary (teal). Dark-surface variant #00c4b9 */
   --accent:      #00C4B9;
   --accent-ink:  #7FE8E0;
-  --accent-soft: rgba(0, 196, 185, 0.13);
+  --accent-soft: rgba(0, 196, 185, 0.15);
   --accent-2:    #2BD3C8;
 
   /* Status hues alinhados ao spectrum OM */
   --alert:       #F26D72;
   --alert-ink:   #FCA5A5;
-  --alert-soft:  rgba(242, 109, 114, 0.13);
+  --alert-soft:  rgba(242, 109, 114, 0.15);
 
   --warn:        #EBB900;
   --warn-ink:    #FCD34D;
-  --warn-soft:   rgba(235, 185, 0, 0.13);
+  --warn-soft:   rgba(235, 185, 0, 0.15);
 
   --info:        #3FA0DC;
-  --info-soft:   rgba(63, 160, 220, 0.13);
+  --info-soft:   rgba(63, 160, 220, 0.15);
 
   /* OM member-company brand colors */
   --brand-opus:     #be000a;
@@ -71,11 +71,11 @@
   --r-lg: 14px;
   --r-xl: 20px;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-  --shadow-md: 0 4px 24px -8px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.4),
-               0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-  --shadow-lg: 0 24px 72px -24px rgba(0, 0, 0, 0.8), 0 8px 24px -8px rgba(0, 0, 0, 0.5),
-               0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(148, 190, 255, 0.04) inset;
+  --shadow-md: 0 4px 24px -8px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.35),
+               0 0 0 1px rgba(148, 190, 255, 0.05) inset;
+  --shadow-lg: 0 24px 72px -24px rgba(0, 0, 0, 0.7), 0 8px 24px -8px rgba(0, 0, 0, 0.45),
+               0 0 0 1px rgba(148, 190, 255, 0.06) inset;
   --shadow-glow-accent: 0 0 0 1px rgba(0, 196, 185, 0.25), 0 0 24px -4px rgba(0, 196, 185, 0.28);
 
   --ease:     cubic-bezier(0.22, 1, 0.36, 1);
@@ -123,22 +123,22 @@
   --shadow-glow-accent: 0 0 0 1px rgba(0,157,147,0.25), 0 0 18px -6px rgba(0,157,147,0.35);
   color-scheme: light;
 }
-/* a sidebar continua escura no tema claro */
+/* a sidebar continua escura (navy) no tema claro */
 [data-theme="light"] .rail, [data-theme="light"] .nav-panel {
-  --bg:         #0B0C0F;
-  --bg-deep:    #08090B;
-  --surface:    #0F1014;
-  --surface-2:  #15171C;
-  --surface-3:  #1B1E25;
-  --ink:    #F7F8F8;
-  --ink-2:  rgba(247, 248, 248, 0.72);
-  --ink-3:  rgba(247, 248, 248, 0.46);
-  --ink-4:  rgba(247, 248, 248, 0.24);
-  --rule:        rgba(255, 255, 255, 0.06);
-  --rule-strong: rgba(255, 255, 255, 0.12);
-  --glass:        rgba(255, 255, 255, 0.025);
-  --glass-2:      rgba(255, 255, 255, 0.04);
-  --glass-strong: rgba(255, 255, 255, 0.06);
+  --bg:         #0B1221;
+  --bg-deep:    #070D19;
+  --surface:    #0F1A2E;
+  --surface-2:  #152238;
+  --surface-3:  #1A2944;
+  --ink:    #F0F4FA;
+  --ink-2:  rgba(240, 244, 250, 0.75);
+  --ink-3:  rgba(240, 244, 250, 0.50);
+  --ink-4:  rgba(240, 244, 250, 0.28);
+  --rule:        rgba(148, 190, 255, 0.07);
+  --rule-strong: rgba(148, 190, 255, 0.14);
+  --glass:        rgba(148, 190, 255, 0.03);
+  --glass-2:      rgba(148, 190, 255, 0.05);
+  --glass-strong: rgba(148, 190, 255, 0.08);
 }
 [data-theme="light"] body { background: var(--bg); }
 [data-theme="light"] body::before {
