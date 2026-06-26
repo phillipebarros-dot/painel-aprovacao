@@ -161,7 +161,8 @@ select.input {
 .cell-time { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .cell-pi   { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); font-weight: 600; font-feature-settings: "zero" 1, "tnum" 1; letter-spacing: 0.01em; }
 .pi-strong { font-family: var(--font-mono); font-weight: 700; font-size: 13.5px; color: var(--ink); font-feature-settings: "zero" 1, "tnum" 1; letter-spacing: 0.02em; background: var(--glass-2); border: 1px solid var(--rule); padding: 1px 7px; border-radius: 6px; white-space: nowrap; }
-.content .pi-strong { background: rgba(0,0,0,0.045); border-color: rgba(0,0,0,0.08); }
+/* FIX Roseli: pi-strong preto -> azulado */
+.content .pi-strong { background: rgba(20,50,95,0.05); border-color: rgba(20,50,95,0.10); }
 /* row stagger entrance */
 .tbl tbody tr.row-anim { animation: rowIn 360ms var(--ease-out) both; }
 @keyframes rowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -226,7 +227,8 @@ select.input {
 .cal-dow { font-size: 9.5px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-4); text-align: center; padding-bottom: 2px; }
 
 /* Tooltip */
-.viz-tip { position: fixed; pointer-events: none; z-index: 9000; background: var(--surface, #0F1014); color: var(--ink, #F7F8F8); border: 1px solid var(--rule-strong); border-radius: 8px; padding: 7px 10px; font-size: 12px; box-shadow: var(--shadow-lg); transform: translate(-50%, -120%); white-space: nowrap; }
+/* FIX Roseli: viz-tip fallback preto -> navy */
+.viz-tip { position: fixed; pointer-events: none; z-index: 9000; background: var(--surface, #0F1C30); color: var(--ink, #EAF1FB); border: 1px solid var(--rule-strong); border-radius: 8px; padding: 7px 10px; font-size: 12px; box-shadow: var(--shadow-lg); transform: translate(-50%, -120%); white-space: nowrap; }
 
 /* RankBars */
 .rank-track { height: 5px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
@@ -376,7 +378,8 @@ select.input {
 }
 
 /* ════════ Modal / dropdown / scrim ════════ */
-.scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 90; animation: fadeIn 240ms var(--ease); }
+/* FIX Roseli: scrim preto puro -> navy para combinar com paleta azul */
+.scrim { position: fixed; inset: 0; background: rgba(8,16,30,0.55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 90; animation: fadeIn 240ms var(--ease); }
 .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(480px, 92vw); background: var(--surface); border: 1px solid var(--rule-strong); border-radius: var(--r-xl); z-index: 100; box-shadow: var(--shadow-lg); animation: modalIn 360ms var(--ease-out); }
 .content .modal, .content .dropdown { color: var(--ink); }
 .dropdown { position: absolute; background: var(--surface); border: 1px solid var(--rule-strong); border-radius: 12px; box-shadow: var(--shadow-lg); padding: 4px; z-index: 80; animation: dropIn 220ms var(--ease-out); min-width: 260px; }

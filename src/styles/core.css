@@ -246,10 +246,9 @@ body::before {
   background: var(--bg);
   transition: grid-template-columns 260ms var(--ease);
 }
-/* Moldura atrás do card de conteúdo acompanha a cor da sidebar:
-   tema claro -> preta (igual sidebar) · tema escuro -> branca (igual sidebar) */
-[data-theme="light"] .app { background: #08090B; }
-[data-theme="dark"] .app { background: #ffffff; }
+/* FIX Roseli: moldura atras do card agora e navy (nunca preto/branco puro) */
+[data-theme="light"] .app { background: #0A1424; }
+[data-theme="dark"] .app { background: #E4ECF6; }
 [data-density="compact"] .app { grid-template-columns: 56px 198px 1fr; }
 .app.no-sidebar { grid-template-columns: 1fr; }
 @media (max-width: 860px) {
@@ -319,28 +318,33 @@ body::before {
 .panel-item-desc { font-size: 10.5px; color: var(--ink-4); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-panel-foot { margin-top: auto; padding-top: 12px; }
 
-/* Content area — light theme */
+/* Content area -- paleta AZUL/NAVY (FIX Roseli: branco puro -> azul-gelo) */
 .content {
-  --bg:           #FFFFFF;
-  --bg-deep:      #F8F9FA;
-  --surface:      #FFFFFF;
-  --surface-2:    #F4F5F7;
-  --surface-3:    #E5E7EB;
-  --glass:        rgba(0, 0, 0, 0.03);
-  --glass-2:      rgba(0, 0, 0, 0.05);
-  --glass-strong: rgba(0, 0, 0, 0.08);
-  --ink:    #111827;
-  --ink-2:  rgba(17, 24, 39, 0.72);
-  --ink-3:  rgba(17, 24, 39, 0.46);
-  --ink-4:  rgba(17, 24, 39, 0.24);
-  --rule:        rgba(0, 0, 0, 0.08);
-  --rule-strong: rgba(0, 0, 0, 0.14);
-  --rule-bright: rgba(0, 0, 0, 0.22);
-  /* Bug 3.1 fix: accent unificado na familia teal (era #059669 emerald) */
+  /* FIX Roseli: branco puro -> azul-gelo #EEF3FA */
+  --bg:           #EEF3FA;
+  --bg-deep:      #E4ECF6;
+  --surface:      #FBFDFF;
+  --surface-2:    #EAF0F8;
+  --surface-3:    #DCE6F3;
+  /* FIX Roseli: glass preto -> azulado */
+  --glass:        rgba(20, 50, 95, 0.04);
+  --glass-2:      rgba(20, 50, 95, 0.06);
+  --glass-strong: rgba(20, 50, 95, 0.09);
+  /* FIX Roseli: ink preto puro #111827 -> navy #0E1E33 */
+  --ink:    #0E1E33;
+  --ink-2:  rgba(14, 30, 51, 0.74);
+  --ink-3:  rgba(14, 30, 51, 0.50);
+  --ink-4:  rgba(14, 30, 51, 0.28);
+  /* FIX Roseli: bordas pretas -> azuladas */
+  --rule:        rgba(20, 50, 95, 0.12);
+  --rule-strong: rgba(20, 50, 95, 0.20);
+  --rule-bright: rgba(20, 50, 95, 0.28);
+  /* Accent teal preservado */
   --accent:      #009d93;
   --accent-ink:  #007a70;
   --accent-soft: rgba(0, 157, 147, 0.10);
   --accent-2:    #00b6aa;
+  --ok: var(--accent-ink);
   --alert:       #DC2626;
   --alert-ink:   #991B1B;
   --alert-soft:  rgba(220, 38, 38, 0.08);
@@ -349,16 +353,19 @@ body::before {
   --warn-soft:   rgba(217, 119, 6, 0.08);
   --info:        #2563EB;
   --info-soft:   rgba(37, 99, 235, 0.08);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 16px 48px -12px rgba(0, 0, 0, 0.15), 0 4px 12px -4px rgba(0, 0, 0, 0.08);
+  /* FIX Roseli: sombras pretas -> azuladas */
+  --shadow-sm: 0 1px 2px rgba(14, 30, 51, 0.08), 0 0 0 1px rgba(14, 30, 51, 0.05);
+  --shadow-md: 0 4px 16px -4px rgba(14, 30, 51, 0.12), 0 1px 2px rgba(14, 30, 51, 0.07);
+  --shadow-lg: 0 16px 48px -12px rgba(14, 30, 51, 0.18), 0 4px 12px -4px rgba(14, 30, 51, 0.10);
   --shadow-glow-accent: 0 0 0 1px rgba(0,157,147,0.2), 0 8px 24px -8px rgba(0,157,147,0.3);
+  /* FIX Roseli: cor de dado azul para graficos */
+  --data-blue: var(--info);
   background: var(--bg); color: var(--ink); color-scheme: light;
   overflow: hidden auto; position: relative; display: flex; flex-direction: column;
   margin: 10px; border-radius: 18px;
-  /* FIX Rose/Anne: borda preta pesada -> sutil com tom do accent */
-  border: 1px solid rgba(0, 157, 147, 0.12);
-  box-shadow: 0 8px 32px -16px rgba(0, 60, 56, 0.18), 0 2px 6px -2px rgba(0, 60, 56, 0.08);
+  /* FIX Roseli: borda sutil azulada */
+  border: 1px solid rgba(20, 50, 95, 0.10);
+  box-shadow: 0 8px 32px -16px rgba(14, 30, 51, 0.16), 0 2px 6px -2px rgba(14, 30, 51, 0.06);
 }
 .content::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
@@ -373,68 +380,86 @@ body::before {
 /* FIX A1.2: esmeralda -> accent tokens no tema claro */
 .content .pill-approved { background: rgba(0,157,147,0.1);  color: #007a70; border-color: rgba(0,157,147,0.2); }
 .content .pill-rejected { background: rgba(220,38,38,0.08); color: #991B1B; border-color: rgba(220,38,38,0.2); }
-.content .pill-neutral  { background: rgba(0,0,0,0.04);     color: var(--ink-2); border-color: rgba(0,0,0,0.1); }
+/* FIX Roseli: pill-neutral preto -> azulado */
+.content .pill-neutral  { background: rgba(20,50,95,0.05); color: var(--ink-2); border-color: rgba(20,50,95,0.12); }
 .content .pill-info     { background: rgba(37,99,235,0.08); color: #1E40AF; border-color: rgba(37,99,235,0.18); }
-.content .pill-viewer   { background: rgba(0,0,0,0.04);     color: var(--ink-2); border-color: rgba(0,0,0,0.1); }
-.content .avatar { box-shadow: 0 0 0 2px #FFFFFF; }
-.content select.input option { background: #FFFFFF; color: #111827; }
-.content .search-trigger { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: var(--ink-3); }
-.content .search-trigger:hover { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.2); }
-.content .topbar { background: rgba(255,255,255,0.82); border-bottom-color: transparent; }
-.content .kbd { border-color: rgba(0,0,0,0.15); background: rgba(0,0,0,0.04); color: var(--ink-3); }
-.content .icon-btn:hover { background: rgba(0,0,0,0.05); }
-.content .icon-btn .dot-notif { box-shadow: 0 0 0 2px #FFFFFF; }
-.content::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-color: #FFFFFF; }
-.content::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
-.content .dropdown { background: #FFFFFF; border-color: rgba(0,0,0,0.1); box-shadow: var(--shadow-lg); }
+.content .pill-viewer   { background: rgba(20,50,95,0.05); color: var(--ink-2); border-color: rgba(20,50,95,0.12); }
+/* FIX Roseli: avatar ring branco puro -> off-white azulado */
+.content .avatar { box-shadow: 0 0 0 2px var(--surface); }
+/* FIX Roseli: select option branco puro -> azul-gelo */
+.content select.input option { background: #FBFDFF; color: #0E1E33; }
+/* FIX Roseli: search/kbd/icon-btn preto -> azulado */
+.content .search-trigger { background: rgba(20,50,95,0.05); border-color: rgba(20,50,95,0.14); color: var(--ink-3); }
+.content .search-trigger:hover { background: rgba(20,50,95,0.08); border-color: rgba(20,50,95,0.22); }
+.content .topbar { background: rgba(238,243,250,0.82); border-bottom-color: transparent; }
+.content .kbd { border-color: rgba(20,50,95,0.16); background: rgba(20,50,95,0.05); color: var(--ink-3); }
+.content .icon-btn:hover { background: rgba(20,50,95,0.06); }
+.content .icon-btn .dot-notif { box-shadow: 0 0 0 2px var(--surface); }
+/* FIX Roseli: scrollbar preto -> azulado */
+.content::-webkit-scrollbar-thumb { background: rgba(20,50,95,0.14); border-color: var(--bg); }
+.content::-webkit-scrollbar-thumb:hover { background: rgba(20,50,95,0.22); }
+/* FIX Roseli: dropdown branco puro -> off-white azulado */
+.content .dropdown { background: var(--surface); border-color: rgba(20,50,95,0.12); box-shadow: var(--shadow-lg); }
 
-/* ── MODO ESCURO: o conteúdo também escurece (painel preto) ───────────────── */
+/* FIX Roseli: painel escuro preto puro -> navy profundo */
 [data-theme="dark"] .content {
-  --bg: #08090B; --bg-deep: #050507;
-  --surface: #0F1014; --surface-2: #15171C; --surface-3: #1B1E25;
-  --glass: rgba(255,255,255,0.025); --glass-2: rgba(255,255,255,0.04); --glass-strong: rgba(255,255,255,0.06);
-  --ink: #F7F8F8; --ink-2: rgba(247,248,248,0.72); --ink-3: rgba(247,248,248,0.46); --ink-4: rgba(247,248,248,0.24);
-  --rule: rgba(255,255,255,0.06); --rule-strong: rgba(255,255,255,0.12); --rule-bright: rgba(255,255,255,0.18);
+  --bg: #0A1424; --bg-deep: #070F1C;
+  --surface: #0F1C30; --surface-2: #15263E; --surface-3: #1D324F;
+  --glass: rgba(150,190,255,0.03); --glass-2: rgba(150,190,255,0.05); --glass-strong: rgba(150,190,255,0.07);
+  /* FIX Roseli: ink branco puro -> off-white azulado */
+  --ink: #EAF1FB; --ink-2: rgba(234,241,251,0.72); --ink-3: rgba(234,241,251,0.46); --ink-4: rgba(234,241,251,0.24);
+  /* FIX Roseli: bordas brancas -> azuladas */
+  --rule: rgba(150,190,255,0.10); --rule-strong: rgba(150,190,255,0.18); --rule-bright: rgba(150,190,255,0.24);
   --accent: #00C4B9; --accent-ink: #7FE8E0; --accent-soft: rgba(0,196,185,0.13); --accent-2: #2BD3C8;
+  --ok: var(--accent-ink);
   --alert: #F26D72; --alert-ink: #FCA5A5; --alert-soft: rgba(242,109,114,0.13);
   --warn: #EBB900; --warn-ink: #FCD34D; --warn-soft: rgba(235,185,0,0.13);
   --info: #3FA0DC; --info-soft: rgba(63,160,220,0.13);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) inset;
-  --shadow-md: 0 4px 24px -8px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset;
-  --shadow-lg: 0 24px 72px -24px rgba(0,0,0,0.8), 0 8px 24px -8px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset;
-  color-scheme: dark; border-color: rgba(255,255,255,0.06);
+  --data-blue: var(--info);
+  /* FIX Roseli: sombras com inset azulado */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(150,190,255,0.05) inset;
+  --shadow-md: 0 4px 24px -8px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(150,190,255,0.05) inset;
+  --shadow-lg: 0 24px 72px -24px rgba(0,0,0,0.8), 0 8px 24px -8px rgba(0,0,0,0.5), 0 0 0 1px rgba(150,190,255,0.06) inset;
+  color-scheme: dark; border-color: rgba(150,190,255,0.10);
 }
 [data-theme="dark"] .content::before { background-image: radial-gradient(ellipse 900px 500px at 100% -5%, rgba(0,196,185,0.05), transparent 60%), radial-gradient(ellipse 700px 500px at 0% 8%, rgba(27,91,136,0.04), transparent 70%); }
 [data-theme="dark"] .content .pill-pending  { background: rgba(235,185,0,0.14);  color: var(--warn-ink); border-color: rgba(235,185,0,0.28); }
 [data-theme="dark"] .content .pill-approved { background: rgba(0,196,185,0.14);   color: var(--accent-ink); border-color: rgba(0,196,185,0.3); }
 [data-theme="dark"] .content .pill-rejected { background: rgba(242,109,114,0.14); color: var(--alert-ink); border-color: rgba(242,109,114,0.3); }
-[data-theme="dark"] .content .pill-neutral, [data-theme="dark"] .content .pill-viewer { background: rgba(255,255,255,0.06); color: var(--ink-2); border-color: rgba(255,255,255,0.12); }
+/* FIX Roseli: pill-neutral branco -> azulado */
+[data-theme="dark"] .content .pill-neutral, [data-theme="dark"] .content .pill-viewer { background: rgba(150,190,255,0.07); color: var(--ink-2); border-color: rgba(150,190,255,0.14); }
 [data-theme="dark"] .content .pill-info { background: rgba(63,160,220,0.14); color: #9CCBF0; border-color: rgba(63,160,220,0.3); }
 [data-theme="dark"] .content .avatar { box-shadow: 0 0 0 2px var(--surface); }
-[data-theme="dark"] .content select.input option { background: #15171C; color: #F7F8F8; }
-[data-theme="dark"] .content .search-trigger { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); color: var(--ink-3); }
-[data-theme="dark"] .content .search-trigger:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.2); }
-[data-theme="dark"] .content .topbar { background: rgba(15,16,20,0.82); border-bottom-color: transparent; }
-[data-theme="dark"] .content .kbd { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: var(--ink-3); }
-[data-theme="dark"] .content .icon-btn:hover { background: rgba(255,255,255,0.06); }
+/* FIX Roseli: select option preto puro -> navy */
+[data-theme="dark"] .content select.input option { background: #15263E; color: #EAF1FB; }
+/* FIX Roseli: search/kbd/icon-btn branco -> azulado */
+[data-theme="dark"] .content .search-trigger { background: rgba(150,190,255,0.05); border-color: rgba(150,190,255,0.12); color: var(--ink-3); }
+[data-theme="dark"] .content .search-trigger:hover { background: rgba(150,190,255,0.08); border-color: rgba(150,190,255,0.20); }
+/* FIX Roseli: topbar preto puro -> navy */
+[data-theme="dark"] .content .topbar { background: rgba(10,20,36,0.82); border-bottom-color: transparent; }
+[data-theme="dark"] .content .kbd { border-color: rgba(150,190,255,0.16); background: rgba(150,190,255,0.06); color: var(--ink-3); }
+[data-theme="dark"] .content .icon-btn:hover { background: rgba(150,190,255,0.07); }
 [data-theme="dark"] .content .icon-btn .dot-notif { box-shadow: 0 0 0 2px var(--surface); }
-[data-theme="dark"] .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-color: var(--bg); }
-[data-theme="dark"] .content .dropdown { background: #15171C; border-color: rgba(255,255,255,0.1); }
+[data-theme="dark"] .content::-webkit-scrollbar-thumb { background: rgba(150,190,255,0.12); border-color: var(--bg); }
+/* FIX Roseli: dropdown preto puro -> navy */
+[data-theme="dark"] .content .dropdown { background: #15263E; border-color: rgba(150,190,255,0.14); }
 .topbar-om { height: 70px; width: auto; max-width: 160px; object-fit: contain; flex-shrink: 0; }
 /* om-title.png é branco: no painel claro (tema claro) inverte para escuro */
 [data-theme="light"] .content .topbar-om { filter: invert(1) brightness(0.25); }
 .login-left-head .row { width: 100%; align-items: center; }
 .login-gptw { height: 46px; width: auto; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
 
-/* MODO ESCURO: sidebar clara (branca, ícones escuros), painel escuro */
+/* FIX Roseli: sidebar escura branco puro -> off-white azulado */
 [data-theme="dark"] .rail, [data-theme="dark"] .nav-panel {
-  --surface: #ffffff; --surface-2: #f7f8fc; --surface-3: #eef1f7;
-  --ink: #111827; --ink-2: rgba(17,24,39,0.72); --ink-3: rgba(17,24,39,0.5); --ink-4: rgba(17,24,39,0.3);
-  --rule: rgba(0,0,0,0.09); --rule-strong: rgba(0,0,0,0.16);
-  --glass: rgba(0,0,0,0.04); --glass-2: rgba(0,0,0,0.06); --glass-strong: rgba(0,0,0,0.09);
+  --surface: #F0F4FA; --surface-2: #E4ECF6; --surface-3: #DCE6F3;
+  --ink: #0E1E33; --ink-2: rgba(14,30,51,0.74); --ink-3: rgba(14,30,51,0.50); --ink-4: rgba(14,30,51,0.28);
+  --rule: rgba(20,50,95,0.10); --rule-strong: rgba(20,50,95,0.18);
+  --glass: rgba(20,50,95,0.04); --glass-2: rgba(20,50,95,0.06); --glass-strong: rgba(20,50,95,0.09);
 }
-[data-theme="dark"] .rail { background: #ffffff; border-right-color: rgba(0,0,0,0.08); }
-[data-theme="dark"] .nav-panel { background: #f7f8fc; border-right-color: rgba(0,0,0,0.08); }
+/* FIX Roseli: rail branco puro -> off-white azulado */
+[data-theme="dark"] .rail { background: #F0F4FA; border-right-color: rgba(20,50,95,0.10); }
+/* FIX Roseli: nav-panel branco puro -> off-white azulado */
+[data-theme="dark"] .nav-panel { background: #E4ECF6; border-right-color: rgba(20,50,95,0.10); }
 [data-theme="dark"] .nav-tas .tas-goose { filter: invert(1); }
 /* moldura simétrica nos dois temas: o card de conteúdo flutua com a borda da cor da sidebar em volta */
 [data-theme="dark"] .content { margin: 10px; border: none; border-radius: 18px; }

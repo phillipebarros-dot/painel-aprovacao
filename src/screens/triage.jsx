@@ -226,13 +226,15 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
           <Button variant="ghost" size="sm" iconRight="chevron_right" onClick={skip} disabled={idx >= total - 1 && false}>Próximo</Button>
         </div>}
       </div>
+      {/* FIX Roseli: lightbox preto puro -> navy */}
       {lightbox && (
-        <div className="triage-stage" style={{ background: "rgba(0,0,0,0.88)", zIndex: 9999 }} onClick={() => setLightbox(null)} onKeyDown={e => { if (e.key === 'Escape') setLightbox(null); }}>
+        <div className="triage-stage" style={{ background: "rgba(8,16,30,0.90)", zIndex: 9999 }} onClick={() => setLightbox(null)} onKeyDown={e => { if (e.key === 'Escape') setLightbox(null); }}>
           <div style={{ position: "absolute", top: 16, right: 16, zIndex: 2 }}>
             <button className="icon-btn" onClick={() => setLightbox(null)} style={{ color: "#fff" }}><Icon name="x" size={22}/></button>
           </div>
           <div style={{ position: "absolute", top: 16, left: 16, zIndex: 2 }}>
-            <a href={lightbox.viewUrl || lightbox.webViewLink || (lightbox.id_imagem ? `https://drive.google.com/file/d/${lightbox.id_imagem}/view` : '#')} target="_blank" rel="noreferrer" style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.4)" }}>Abrir no Drive</a>
+            {/* FIX Roseli: botao drive preto -> navy */}
+            <a href={lightbox.viewUrl || lightbox.webViewLink || (lightbox.id_imagem ? `https://drive.google.com/file/d/${lightbox.id_imagem}/view` : '#')} target="_blank" rel="noreferrer" style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(150,190,255,0.15)", background: "rgba(8,16,30,0.5)" }}>Abrir no Drive</a>
           </div>
           <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", padding: 40 }} onClick={e => e.stopPropagation()}>
             {lightbox.id_imagem ? (

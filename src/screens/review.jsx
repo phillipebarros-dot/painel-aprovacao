@@ -747,9 +747,11 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
       </>)}
 
       {/* Lightbox */}
+      {/* FIX Roseli: lightbox preto puro -> navy */}
       {lightbox && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.85)", display: "grid", placeItems: "center", cursor: "pointer" }} onClick={() => setLightbox(null)}>
-          <div style={{ width: "min(1180px,94vw)", height: "min(860px,90vh)", background: "#0a0a0c", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.6)", animation: "modalIn 360ms var(--ease-out)", cursor: "default" }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(8,16,30,0.88)", display: "grid", placeItems: "center", cursor: "pointer" }} onClick={() => setLightbox(null)}>
+          {/* FIX Roseli: card lightbox preto -> navy */}
+          <div style={{ width: "min(1180px,94vw)", height: "min(860px,90vh)", background: "#0A1424", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.6)", animation: "modalIn 360ms var(--ease-out)", cursor: "default" }} onClick={e => e.stopPropagation()}>
             <div className="row" style={{ justifyContent: "space-between", padding: "14px 18px", background: "rgba(255,255,255,0.05)" }}>
               <div><span style={{ color: "#fff", fontSize: 15, fontWeight: 500 }}>{lightbox.detalhe}</span><span style={{ color: "#999", fontSize: 12.5, marginLeft: 8 }}>{lightbox.address}</span></div>
               <div className="row gap-2" style={{ alignItems: "center" }}>

@@ -306,9 +306,11 @@ const SlaHeatmap = ({ data }) => {
   const colorFor = (avg, n) => {
     if (!n) return "var(--surface-2)";
     const t = Math.min(1, avg / (max || 1));
-    // green (fast) -> amber -> red (slow)
-    const hue = 150 - t * 150;
-    return `hsl(${hue}, 62%, ${62 - t * 16}%)`;
+    /* FIX Roseli: heatmap sequencial azul (claro = rapido, navy = lento) */
+    const h = 210;
+    const s = 55 + t * 20;
+    const l = 72 - t * 38;
+    return `hsl(${h}, ${s}%, ${l}%)`;
   };
   return (
     <div style={{ position: "relative" }}>
@@ -326,9 +328,10 @@ const SlaHeatmap = ({ data }) => {
           </React.Fragment>
         ))}
       </div>
+      {/* FIX Roseli: legenda heatmap azul sequencial */}
       <div className="row gap-3" style={{ marginTop: 14, fontSize: 11, color: "var(--ink-3)" }}>
-        <span>Rápido</span>
-        <div style={{ flex: 1, maxWidth: 160, height: 6, borderRadius: 3, background: "linear-gradient(90deg, hsl(150,62%,62%), hsl(75,62%,54%), hsl(0,62%,46%))" }}/>
+        <span>Rapido</span>
+        <div style={{ flex: 1, maxWidth: 160, height: 6, borderRadius: 3, background: "linear-gradient(90deg, hsl(210,55%,72%), hsl(210,65%,52%), hsl(210,75%,34%))" }}/>
         <span>Lento</span>
       </div>
       <VizTip tip={tip}/>
