@@ -12,6 +12,8 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
   const [filterClient, setFilterClient] = React.useState("all");
   const [filterMeio, setFilterMeio] = React.useState("all");
   const [filterCampanha, setFilterCampanha] = React.useState("all");
+  const [dateFrom, setDateFrom] = React.useState("");
+  const [dateTo, setDateTo] = React.useState("");
   const [sort, setSort] = React.useState({ key: "submittedAt", dir: "desc" });
   const [selected, setSelected] = React.useState(new Set());
   const [page, setPage] = React.useState(0);
@@ -37,6 +39,8 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
     if (filterClient !== "all") rows = rows.filter(r => r.cliente === filterClient);
     if (filterMeio !== "all") rows = rows.filter(r => r.meio === filterMeio);
     if (filterCampanha !== "all") rows = rows.filter(r => r.campanha === filterCampanha);
+    if (dateFrom) { const d = dateFrom; rows = rows.filter(r => { const s = r.submittedAt || r.created_at || ""; return s >= d; }); }
+    if (dateTo) { const d = dateTo + "T23:59:59"; rows = rows.filter(r => { const s = r.submittedAt || r.created_at || ""; return s <= d; }); }
     if (view === "planilha" && planAccount !== "all") rows = rows.filter(r => r.conta === planAccount);
     const dir = sort.dir === "asc" ? 1 : -1;
     rows.sort((a, b) => {
@@ -45,9 +49,9 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
       if (va < vb) return -dir; if (va > vb) return dir; return 0;
     });
     return rows;
-  }, [checkings, tab, search, filterClient, filterMeio, filterCampanha, sort, view, planAccount]);
+  }, [checkings, tab, search, filterClient, filterMeio, filterCampanha, dateFrom, dateTo, sort, view, planAccount]);
 
-  React.useEffect(() => { setPage(0); setSelected(new Set()); }, [tab, search, filterClient, filterMeio, filterCampanha, viewMode]);
+  React.useEffect(() => { setPage(0); setSelected(new Set()); }, [tab, search, filterClient, filterMeio, filterCampanha, dateFrom, dateTo, viewMode]);
 
   const pageRows = filtered.slice(page * perPage, (page + 1) * perPage);
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
@@ -58,6 +62,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
   if (filterClient !== "all") activeChips.push({ k: "client", label: "Cliente", val: filterClient, clear: () => setFilterClient("all") });
   if (filterMeio !== "all") activeChips.push({ k: "meio", label: "Meio", val: filterMeio, clear: () => setFilterMeio("all") });
   if (filterCampanha !== "all") activeChips.push({ k: "campanha", label: "Campanha", val: filterCampanha, clear: () => setFilterCampanha("all") });
+  if (dateFrom || dateTo) activeChips.push({ k: "date", label: "Período", val: `${dateFrom || "…"} a ${dateTo || "…"}`, clear: () => { setDateFrom(""); setDateTo(""); } });
 
   const toggleSort = (key) => setSort(s => s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" });
   const toggleSel = (id) => { const n = new Set(selected); n.has(id) ? n.delete(id) : n.add(id); setSelected(n); };
@@ -76,11 +81,11 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
     if (!activeChips.length && tab === "all") { onToast?.({ type: "info", message: "Defina filtros antes de salvar." }); return; }
     const name = prompt("Nome do filtro salvo:", `${tab !== "all" ? tab : ""} ${filterClient !== "all" ? filterClient : ""} ${filterMeio !== "all" ? filterMeio : ""}`.trim() || "Filtro");
     if (!name) return;
-    const f = { id: Date.now(), name, tab, filterClient, filterMeio, filterCampanha, search };
+    const f = { id: Date.now(), name, tab, filterClient, filterMeio, filterCampanha, dateFrom, dateTo, search };
     const next = [...saved, f]; setSaved(next); localStorage.setItem("painel_saved_filters", JSON.stringify(next));
     onToast?.({ type: "success", message: `Filtro "${name}" salvo.` });
   };
-  const applyFilter = (f) => { setTab(f.tab); setFilterClient(f.filterClient); setFilterMeio(f.filterMeio); setFilterCampanha(f.filterCampanha || "all"); setSearch(f.search || ""); };
+  const applyFilter = (f) => { setTab(f.tab); setFilterClient(f.filterClient); setFilterMeio(f.filterMeio); setFilterCampanha(f.filterCampanha || "all"); setDateFrom(f.dateFrom || ""); setDateTo(f.dateTo || ""); setSearch(f.search || ""); };
   const delFilter = (id) => { const next = saved.filter(f => f.id !== id); setSaved(next); localStorage.setItem("painel_saved_filters", JSON.stringify(next)); };
 
   const bulkApprove = async () => {
@@ -169,18 +174,26 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
         <AutoTriagePanel checkings={checkings} onStartTriage={onStartTriage} onOpenReview={onOpenReview} onToast={onToast}/>
       )}
 
-      {/* Toolbar */}
-      <div className="row gap-3" style={{ marginBottom: 12, flexWrap: "wrap" }}>
-        <SearchInput value={search} onChange={setSearch} placeholder="Cliente, PI, veículo ou praça…" style={{ flex: "1 1 320px", maxWidth: 480 }}/>
-        <select className="input" value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ width: "auto" }}>
+      {/* Toolbar — linha 1: busca + filtros */}
+      <div className="row gap-2" style={{ marginBottom: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <SearchInput value={search} onChange={setSearch} placeholder="Cliente, PI, veículo ou praça…" style={{ flex: "1 1 240px", maxWidth: 360 }}/>
+        <select className="input" value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ width: "auto", minWidth: 140 }}>
           <option value="all">Todos os clientes</option>{clientes.map(c => <option key={c}>{c}</option>)}
         </select>
-        <select className="input" value={filterCampanha} onChange={e => setFilterCampanha(e.target.value)} style={{ width: "auto" }}>
+        <select className="input" value={filterCampanha} onChange={e => setFilterCampanha(e.target.value)} style={{ width: "auto", minWidth: 150 }}>
           <option value="all">Todas as campanhas</option>{campanhas.map(c => <option key={c}>{c}</option>)}
         </select>
-        <select className="input" value={filterMeio} onChange={e => setFilterMeio(e.target.value)} style={{ width: "auto" }}>
+        <select className="input" value={filterMeio} onChange={e => setFilterMeio(e.target.value)} style={{ width: "auto", minWidth: 130 }}>
           <option value="all">Todos os meios</option>{window.MOCK.meios.map(m => <option key={m}>{m}</option>)}
         </select>
+        <div className="row gap-1" style={{ alignItems: "center" }}>
+          <input type="date" className="input" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ width: 130, fontSize: 12 }} title="Data início"/>
+          <span style={{ fontSize: 11, color: "var(--ink-3)" }}>até</span>
+          <input type="date" className="input" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ width: 130, fontSize: 12 }} title="Data fim"/>
+        </div>
+      </div>
+      {/* Toolbar — linha 2: ações */}
+      <div className="row gap-2" style={{ marginBottom: 12, alignItems: "center" }}>
         <Button variant="ghost" size="sm" icon="bolt" onClick={saveFilter}>Salvar filtro</Button>
         <button className={"btn sm " + (copilotOn ? "btn-ghost" : "btn-quiet")} onClick={() => { const n = !copilotOn; setCopilotOn(n); localStorage.setItem("painel_copilot", n ? "on" : "off"); }} title="Mostrar score do co-piloto"><Icon name="target"/>Co-piloto {copilotOn ? "on" : "off"}</button>
         <div className="spacer"/>
@@ -193,7 +206,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
           {activeChips.map(c => (
             <span key={c.k} className="chip">{c.label}: <b>{c.val}</b><span className="chip-x" onClick={c.clear}><Icon name="x" size={11} strokeWidth={2}/></span></span>
           ))}
-          {activeChips.length > 0 && <button className="btn-quiet sm btn" onClick={() => { setSearch(""); setFilterClient("all"); setFilterMeio("all"); setFilterCampanha("all"); }}>Limpar tudo</button>}
+          {activeChips.length > 0 && <button className="btn-quiet sm btn" onClick={() => { setSearch(""); setFilterClient("all"); setFilterMeio("all"); setFilterCampanha("all"); setDateFrom(""); setDateTo(""); }}>Limpar tudo</button>}
           {saved.length > 0 && <div className="divider-v" style={{ margin: "0 4px" }}/>}
           {saved.map(f => (
             <span key={f.id} className="chip" style={{ background: "var(--info-soft)", borderColor: "rgba(37,99,235,0.2)", cursor: "pointer" }} onClick={() => applyFilter(f)}>
