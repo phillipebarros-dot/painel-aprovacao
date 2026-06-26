@@ -21,10 +21,20 @@ function VizTip({ tip }) {
 
 // ── Area sparkline (animated draw) ──
 // Inclui TODOS os pontos — zeros ficam na baseline (sem gaps visuais)
+// Usa getTotalLength() pra animação precisa do stroke-dasharray
 const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 }) => {
   const [ref, w] = useWidth();
-  // TODOS os hooks ANTES de qualquer return condicional (regra do React)
+  const lineRef = vUseRef(null);
   const gid = (React.useId || (() => "ag" + Math.random().toString(36).slice(2)))();
+
+  // Medir comprimento real da polyline e aplicar no CSS
+  vUseEffect(() => {
+    const el = lineRef.current;
+    if (!el) return;
+    const totalLen = el.getTotalLength();
+    el.style.setProperty("--len", totalLen);
+  });
+
   if (!data || !data.length) return <div ref={ref} style={{ height }}/>;
   const max = Math.max(1, ...data.map(d => d.v));
   const stepX = w / (data.length - 1 || 1);
@@ -32,7 +42,6 @@ const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 })
   const allPts = data.map((d, i) => ({ x: (i * stepX).toFixed(1), y: yOf(d.v).toFixed(1) }));
   const pts = allPts.map(p => `${p.x},${p.y}`).join(" ");
   const area = `M ${allPts[0].x},${height} L ${pts} L ${allPts[allPts.length - 1].x},${height} Z`;
-  const len = w * 1.4;
   return (
     <div ref={ref} style={{ width: "100%", height }}>
       <svg width={w} height={height} className="spark">
@@ -40,18 +49,28 @@ const AreaSpark = ({ data, height = 100, color = "var(--accent)", animKey = 0 })
           <stop offset="0%" stopColor={color} stopOpacity="0.28"/><stop offset="100%" stopColor={color} stopOpacity="0"/>
         </linearGradient></defs>
         <path key={"a" + animKey} className="area-rise" d={area} fill={`url(#${gid})`}/>
-        <polyline key={"l" + animKey} className="line-draw" style={{ "--len": len }} points={pts} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
+        <polyline ref={lineRef} key={"l" + animKey} className="line-draw" points={pts} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
       </svg>
     </div>
   );
 };
 
 // ── Trend line (volume total, animated, hover) ──
-// Linha unica continua conectando somente dias com dados (total > 0).
-// Dias sem dados sao pulados, sem cair para zero e sem criar gaps.
+// Inclui TODOS os dias — zeros ficam na baseline.
+// Usa getTotalLength() pra animação precisa do stroke-dasharray
 const TrendLine = ({ series, height = 280 }) => {
   const [ref, w] = useWidth(800);
   const [hover, setHover] = vUseState(null);
+  const lineRef = vUseRef(null);
+
+  // Medir comprimento real da polyline e aplicar no CSS
+  vUseEffect(() => {
+    const el = lineRef.current;
+    if (!el) return;
+    const totalLen = el.getTotalLength();
+    el.style.setProperty("--len", totalLen);
+  });
+
   if (!series || !series.length) return <div ref={ref} style={{ width: "100%", height }}/>;
   const padL = 38, padR = 14, padT = 14, padB = 28;
   const innerW = Math.max(0, w - padL - padR), innerH = height - padT - padB;
@@ -65,7 +84,6 @@ const TrendLine = ({ series, height = 280 }) => {
   const pts = allPts.map(p => `${p.x},${p.y}`).join(" ");
   const area = allPts.length ? `M ${allPts[0].x},${bottom} L ${pts} L ${allPts[allPts.length - 1].x},${bottom} Z` : "";
 
-  const len = innerW * 1.5;
   const onMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const rel = e.clientX - rect.left - padL;
@@ -83,7 +101,7 @@ const TrendLine = ({ series, height = 280 }) => {
           return <g key={i}><line className="grid-line" x1={padL} x2={w - padR} y1={y} y2={y}/><text className="axis-text" x={padL - 8} y={y + 3} textAnchor="end">{Math.round(max * p)}</text></g>;
         })}
         {area && <path className="area-rise" d={area} fill="url(#trendg)"/>}
-        {pts && <polyline className="line-draw" style={{ "--len": len }} points={pts} fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>}
+        {pts && <polyline ref={lineRef} className="line-draw" points={pts} fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>}
         {series.map((d, i) => i % Math.ceil(series.length / 8) === 0 && (
           <text key={"x" + i} className="axis-text" x={xOf(i)} y={height - 9} textAnchor="middle">
             {new Date(d.ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
