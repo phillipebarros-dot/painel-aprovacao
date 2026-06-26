@@ -70,6 +70,14 @@ function ScreenReports({ checkings, currentUser, onToast }) {
               {/* FIX A7.5: PPTX desabilitado ate backend existir */}
               <Button variant="primary" icon="upload" disabled={true} loading={genLoading === "pptx"} onClick={() => gen("pptx")}>Gerar slides (em breve)</Button>
               <Button variant="ghost" icon="download" disabled={isViewer} loading={genLoading === "pdf"} onClick={() => gen("pdf")}>Exportar PDF</Button>
+              {/* FIX B3: XLSX via H.exportXLSX (colunas da pauta) */}
+              <Button variant="ghost" icon="reports" disabled={isViewer} onClick={() => {
+                const cols = ["Status", "Cliente", "Campanha", "PI", "Veiculo", "Meio", "Praca", "Arquivos", "Recebido"];
+                const labels = { pending: "Pendente", approved: "Aprovado", rejected: "Reprovado" };
+                const xlsRows = rows.map(c => [labels[H.norm(c.status)] || c.status, c.cliente, c.campanha || "-", c.n_pi, c.veiculo, c.meio, c.praca, c.total_arquivos, H.fmtDate(c.submittedAt)]);
+                H.exportXLSX("Relatorio", cols, xlsRows, `relatorio_${startDate}_${endDate}`);
+                onToast?.({ type: "success", message: "Excel exportado com sucesso." });
+              }}>Exportar Excel</Button>
               {isViewer && <div style={{ fontSize: 11, color: "var(--ink-3)", textAlign: "center", marginTop: 4 }}>Somente visualização</div>}
             </div>
           </div>

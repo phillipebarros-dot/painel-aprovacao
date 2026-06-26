@@ -334,7 +334,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
           <div className="kpi"><div className="kpi-label">Minha demanda</div><div className="kpi-value"><CountUp value={myStats?.demanda || 0}/></div><div className="kpi-meta">PIs sob minha responsabilidade</div></div>
           <div className="kpi"><div className="kpi-label">Baixei · {periodLabel}</div><div className="kpi-value" style={{ color: "var(--accent)" }}><CountUp value={myStats?.baixados || 0}/></div><div className="kpi-meta"><strong>{myStats?.approved || 0}</strong> aprov. · <strong>{myStats?.rejected || 0}</strong> reprov.</div></div>
           <div className="kpi"><div className="kpi-label">Na minha fila</div><div className="kpi-value" style={{ color: myPending.length ? "var(--warn)" : "var(--ink)" }}><CountUp value={myPending.length}/></div><div className="kpi-meta">aguardando minha baixa</div></div>
-          <div className="kpi"><div className="kpi-label">Meu ritmo</div><div className="kpi-value"><CountUp value={myStats?.avgSla || 0} format={v => v.toFixed(1)}/><span className="unit">h</span></div><div className="kpi-meta">SLA médio das minhas baixas</div></div>
+          {/* FIX B1: guard toFixed contra undefined */}
+          <div className="kpi"><div className="kpi-label">Meu ritmo</div><div className="kpi-value"><CountUp value={myStats?.avgSla || 0} format={v => (Number(v) || 0).toFixed(1)}/><span className="unit">h</span></div><div className="kpi-meta">SLA médio das minhas baixas</div></div>
         </div>
 
         {/* Dashboard pessoal do analista */}

@@ -559,9 +559,9 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                 {(() => {
                    const meio = (checking.meio || "").trim().toUpperCase();
                    const isOOHMeio = ["OD", "FL", "DO"].includes(meio);
-                   // Para meios OOH com enderecos, os botoes ficam por endereco (acima)
+                   /* FIX A4.2: aviso redundante quando os blocos de endereco ja mostram botoes */
                    if (isOOHMeio && assets.some(g => g.endereco)) {
-                     return <span className="body-xs muted" style={{ alignSelf: "center" }}>Para reanexar, use os botoes em cada bloco de endereco acima.</span>;
+                     return null;
                    }
                    // Para meios nao-OOH ou sem enderecos, manter botoes genericos aqui
                    const REUPLOAD_MAP = {

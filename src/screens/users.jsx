@@ -14,7 +14,8 @@ function InviteModal({ onClose, onSuccess }) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Email inválido."); return; }
     if (password.length < 6) { setError("Senha deve ter pelo menos 6 caracteres."); return; }
     setSaving(true);
-    setTimeout(() => { setSaving(false); setSuccess(`Usuário ${name.trim()} cadastrado com sucesso!`); setTimeout(() => { onSuccess({ name: name.trim(), email: email.trim().toLowerCase(), role }); onClose(); }, 1000); }, 800);
+    /* FIX B2.6: submit nao persiste no backend (setTimeout fake). Rotulo explicita cadastro local */
+    setTimeout(() => { setSaving(false); setSuccess(`Usuário ${name.trim()} cadastrado localmente!`); setTimeout(() => { onSuccess({ name: name.trim(), email: email.trim().toLowerCase(), role }); onClose(); }, 1000); }, 800);
   };
 
   const Lbl = ({ children }) => <label style={{ fontSize: 11.5, fontWeight: 500, color: "var(--ink-2)", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{children}</label>;
@@ -36,7 +37,8 @@ function InviteModal({ onClose, onSuccess }) {
           </div>
           {error && <div style={{ marginTop: 14, padding: "10px 14px", background: "var(--alert-soft)", color: "var(--alert)", borderRadius: 10, fontSize: 13, display: "flex", gap: 8, alignItems: "center", border: "1px solid color-mix(in srgb, var(--alert) 25%, transparent)" }}><Icon name="warn" size={14}/> {error}</div>}
           {success && <div style={{ marginTop: 14, padding: "10px 14px", background: "var(--accent-soft)", color: "var(--accent)", borderRadius: 10, fontSize: 13, display: "flex", gap: 8, alignItems: "center", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)" }}><Icon name="check" size={14}/> {success}</div>}
-          <div className="row gap-3" style={{ marginTop: 20, justifyContent: "flex-end" }}><Button variant="ghost" type="button" onClick={onClose} disabled={saving}>Cancelar</Button><Button variant="primary" type="submit" loading={saving}>Cadastrar usuário</Button></div>
+          {/* FIX B2.6: rotulo explicita que cadastro e local */}
+          <div className="row gap-3" style={{ marginTop: 20, justifyContent: "flex-end" }}><Button variant="ghost" type="button" onClick={onClose} disabled={saving}>Cancelar</Button><Button variant="primary" type="submit" loading={saving}>Cadastrar (local)</Button></div>
         </form>
       </div>
     </div>
