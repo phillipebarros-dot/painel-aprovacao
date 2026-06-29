@@ -67,8 +67,12 @@
       const m = webViewLink.match(/\/folders\/([a-zA-Z0-9_-]+)/);
       if (m) drive_folder_id = m[1];
     }
+    // Normaliza rejection_count: BigQuery pode retornar string ou valor corrupto
+    const rawRej = parseInt(c.rejection_count, 10);
+    const rejection_count = (!isNaN(rawRej) && rawRej >= 0) ? rawRej : 0;
+
     return {
-      ...c, status, submittedAt,
+      ...c, status, submittedAt, rejection_count,
       approvedAt: parseTs(c.approved_at),
       rejectedAt: parseTs(c.rejected_at),
       assigned_to: c.responsavel || c.assigned_to || "",
