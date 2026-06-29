@@ -24,6 +24,7 @@ build/
 # Se vazar: atacante sabe quais serviços estão conectados
 # ===================================================
 n8n/
+!n8n/Painel de aprovacao l TESTE - FLUXO COMPLETO.json
 
 # ===================================================
 # PENTEST / SEGURANÇA — NUNCA versionar
