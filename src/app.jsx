@@ -435,8 +435,21 @@ function App() {
     const now = Date.now();
     if (decision === "revert") {
       const who = user.nome || user.name;
-      window.PainelAPI?.updateCheckingStatus(checking.submission_id, "pending", who).catch(err => addToast({ type: "error", message: "Falha ao reabrir: " + (err.message || "") }));
-      setCheckings(prev => prev.map(c => c.submission_id === checking.submission_id ? { ...c, status: "pending", approvedAt: null, rejectedAt: null, rejection_reason: "", decision_label: "" } : c));
+      const sid = checking.submission_id;
+      // Salvar estado anterior para rollback
+      const prevStatus = checking.status;
+      const prevApprovedAt = checking.approvedAt;
+      const prevRejectedAt = checking.rejectedAt;
+      const prevRejectionReason = checking.rejection_reason;
+      const prevLabel = checking.decision_label;
+      // Rollback se API falhar
+      const rollback = (err) => {
+        addToast({ type: "error", message: "Falha ao reabrir: " + (err.message || "Erro interno") });
+        setCheckings(prev => prev.map(c => c.submission_id === sid ? { ...c, status: prevStatus, approvedAt: prevApprovedAt, rejectedAt: prevRejectedAt, rejection_reason: prevRejectionReason, decision_label: prevLabel } : c));
+      };
+      window.PainelAPI?.updateCheckingStatus(sid, "pending", who).catch(rollback);
+      // Update otimista (será revertido pelo rollback se a API falhar)
+      setCheckings(prev => prev.map(c => c.submission_id === sid ? { ...c, status: "pending", approvedAt: null, rejectedAt: null, rejection_reason: "", decision_label: "" } : c));
       addToast({ type: "info", message: `${checking.n_pi} reaberto. Voltou para a fila.` });
       setReviewing(null); return;
     }
