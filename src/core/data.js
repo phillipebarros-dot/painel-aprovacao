@@ -100,7 +100,7 @@
     if (usersRes.status === "fulfilled" && usersRes.value?.users) {
       MOCK.users = usersRes.value.users.map(u => ({
         ...u, nome: u.name || u.email, name: u.name || u.email,
-        color: "#0E7490", last_seen: u.lastSeen || u.created_at,
+        color: "#0E7490", last_seen: u.lastSeen || u.created_at || Date.now(),
         avatar: (u.avatar && String(u.avatar).startsWith("http")) ? u.avatar : (u.googlePic || u.google_pic || (u.name || u.email || "?").split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()),
       }));
     }

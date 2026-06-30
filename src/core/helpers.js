@@ -1,18 +1,21 @@
 /* helpers.js — formatters + data computations (plain JS -> window.H) */
 (function () {
+  // Normaliza qualquer entrada de data (string ISO, numero, Date) para timestamp numerico
+  const toTs = (v) => { if (v == null) return NaN; if (typeof v === "number") return v; const n = typeof v === "string" ? new Date(v).getTime() : v instanceof Date ? v.getTime() : Number(v); return isFinite(n) ? n : NaN; };
   const fmtRelTime = (ts) => {
-    if (ts == null || isNaN(ts)) return "";
-    const diff = (Date.now() - ts) / 1000;
+    const t = toTs(ts);
+    if (isNaN(t)) return "";
+    const diff = (Date.now() - t) / 1000;
     if (diff < 0) return "agora";
     if (diff < 60) return "agora";
     if (diff < 3600) return `${Math.floor(diff / 60)}min`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
     if (diff < 7 * 86400) return `${Math.floor(diff / 86400)}d`;
-    return new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
+    return new Date(t).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
   };
-  const fmtTime = (ts) => { if (ts == null || isNaN(ts)) return ""; return new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); };
-  const fmtDate = (ts) => { if (ts == null || isNaN(ts)) return ""; return new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }); };
-  const fmtDateLong = (ts) => { if (ts == null || isNaN(ts)) return ""; return new Date(ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }); };
+  const fmtTime = (ts) => { const t = toTs(ts); if (isNaN(t)) return ""; return new Date(t).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); };
+  const fmtDate = (ts) => { const t = toTs(ts); if (isNaN(t)) return ""; return new Date(t).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }); };
+  const fmtDateLong = (ts) => { const t = toTs(ts); if (isNaN(t)) return ""; return new Date(t).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }); };
   const fmtNum = (n) => { const v = Number(n); return isNaN(v) ? "0" : new Intl.NumberFormat("pt-BR").format(Math.round(v)); };
   const fmtPct = (n) => { const v = Math.round((Number(n) || 0) * 1000) / 10; return n === 1 ? "100%" : v >= 100 ? "99.9%" : `${v}%`; };
   const fmtHours = (h) => { const v = Number(h) || 0; return v < 1 ? `${Math.round(v * 60)}min` : `${v.toFixed(1)}h`; };
