@@ -345,9 +345,9 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
               <div className="row gap-3" style={{ alignItems: "center" }}>
                 {/* REQ 4 (01/07): botao de divisao automatica (so admin) */}
                 {isManager && <button className="btn btn-accent sm" onClick={() => {
-                  // REQ EQUIPE: usar membros da equipe do grupo (nao todos users)
+                  // UXP: usar SOMENTE membros da equipe do grupo logado (sem fallback que mistura equipes)
                   var membros = window.MOCK?.teamMembers?.(currentUser?.grupo || "boticario") || [];
-                  var teamNames = membros.length >= 2 ? membros.map(u => u.nome || u.name) : (window.MOCK?.users || []).filter(u => u.role !== "viewer").map(u => u.nome || u.name);
+                  var teamNames = membros.map(u => u.nome || u.name);
                   if (teamNames.length < 2) { onToast?.({ type: "info", message: "Precisa de pelo menos 2 responsaveis cadastrados." }); return; }
                   var src = divMonth === "all" ? checkings : checkings.filter(c => { var d = new Date(c.submittedAt); return (d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")) === divMonth; });
                   var unassigned = src.filter(c => !c.assigned_to);
