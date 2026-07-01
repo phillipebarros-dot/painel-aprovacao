@@ -144,6 +144,98 @@ function AssetCard({ file: f, index, group, onOpen, onDelete }) {
 }
 
 
+// ─── Comentários do Cliente Uninter (read-only no admin) ───────────────────
+function ClientCommentsCard({ submissionId }) {
+  const H = window.H;
+  const API = window.PainelAPI;
+  const [comments, setComments] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [expanded, setExpanded] = React.useState(false);
+  const [marking, setMarking] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!submissionId || !API?.getClientComments) { setLoading(false); return; }
+    let cancelled = false;
+    API.getClientComments(submissionId).then(res => {
+      if (cancelled) return;
+      const list = res?.comments || res?.data || (Array.isArray(res) ? res : []);
+      setComments(list);
+      if (list.some(c => !c.read_by_admin)) setExpanded(true);
+      setLoading(false);
+    }).catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [submissionId]);
+
+  const unread = comments.filter(c => !c.read_by_admin).length;
+
+  const markRead = async () => {
+    if (!API?.markClientCommentsRead) return;
+    setMarking(true);
+    try { await API.markClientCommentsRead(submissionId); setComments(prev => prev.map(c => ({ ...c, read_by_admin: true }))); }
+    catch { /* silencioso */ }
+    setMarking(false);
+  };
+
+  if (loading) return (
+    <div className="card card-pad">
+      <div className="eyebrow">Observações do Cliente</div>
+      <div className="body-xs muted" style={{ marginTop: 6 }}>Carregando…</div>
+    </div>
+  );
+
+  return (
+    <div className="card card-pad">
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center", marginBottom: 4, cursor: "pointer" }} onClick={() => setExpanded(!expanded)}>
+        <div className="row gap-2" style={{ alignItems: "center" }}>
+          <Icon name="message" size={14} style={{ color: "var(--alert-ink)" }}/>
+          <span className="eyebrow" style={{ margin: 0 }}>Observações do Cliente</span>
+          {unread > 0 && <span className="numdot" style={{ background: "var(--alert)", color: "#fff", fontSize: 10, minWidth: 18, height: 18, borderRadius: 9, display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>{unread}</span>}
+          {comments.length > 0 && unread === 0 && <span className="pill pill-approved" style={{ fontSize: 9 }}>Todos lidos</span>}
+        </div>
+        <Icon name={expanded ? "chevron_up" : "chevron_down"} size={14} style={{ color: "var(--ink-3)" }}/>
+      </div>
+      <p className="body-xs muted" style={{ margin: "0 0 8px" }}>Comentários feitos pelo cliente Uninter no painel de checking. Somente leitura.</p>
+
+      {expanded && (
+        <div className="col" style={{ gap: 10 }}>
+          {comments.length === 0 ? (
+            <div className="body-xs muted" style={{ textAlign: "center", padding: "12px 0" }}>Nenhuma observação do cliente até o momento.</div>
+          ) : (
+            <>
+              <div className="col" style={{ gap: 8, maxHeight: 280, overflowY: "auto" }}>
+                {comments.map(c => (
+                  <div key={c.id} style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid var(--rule)", background: c.comment_type === "approval_ok" ? "rgba(16,185,129,0.06)" : !c.read_by_admin ? "rgba(245,158,11,0.06)" : "var(--surface-2)" }}>
+                    <div className="row" style={{ justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)" }}>{c.user_name || c.user_email || "Cliente"}</span>
+                      <span className="cell-time">{H.fmtRelTime(new Date(c.created_at).getTime())}</span>
+                    </div>
+                    <div className="row gap-2" style={{ alignItems: "flex-start" }}>
+                      {c.comment_type === "approval_ok" ? (
+                        <span className="pill pill-approved" style={{ fontSize: 10 }}><Icon name="check" size={10}/> Sem observações</span>
+                      ) : (
+                        <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.5, margin: 0 }}>{c.comment}</p>
+                      )}
+                    </div>
+                    {!c.read_by_admin && c.comment_type !== "approval_ok" && (
+                      <span className="pill pill-pending" style={{ fontSize: 9, marginTop: 6 }}>Não lido</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {unread > 0 && (
+                <Button variant="quiet" size="sm" icon="check" disabled={marking} onClick={markRead}>
+                  {marking ? "Marcando…" : `Marcar ${unread} como lido${unread > 1 ? "s" : ""}`}
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function ScreenReview({ checking, currentUser, onBack, onDecide }) {
   const H = window.H;
   const isViewer = currentUser?.role === "viewer";
@@ -503,6 +595,13 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
               )}
             </div>
           )}
+          {/* ── Observações do Cliente (somente Uninter) ── */}
+          {(() => {
+            const RA = window.RULES_API; if (!RA) return null;
+            const { isUninter } = RA.rulesForChecking(checking);
+            if (!isUninter) return null;
+            return <ClientCommentsCard submissionId={checking.submission_id} />;
+          })()}
           {(() => {
             const RA = window.RULES_API; if (!RA) return null;
             const { codes, isUninter } = RA.rulesForChecking(checking);

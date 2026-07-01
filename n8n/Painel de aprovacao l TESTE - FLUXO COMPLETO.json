@@ -3673,6 +3673,56 @@
               },
               "renameOutput": true,
               "outputKey": "proxy_file"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c1-client-comments-read",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "get_client_comments",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "get_client_comments"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c2-client-comments-mark",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "mark_client_comment_read",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "mark_client_comment_read"
             }
           ]
         },
@@ -3689,7 +3739,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ============================================================\n// VALIDAR DADOS - Schema de validacao + RBAC + VIEWER BLOCK\n// ============================================================\nconst item = $input.first().json;\nconst { action, body } = item;\nconst authenticatedUser = item._auth || null;\n\n// ============================================================\n// FIX C: Guard anti-rej_\n// ============================================================\nconst actionsThatUseId = ['approve', 'reject', 'resubmit_checking'];\nif (actionsThatUseId.includes(action)) {\n  const targetId = body.id || body.submission_id || '';\n  if (String(targetId).startsWith('rej_')) {\n    throw new Error('INVALID_ID: Operação não permitida em registros de log de rejeição (rej_)');\n  }\n}\n\n// ============================================================\n// RBAC: Acoes bloqueadas para viewers (setor Midia)\n// Viewers podem apenas visualizar — NUNCA aprovar/rejeitar\n// ============================================================\nconst VIEWER_BLOCKED_ACTIONS = ['approve', 'reject', 'resubmit_checking', 'register_user', 'update_user_role', 'update_user_status', 'update_checking_status', 'save_sla_config', 'distribute_demands', 'toggle_automation', 'assign_responsible', 'set_supplier_rating', 'log_security_event'];\nif (VIEWER_BLOCKED_ACTIONS.includes(action) && authenticatedUser && authenticatedUser.role === 'viewer') {\n  throw new Error('FORBIDDEN: Viewers do setor Midia nao possuem permissao para esta acao');\n}\n\nconst schemas = {\n  login_sso:          { required: ['id_token'] },\n  approve:            { required: ['id'] },\n  reject:             { required: ['id', 'reason'] },\n  logout:             { required: [] },\n  resubmit_checking:  { required: ['submission_id'] },\n  login:              { required: ['email', 'password'] },\n  register_user:      { required: ['name', 'email', 'password'], adminOnly: true },\n  update_user_role:   { required: ['userId', 'newRole'], adminOnly: true },\n  update_user_status: { required: ['userId', 'status'], adminOnly: true },\n  get_users:          { required: [], adminOnly: true },\n  log_security_event: { required: ['event_type', 'severity'], adminOnly: true },\n  get_security_alerts: { required: [], adminOnly: true },\n  heartbeat:          { required: [] },\n  get_online_users:   { required: [] },\n  get_notifications:  { required: [] },\n  proxy_file:         { required: [] },\n  update_checking_status: { required: ['id', 'status'] },\n  save_sla_config:    { required: [], adminOnly: true },\n  toggle_automation:  { required: ['automation_id'], adminOnly: true },\n  distribute_demands: { required: [], adminOnly: true },\n  upload_supplement:  { required: ['submission_id'] },\n  'get_automations':  { required: [], adminOnly: true },\n  'get_sla_config':  { required: [], adminOnly: true },\n  'copilot_analyze':  { required: [] },\n  'get_board_sheets':  { required: [] },\n  'get_history':  { required: [] },\n  'add_comment':  { required: [] },\n  'get_responsibles':  { required: [] },\n  'get_checking_files':  { required: [] },\n  'get_files':           { required: ['submission_id'] },\n  'generate_slides':     { required: [] },\n  'get_slide_options':   { required: [] },\n  'get_production_board': { required: [] },\n  'assign_responsible':  { required: [], adminOnly: true },\n  'get_responsaveis':    { required: [] },\n  'set_supplier_rating': { required: [], adminOnly: true },\n  'get_checkings':  { required: [] },\n  'get_board':  { required: [] },\n  'get_suppliers':  { required: [] },\n  'get_alerts':  { required: [] },\n  'get_all_checkings':  { required: [] },\n  'get_pending':  { required: [] },\n  'get_stats':  { required: [] }\n};\n\nconst schema = schemas[action];\nif (schema) {\n  const missing = (schema.required || []).filter(f => !body[f]);\n  if (missing.length > 0) throw new Error('MISSING_FIELDS: ' + missing.join(', '));\n  if (schema.adminOnly && (!authenticatedUser || authenticatedUser.role !== 'admin')) {\n    throw new Error('FORBIDDEN: Acesso restrito a administradores');\n  }\n}\n\n// ============================================================\n// SECURITY: Bloquear actions desconhecidas\n// ============================================================\nif (!schema && action !== 'health_check') {\n  throw new Error('INVALID_ACTION: Acao desconhecida: ' + String(action).substring(0, 30));\n}\n\n\nif (action === 'update_user_role') {\n  const allowedRoles = ['admin', 'analyst', 'viewer'];\n  if (!allowedRoles.includes(body.newRole)) throw new Error('INVALID_ROLE: Role must be admin, analyst or viewer');\n}\n\nif (action === 'update_user_status') {\n  const allowedStatus = ['active', 'inactive'];\n  if (!allowedStatus.includes(body.status)) throw new Error('INVALID_STATUS: Status must be active or inactive');\n}\n\nif (action === 'register_user' && body.email) {\n  const allowedDomains = ['@grupoom.com.br', '@opusmultipla.com.br'];\n  const emailLower = body.email.toLowerCase();\n  if (!allowedDomains.some(d => emailLower.endsWith(d))) {\n    throw new Error('FORBIDDEN: Email deve ser do dominio corporativo');\n  }\n}\n\n// Logout já foi processado no auth node, responder diretamente\nif (action === 'logout' && $input.first().json._logoutSuccess) {\n  // O roteador não tem branch para logout, então retornamos aqui\n}\n\nreturn $input.all();"
+        "jsCode": "// ============================================================\n// VALIDAR DADOS - Schema de validacao + RBAC + VIEWER BLOCK\n// ============================================================\nconst item = $input.first().json;\nconst { action, body } = item;\nconst authenticatedUser = item._auth || null;\n\n// ============================================================\n// FIX C: Guard anti-rej_\n// ============================================================\nconst actionsThatUseId = ['approve', 'reject', 'resubmit_checking'];\nif (actionsThatUseId.includes(action)) {\n  const targetId = body.id || body.submission_id || '';\n  if (String(targetId).startsWith('rej_')) {\n    throw new Error('INVALID_ID: Operação não permitida em registros de log de rejeição (rej_)');\n  }\n}\n\n// ============================================================\n// RBAC: Acoes bloqueadas para viewers (setor Midia)\n// Viewers podem apenas visualizar — NUNCA aprovar/rejeitar\n// ============================================================\nconst VIEWER_BLOCKED_ACTIONS = ['approve', 'reject', 'resubmit_checking', 'register_user', 'update_user_role', 'update_user_status', 'update_checking_status', 'save_sla_config', 'distribute_demands', 'toggle_automation', 'assign_responsible', 'set_supplier_rating', 'log_security_event'];\nif (VIEWER_BLOCKED_ACTIONS.includes(action) && authenticatedUser && authenticatedUser.role === 'viewer') {\n  throw new Error('FORBIDDEN: Viewers do setor Midia nao possuem permissao para esta acao');\n}\n\nconst schemas = {\n  login_sso:          { required: ['id_token'] },\n  approve:            { required: ['id'] },\n  reject:             { required: ['id', 'reason'] },\n  logout:             { required: [] },\n  resubmit_checking:  { required: ['submission_id'] },\n  login:              { required: ['email', 'password'] },\n  register_user:      { required: ['name', 'email', 'password'], adminOnly: true },\n  update_user_role:   { required: ['userId', 'newRole'], adminOnly: true },\n  update_user_status: { required: ['userId', 'status'], adminOnly: true },\n  get_users:          { required: [], adminOnly: true },\n  log_security_event: { required: ['event_type', 'severity'], adminOnly: true },\n  get_security_alerts: { required: [], adminOnly: true },\n  heartbeat:          { required: [] },\n  get_online_users:   { required: [] },\n  get_notifications:  { required: [] },\n  proxy_file:         { required: [] },\n  update_checking_status: { required: ['id', 'status'] },\n  save_sla_config:    { required: [], adminOnly: true },\n  toggle_automation:  { required: ['automation_id'], adminOnly: true },\n  distribute_demands: { required: [], adminOnly: true },\n  upload_supplement:  { required: ['submission_id'] },\n  'get_automations':  { required: [], adminOnly: true },\n  'get_sla_config':  { required: [], adminOnly: true },\n  'copilot_analyze':  { required: [] },\n  'get_board_sheets':  { required: [] },\n  'get_history':  { required: [] },\n  'add_comment':  { required: [] },\n  'get_responsibles':  { required: [] },\n  'get_checking_files':  { required: [] },\n  'get_files':           { required: ['submission_id'] },\n  'generate_slides':     { required: [] },\n  'get_slide_options':   { required: [] },\n  'get_production_board': { required: [] },\n  'assign_responsible':  { required: [], adminOnly: true },\n  'get_responsaveis':    { required: [] },\n  'set_supplier_rating': { required: [], adminOnly: true },\n  'get_checkings':  { required: [] },\n  'get_board':  { required: [] },\n  'get_suppliers':  { required: [] },\n  'get_alerts':  { required: [] },\n  'get_all_checkings':  { required: [] },\n  'get_pending':  { required: [] },\n  'get_stats':  { required: [] },\n  'get_client_comments':  { required: ['submission_id'] },\n  'mark_client_comment_read':  { required: ['submission_id'] }\n};\n\nconst schema = schemas[action];\nif (schema) {\n  const missing = (schema.required || []).filter(f => !body[f]);\n  if (missing.length > 0) throw new Error('MISSING_FIELDS: ' + missing.join(', '));\n  if (schema.adminOnly && (!authenticatedUser || authenticatedUser.role !== 'admin')) {\n    throw new Error('FORBIDDEN: Acesso restrito a administradores');\n  }\n}\n\n// ============================================================\n// SECURITY: Bloquear actions desconhecidas\n// ============================================================\nif (!schema && action !== 'health_check') {\n  throw new Error('INVALID_ACTION: Acao desconhecida: ' + String(action).substring(0, 30));\n}\n\n\nif (action === 'update_user_role') {\n  const allowedRoles = ['admin', 'analyst', 'viewer'];\n  if (!allowedRoles.includes(body.newRole)) throw new Error('INVALID_ROLE: Role must be admin, analyst or viewer');\n}\n\nif (action === 'update_user_status') {\n  const allowedStatus = ['active', 'inactive'];\n  if (!allowedStatus.includes(body.status)) throw new Error('INVALID_STATUS: Status must be active or inactive');\n}\n\nif (action === 'register_user' && body.email) {\n  const allowedDomains = ['@grupoom.com.br', '@opusmultipla.com.br'];\n  const emailLower = body.email.toLowerCase();\n  if (!allowedDomains.some(d => emailLower.endsWith(d))) {\n    throw new Error('FORBIDDEN: Email deve ser do dominio corporativo');\n  }\n}\n\n// Logout já foi processado no auth node, responder diretamente\nif (action === 'logout' && $input.first().json._logoutSuccess) {\n  // O roteador não tem branch para logout, então retornamos aqui\n}\n\nreturn $input.all();"
       },
       "id": "419a6d7a-a4cf-4ea8-86bb-4cdb42b57853",
       "name": "Validar Dados",
@@ -5528,6 +5578,114 @@
         21856,
         19360
       ]
+    },
+    {
+      "parameters": {
+        "projectId": {
+          "__rl": true,
+          "value": "checking-grupoom",
+          "mode": "list"
+        },
+        "sqlQuery": "SELECT id, submission_id, user_name, user_email, comment, comment_type, FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', created_at) AS created_at, read_by_admin FROM `checking-grupoom.form_checking.client_comments` WHERE submission_id = '{{ $json.body.submission_id }}' ORDER BY created_at DESC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [
+        24200,
+        19200
+      ],
+      "id": "cc-get-client-comments",
+      "name": "BigQuery - Ler Comentarios Cliente",
+      "credentials": {
+        "googleBigQueryOAuth2Api": {
+          "id": "hxvtFcUvIi35sayG",
+          "name": "Painel Cliente - Painel de Aprovação - Formulario"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, comments: $input.all().map(i => i.json) } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        24424,
+        19200
+      ],
+      "id": "cc-respond-client-comments",
+      "name": "Responder Comentarios Cliente"
+    },
+    {
+      "parameters": {
+        "projectId": {
+          "__rl": true,
+          "value": "checking-grupoom",
+          "mode": "list"
+        },
+        "sqlQuery": "UPDATE `checking-grupoom.form_checking.client_comments` SET read_by_admin = TRUE, read_at = CURRENT_TIMESTAMP() WHERE submission_id = '{{ $json.body.submission_id }}' AND read_by_admin = FALSE",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleBigQuery",
+      "typeVersion": 2.1,
+      "position": [
+        24200,
+        19400
+      ],
+      "id": "cc-mark-client-comments",
+      "name": "BigQuery - Marcar Comentarios Lidos",
+      "credentials": {
+        "googleBigQueryOAuth2Api": {
+          "id": "hxvtFcUvIi35sayG",
+          "name": "Painel Cliente - Painel de Aprovação - Formulario"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Comentarios marcados como lidos' } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://painelchecking.grupoom.com.br"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store, no-cache, must-revalidate"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        24424,
+        19400
+      ],
+      "id": "cc-respond-mark-read",
+      "name": "Responder Marcar Lidos"
     }
   ],
   "pinData": {},
@@ -6667,6 +6825,20 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "BigQuery - Ler Comentarios Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "BigQuery - Marcar Comentarios Lidos",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -6675,6 +6847,28 @@
         [
           {
             "node": "Responder Proxy File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BigQuery - Ler Comentarios Cliente": {
+      "main": [
+        [
+          {
+            "node": "Responder Comentarios Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BigQuery - Marcar Comentarios Lidos": {
+      "main": [
+        [
+          {
+            "node": "Responder Marcar Lidos",
             "type": "main",
             "index": 0
           }
