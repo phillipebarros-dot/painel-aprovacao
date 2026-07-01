@@ -3,8 +3,14 @@ function ScreenReports({ checkings, currentUser, onToast }) {
   const H = window.H;
   const isViewer = currentUser?.role === "viewer";
   const fmt = d => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-  const [startDate, setStartDate] = React.useState(fmt(new Date(Date.now() - 30 * 86400000)));
-  const [endDate, setEndDate] = React.useState(fmt(new Date()));
+  // REQ 3.2: padrao do reports = mes corrente (mes fechado)
+  const now = new Date();
+  const mesAtualStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const mesAtualEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const [startDate, setStartDate] = React.useState(fmt(mesAtualStart));
+  const [endDate, setEndDate] = React.useState(fmt(mesAtualEnd));
+  // REQ 3.2: meses fechados para atalhos
+  const recentMeses = React.useMemo(() => H.recentMonths(12), []);
   const [cliente, setCliente] = React.useState("all");
   const [veiculo, setVeiculo] = React.useState("all");
   const [meio, setMeio] = React.useState("all");
@@ -55,6 +61,15 @@ function ScreenReports({ checkings, currentUser, onToast }) {
                 <div className="row gap-2"><input className="input" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ flex: 1 }}/><span className="muted">→</span><input className="input" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ flex: 1 }}/></div>
                 <div className="row gap-2" style={{ marginTop: 4, flexWrap: "wrap" }}>
                   {[["7d", 7], ["30d", 30], ["Trimestre", 90], ["Ano", 365]].map(([l, d]) => <button key={l} className="pill pill-neutral" style={{ cursor: "pointer" }} onClick={() => { setStartDate(fmt(new Date(Date.now() - d * 86400000))); setEndDate(fmt(new Date())); }}>{l}</button>)}
+                </div>
+                {/* REQ 3.2: atalhos de mes fechado */}
+                <div className="row gap-2" style={{ marginTop: 4, flexWrap: "wrap" }}>
+                  {recentMeses.slice(0, 6).map(m => {
+                    const [y, mo] = m.value.split("-").map(Number);
+                    const s = new Date(y, mo - 1, 1);
+                    const e = new Date(y, mo, 0);
+                    return <button key={m.value} className="pill pill-neutral" style={{ cursor: "pointer", fontSize: 10 }} onClick={() => { setStartDate(fmt(s)); setEndDate(fmt(e)); }}>{m.label}</button>;
+                  })}
                 </div>
               </div>
               {[["Cliente", cliente, setCliente, clientes], ["Veículo", veiculo, setVeiculo, veiculos], ["Meio", meio, setMeio, window.MOCK.meios]].map(([lb, val, set, opts]) => (

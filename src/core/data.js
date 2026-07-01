@@ -33,18 +33,69 @@
     todos:     { label: "Todos", contas: null }, // admin: sem filtro
   };
 
+  // REQ EQUIPE: heuristica de regiao inferida da sigla da conta.
+  // Usada pela distribuicao automatica para agrupar contas por regiao.
+  function inferRegiao(conta) {
+    if (!conta) return "";
+    var up = conta.toUpperCase();
+    if (up.includes("SUL")) return "SUL";
+    if (up.includes("SP INT")) return "SP INT";
+    if (up.includes("SP")) return "SP";
+    if (up.includes("NE")) return "NE";
+    if (up.includes("SE")) return "SE";
+    if (up.includes("RS")) return "RS";
+    if (up.includes("SC")) return "SC";
+    return ""; // EUDORA, AERO, VULT, BOTI BRASIL nao tem regiao explicita
+  }
+
+  // REQ EQUIPE: deriva membros da equipe a partir dos users cadastrados.
+  // NAO hardcoded: filtra por role===analyst e grupo.
+  function teamMembers(grupo) {
+    return (window.MOCK?.users || []).filter(function (u) {
+      return u.role === "analyst" && (u.grupo || "boticario") === grupo;
+    });
+  }
+  // REQ EQUIPE: retorna equipe do usuario (null se admin/todos)
+  function teamFor(user) {
+    var g = user?.grupo || "todos";
+    if (g === "todos") return null;
+    return { grupo: g, label: GRUPOS[g]?.label || g, membros: teamMembers(g) };
+  }
+  // REQ EQUIPE: retorna gestoras (admins do grupo)
+  function teamManagers(grupo) {
+    return (window.MOCK?.users || []).filter(function (u) {
+      return u.role === "admin" && ((u.grupo || "todos") === grupo || (u.grupo || "todos") === "todos");
+    });
+  }
+
   // REQ 6.2 (01/07): filtra checkings pelo grupo do usuario logado.
   // Retorna somente os PIs cujo campo 'conta' pertence ao grupo.
   // grupo "todos" ou ausente = sem filtro (admin).
+  // BUG 2.3: PIs sem conta NAO devem sumir para grupo boticario.
   function visibleCheckings(user, checkings) {
-    const grupo = user?.grupo || "todos";
+    var grupo = user?.grupo || "todos";
     if (grupo === "todos") return checkings;
-    const g = GRUPOS[grupo];
+    var g = GRUPOS[grupo];
     if (!g || !g.contas) return checkings;
-    const set = new Set(g.contas.map(function (s) { return s.toLowerCase(); }));
-    return checkings.filter(function (c) {
-      return set.has((c.conta || "").toLowerCase());
+    var set = new Set(g.contas.map(function (s) { return s.toLowerCase(); }));
+    // BUG 2.3: contar PIs sem conta para log
+    var semConta = 0;
+    var result = checkings.filter(function (c) {
+      var conta = (c.conta || "").toLowerCase();
+      if (!conta) {
+        // BUG 2.3: tentar inferir conta de c.planilha
+        var fallback = (c.planilha || "").toLowerCase();
+        if (fallback && set.has(fallback)) return true;
+        // BUG 2.3: para boticario, NAO esconder (mostrar com badge "sem conta")
+        if (grupo === "boticario") { semConta++; return true; }
+        // BUG 2.3: kauana ve so UNINTER confirmado
+        return false;
+      }
+      return set.has(conta);
     });
+    // BUG 2.3: logar para backend corrigir
+    if (semConta > 0) console.warn("[visibleCheckings] " + semConta + " PIs sem campo 'conta' incluidos no grupo boticario. Backend deve preencher.");
+    return result;
   }
 
   // Arquitetura real do pipeline (mostrada em Operações). Descreve o fluxo n8n real.
@@ -89,6 +140,11 @@
     CONTAS_BOTICARIO: CONTAS_BOTICARIO,
     CONTAS_KAUANA: CONTAS_KAUANA,
     visibleCheckings: visibleCheckings,
+    // REQ EQUIPE: helpers de equipe derivados
+    teamMembers: teamMembers,
+    teamFor: teamFor,
+    teamManagers: teamManagers,
+    inferRegiao: inferRegiao,
     getFiles: (id) => MOCK.filesById[id] || [],
   };
 

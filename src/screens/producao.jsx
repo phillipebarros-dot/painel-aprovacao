@@ -104,6 +104,23 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
 
   const colorOf = (name) => (window.MOCK.users.find(u => u.name === name)?.color) || "#0E7490";
 
+  // REQ EQUIPE: derive equipe do grupo do usuario logado
+  const equipe = React.useMemo(() => {
+    const membros = window.MOCK?.teamMembers?.(currentUser?.grupo || "boticario") || [];
+    return membros.map(u => {
+      const nm = (u.nome || u.name || "").trim().toLowerCase();
+      const em = (u.email || "").trim().toLowerCase();
+      const meus = checkings.filter(c => {
+        const a = (c.assigned_to || "").trim().toLowerCase();
+        return a && (a === nm || (em && a === em));
+      });
+      const baixados = meus.filter(c => c.approvedAt || c.rejectedAt).length;
+      return { ...u, carga: meus.length, baixados, pendentes: meus.filter(c => H.norm(c.status) === "pending").length };
+    });
+  }, [checkings, currentUser]);
+  const equipeTotal = equipe.reduce((s, m) => s + m.carga, 0);
+  const equipeAlvo = equipe.length ? equipeTotal / equipe.length : 0;
+
   // Divisão por conta (espelha as abas da planilha da Marlene): agrupa PIs por conta
   const team = React.useMemo(() => (window.MOCK?.users || []).filter(u => u.role !== "viewer").map(u => u.nome || u.name), []);
   const contaAgg = React.useMemo(() => {
@@ -199,6 +216,62 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
           <div className="kpi"><div className="kpi-label">Conclusão</div><div className="kpi-value"><CountUp value={prod.totals.demanda ? Math.round((prod.totals.baixados / prod.totals.demanda) * 100) : 0}/><span className="unit">%</span></div><div className="kpi-meta">da demanda baixada</div></div>
         </div>
 
+        {/* REQ EQUIPE 1.2: bloco equipe do periodo (admin only) */}
+        {equipe.length > 0 && (
+          <div className="card card-pad" style={{ marginBottom: "var(--gap)" }}>
+            <div className="row gap-2" style={{ alignItems: "center", marginBottom: 14 }}>
+              <Icon name="users" size={15} style={{ color: "var(--accent)" }}/>
+              <span style={{ fontSize: 14, fontWeight: 600 }}>Equipe do periodo</span>
+              <span className="spacer"/>
+              <span className="cell-mono muted" style={{ fontSize: 12 }}>{equipeTotal} PIs distribuidos entre {equipe.length}</span>
+            </div>
+            {/* Chips por membro */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10, marginBottom: 14 }}>
+              {equipe.map(m => {
+                const pct = m.carga ? (m.baixados / m.carga) : 0;
+                const acima = equipeAlvo > 0 && m.carga > equipeAlvo * 1.15;
+                return (
+                  <div key={m.email || m.nome} className="card card-pad" style={{ padding: "12px 14px", border: acima ? "1px solid var(--warn)" : undefined }}>
+                    <div className="row gap-2" style={{ alignItems: "center", marginBottom: 8 }}>
+                      <Avatar user={m} size={28}/>
+                      <div className="col" style={{ gap: 1, flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.nome || m.name}</span>
+                        <span className="cell-mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{m.carga} PIs</span>
+                      </div>
+                      <span className="cell-mono" style={{ fontSize: 16, fontWeight: 700, color: pct >= 0.8 ? "var(--accent)" : pct >= 0.5 ? "var(--warn)" : "var(--ink-3)" }}>{Math.round(pct * 100)}%</span>
+                    </div>
+                    <div className="rank-track" style={{ height: 5 }}><div className="rank-fill" style={{ width: `${pct * 100}%`, height: "100%", background: acima ? "var(--warn)" : "var(--accent)" }}/></div>
+                    {acima && <div style={{ fontSize: 10.5, color: "var(--warn)", marginTop: 4 }}>acima do equilibrio (+{Math.round(((m.carga / equipeAlvo) - 1) * 100)}%)</div>}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Barra de equilibrio empilhada */}
+            {equipeTotal > 0 && (
+              <div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-4)", fontWeight: 600, marginBottom: 6 }}>Distribuicao da carga</div>
+                <div className="rank-track" style={{ height: 18, display: "flex", borderRadius: 6, overflow: "hidden", position: "relative" }}>
+                  {equipe.map((m, i) => {
+                    const w = (m.carga / equipeTotal) * 100;
+                    const acima = equipeAlvo > 0 && m.carga > equipeAlvo * 1.15;
+                    const colors = ["var(--accent)", "#7E22CE", "#C2410C", "#0E7490", "#15803D", "#B45309"];
+                    return <div key={m.email || i} title={`${m.nome || m.name}: ${m.carga} PIs`} style={{ width: w + "%", height: "100%", background: acima ? "var(--warn)" : colors[i % colors.length], transition: "width 600ms var(--ease-out)" }}/>;
+                  })}
+                  {/* Linha alvo (total/N) */}
+                  {equipe.length > 1 && <div style={{ position: "absolute", left: (100 / equipe.length) + "%", top: 0, bottom: 0, width: 1.5, background: "var(--ink)", opacity: 0.3 }}/>}
+                </div>
+                <div className="row gap-3" style={{ marginTop: 6, flexWrap: "wrap" }}>
+                  {equipe.map((m, i) => {
+                    const colors = ["var(--accent)", "#7E22CE", "#C2410C", "#0E7490", "#15803D", "#B45309"];
+                    return <span key={m.email || i} className="row gap-2" style={{ fontSize: 11, color: "var(--ink-3)" }}><span style={{ width: 8, height: 8, borderRadius: 2, background: (equipeAlvo > 0 && m.carga > equipeAlvo * 1.15) ? "var(--warn)" : colors[i % colors.length] }}/>{(m.nome || m.name || "").split(" ")[0]} ({m.carga})</span>;
+                  })}
+                  <span className="muted" style={{ fontSize: 11 }}>| alvo: {Math.round(equipeAlvo)} cada</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Produtividade por pessoa */}
         <div className="card" style={{ display: pview === "tabela" ? undefined : "none" }}>
           <div className="card-head">
@@ -272,24 +345,44 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
               <div className="row gap-3" style={{ alignItems: "center" }}>
                 {/* REQ 4 (01/07): botao de divisao automatica (so admin) */}
                 {isManager && <button className="btn btn-accent sm" onClick={() => {
-                  var team = (window.MOCK?.users || []).filter(u => u.role !== "viewer").map(u => u.nome || u.name);
-                  if (team.length < 2) { onToast?.({ type: "info", message: "Precisa de pelo menos 2 responsaveis cadastrados." }); return; }
+                  // REQ EQUIPE: usar membros da equipe do grupo (nao todos users)
+                  var membros = window.MOCK?.teamMembers?.(currentUser?.grupo || "boticario") || [];
+                  var teamNames = membros.length >= 2 ? membros.map(u => u.nome || u.name) : (window.MOCK?.users || []).filter(u => u.role !== "viewer").map(u => u.nome || u.name);
+                  if (teamNames.length < 2) { onToast?.({ type: "info", message: "Precisa de pelo menos 2 responsaveis cadastrados." }); return; }
                   var src = divMonth === "all" ? checkings : checkings.filter(c => { var d = new Date(c.submittedAt); return (d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")) === divMonth; });
                   var unassigned = src.filter(c => !c.assigned_to);
                   if (!unassigned.length) { onToast?.({ type: "info", message: "Todos os PIs deste periodo ja tem responsavel." }); return; }
-                  // REQ 4.2 (01/07): round-robin igualitario por conta/regiao
+                  // REQ EQUIPE: distribuicao respeita REGIAO quando possivel.
+                  // Heuristica: agrupar contas por regiao inferida. Distribuir contas
+                  // inteiras por membro (round-robin de regioes). Depois balancear
+                  // excedente por quantidade, garantindo equilibrio.
+                  var inferR = window.MOCK?.inferRegiao || function() { return ""; };
                   var byConta = {};
                   unassigned.forEach(c => { var k = c.conta || "Sem conta"; if (!byConta[k]) byConta[k] = []; byConta[k].push(c); });
-                  var map = {}, counts = {};
-                  team.forEach(t => { counts[t] = 0; });
+                  var map = {}, counts = {}, contaMembro = {};
+                  teamNames.forEach(t => { counts[t] = 0; });
+                  // Agrupar contas por regiao
+                  var regioes = {};
                   Object.keys(byConta).forEach(conta => {
-                    byConta[conta].forEach((c, i) => {
-                      var who = team[i % team.length];
-                      map[c.submission_id] = who;
-                      counts[who] = (counts[who] || 0) + 1;
+                    var r = inferR(conta) || "_geral";
+                    if (!regioes[r]) regioes[r] = [];
+                    regioes[r].push(conta);
+                  });
+                  // Distribuir contas inteiras por round-robin dentro de cada regiao
+                  var idx = 0;
+                  Object.keys(regioes).sort().forEach(regiao => {
+                    regioes[regiao].forEach(conta => {
+                      var who = teamNames[idx % teamNames.length];
+                      contaMembro[conta] = contaMembro[conta] || {};
+                      byConta[conta].forEach(c => {
+                        map[c.submission_id] = who;
+                        counts[who] = (counts[who] || 0) + 1;
+                        contaMembro[conta][who] = (contaMembro[conta][who] || 0) + 1;
+                      });
+                      idx++;
                     });
                   });
-                  setAutoPreview({ map: map, counts: counts, total: unassigned.length, byConta: byConta, team: team });
+                  setAutoPreview({ map: map, counts: counts, total: unassigned.length, byConta: byConta, activeTeam: teamNames, contaMembro: contaMembro });
                 }}><Icon name="sparkles" size={12}/>Dividir automaticamente</button>}
                 <select className="dash-month" value={divMonth} onChange={e => setDivMonth(e.target.value)}>
                   <option value="all">Todos os meses</option>
@@ -374,28 +467,39 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
         )}
 
         {divOpen && <DividirDemanda checkings={checkings} team={prod.rows.map(r => r.name)} onClose={() => setDivOpen(false)} onAssign={onAssign} onToast={onToast}/>}
-        {/* REQ 4 (01/07): modal de preview da divisao automatica */}
+        {/* REQ 4 (01/07): modal de preview da divisao automatica com distribuicao regional */}
         {autoPreview && (<>
           <div className="scrim" onClick={() => setAutoPreview(null)}/>
-          <div className="modal content" style={{ width: "min(620px, 94vw)" }}><div className="card-pad">
+          <div className="modal content" style={{ width: "min(720px, 94vw)" }}><div className="card-pad">
             <div className="eyebrow" style={{ marginBottom: 8 }}>Divisao automatica</div>
-            <h2 className="display-3" style={{ marginBottom: 14 }}>Preview: {autoPreview.total} PIs divididos igualmente</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
-              {autoPreview.team.map(name => (
+            <h2 className="display-3" style={{ marginBottom: 6 }}>{divMonth !== "all" ? divMonths.find(m => m.value === divMonth)?.label || divMonth : "Todos os meses"}: {autoPreview.total} PIs</h2>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 16 }}>Distribuidos entre {autoPreview.activeTeam.length} membro{autoPreview.activeTeam.length !== 1 ? "s" : ""}. Contas agrupadas por regiao.</div>
+            {/* Cards por membro */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10, marginBottom: 16 }}>
+              {autoPreview.activeTeam.map(name => (
                 <div key={name} className="card card-pad" style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 28, fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--accent)" }}>{autoPreview.counts[name] || 0}</div>
                   <div style={{ fontSize: 12, fontWeight: 500, marginTop: 4 }}>{name.split(" ")[0]}</div>
                 </div>
               ))}
             </div>
-            <div className="eyebrow" style={{ marginBottom: 6 }}>Por conta/regiao</div>
-            <div style={{ maxHeight: 180, overflowY: "auto", marginBottom: 16 }}>
+            {/* Preview conta x membro (tabela) */}
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Distribuicao por conta e membro</div>
+            <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 16 }}>
               <table className="tbl" style={{ fontSize: 12 }}>
-                <thead><tr><th>Conta</th><th style={{ textAlign: "right" }}>PIs</th></tr></thead>
+                <thead><tr><th>Conta</th><th>Regiao</th>{autoPreview.activeTeam.map(n => <th key={n} style={{ textAlign: "right" }}>{n.split(" ")[0]}</th>)}<th style={{ textAlign: "right" }}>Total</th></tr></thead>
                 <tbody>
-                  {Object.keys(autoPreview.byConta).sort().map(conta => (
-                    <tr key={conta}><td>{conta}</td><td style={{ textAlign: "right", fontFamily: "var(--font-mono)" }}>{autoPreview.byConta[conta].length}</td></tr>
-                  ))}
+                  {Object.keys(autoPreview.byConta).sort().map(conta => {
+                    const row = autoPreview.contaMembro?.[conta] || {};
+                    return (
+                      <tr key={conta}>
+                        <td style={{ fontWeight: 500 }}>{conta}</td>
+                        <td className="cell-secondary">{window.MOCK?.inferRegiao?.(conta) || "-"}</td>
+                        {autoPreview.activeTeam.map(n => <td key={n} className="cell-mono" style={{ textAlign: "right" }}>{row[n] || 0}</td>)}
+                        <td className="cell-mono" style={{ textAlign: "right", fontWeight: 600 }}>{autoPreview.byConta[conta].length}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -403,7 +507,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
               <Button variant="ghost" onClick={() => setAutoPreview(null)}>Cancelar</Button>
               <Button variant="accent" icon="check" onClick={() => {
                 onAssign && onAssign(autoPreview.map);
-                onToast?.({ type: "success", message: autoPreview.total + " PIs divididos entre " + autoPreview.team.length + " responsaveis." });
+                onToast?.({ type: "success", message: autoPreview.total + " PIs divididos entre " + autoPreview.activeTeam.length + " responsaveis." });
                 setAutoPreview(null);
               }}>Aplicar divisao</Button>
             </div>

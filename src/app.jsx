@@ -458,8 +458,10 @@ function App() {
     }
     // REQ 8.1 (01/07): removido fluxo "ressalva" (aprovado com restricao)
     const isApprove = decision === "approve";
+    // BUG 2.1: sem_checking NAO e rejeicao. Nao dispara email ao fornecedor.
+    const isSemChecking = decision === "sem_checking";
 
-    const label = decision === "sem_checking" ? "Sem checking" : "";
+    const label = isSemChecking ? "Sem checking" : "";
     const who = user.nome || user.name;
     // Salvar estado anterior para reverter se a API falhar
     const prevStatus = checking.status;
@@ -472,19 +474,26 @@ function App() {
 
     // Callback de rollback: reverte estado local se API falhar
     const rollback = (err) => {
-      addToast({ type: "error", message: (isApprove ? "Falha ao aprovar: " : "Falha ao reprovar: ") + (err.message || "Erro interno") });
+      addToast({ type: "error", message: (isApprove ? "Falha ao aprovar: " : isSemChecking ? "Falha ao marcar sem checking: " : "Falha ao reprovar: ") + (err.message || "Erro interno") });
       setCheckings(prev => prev.map(c => c.submission_id === sid ? { ...c, status: prevStatus, approvedAt: prevApprovedAt, rejectedAt: prevRejectedAt, approval_user: prevApprovalUser, rejection_reason: prevRejectionReason, decision_label: prevLabel } : c));
     };
 
-    if (isApprove) window.PainelAPI?.approve(sid, who).catch(rollback);
-    else window.PainelAPI?.reject(sid, who, reason || "").catch(rollback);
+    // BUG 2.1: sem_checking usa updateCheckingStatus (nao reject, que manda email)
+    if (isSemChecking) {
+      window.PainelAPI?.updateCheckingStatus(sid, "sem_checking", who).catch(rollback);
+    } else if (isApprove) {
+      window.PainelAPI?.approve(sid, who).catch(rollback);
+    } else {
+      window.PainelAPI?.reject(sid, who, reason || "").catch(rollback);
+    }
 
     // Update otimista (sera revertido pelo rollback se a API falhar)
-    // REQ 8.1 (01/07): removido fluxo "ressalva"
-    setCheckings(prev => prev.map(c => c.submission_id === sid ? { ...c, status: isApprove ? "approved" : "rejected", approvedAt: isApprove ? now : null, rejectedAt: isApprove ? null : now, approval_user: who, rejection_reason: decision === "reject" ? reason : "", decision_label: label } : c));
+    // BUG 2.1: sem_checking seta status "sem_checking" (nao "rejected")
+    const newStatus = isSemChecking ? "sem_checking" : isApprove ? "approved" : "rejected";
+    setCheckings(prev => prev.map(c => c.submission_id === sid ? { ...c, status: newStatus, approvedAt: isApprove ? now : null, rejectedAt: (!isApprove && !isSemChecking) ? now : null, approval_user: who, rejection_reason: decision === "reject" ? reason : "", decision_label: label } : c));
     if (!silent) {
-      const msg = decision === "approve" ? `${checking.n_pi} aprovado!` : decision === "sem_checking" ? `${checking.n_pi} marcado como sem checking.` : `${checking.n_pi} reprovado.`;
-      addToast({ type: isApprove ? "success" : "info", color: isApprove ? undefined : "#ef4444", message: msg });
+      const msg = isApprove ? `${checking.n_pi} aprovado!` : isSemChecking ? `${checking.n_pi} marcado como sem checking.` : `${checking.n_pi} reprovado.`;
+      addToast({ type: isApprove ? "success" : "info", color: isApprove ? undefined : isSemChecking ? undefined : "#ef4444", message: msg });
     }
     setReviewing(null);
   };
@@ -521,7 +530,7 @@ function App() {
   // REQ 6 (01/07): telas recebem scopedCheckings (filtrado por grupo)
   const screenContent = reviewing ? <ScreenReview checking={reviewing} currentUser={user} onBack={() => setReviewing(null)} onDecide={handleDecide}/>
     : route === "dashboard" ? <ScreenDashboard stats={stats} checkings={scopedCheckings} auditLog={auditLog} onOpenReview={openReview} onNavigate={handleNav} loading={false} onStartTriage={startTriage} viewMode={curView}/>
-    : route === "approvals" ? <ScreenApprovals currentUser={user} checkings={scopedCheckings} stats={stats} onOpenReview={openReview} onRefresh={() => {}} onToast={addToast} onDecide={handleDecide} onStartTriage={startTriage} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onSetResponsavel={(id, who) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, assigned_to: who, approval_user: c.status !== "pending" ? who : c.approval_user } : c)); window.PainelAPI?.assignResponsible(id, who, new Date().toISOString().slice(0, 7)).catch(e => addToast({ type: "error", message: "Falha ao atribuir: " + (e.message || "") })); }}/>
+    : route === "approvals" ? <ScreenApprovals currentUser={user} checkings={scopedCheckings} stats={stats} onOpenReview={openReview} onRefresh={loadData} onToast={addToast} onDecide={handleDecide} onStartTriage={startTriage} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onSetResponsavel={(id, who) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, assigned_to: who, approval_user: c.status !== "pending" ? who : c.approval_user } : c)); window.PainelAPI?.assignResponsible(id, who, new Date().toISOString().slice(0, 7)).catch(e => addToast({ type: "error", message: "Falha ao atribuir: " + (e.message || "") })); }}/>
     : route === "alerts" ? <ScreenAlerts checkings={scopedCheckings} currentUser={user} onOpenReview={openReview} onStartTriage={startTriage} onDecide={handleDecide} onToast={addToast} viewMode={curView} preAlerts={alerts}/>
     : route === "producao" ? <ScreenProducao checkings={scopedCheckings} currentUser={user} onOpenReview={openReview} onToast={addToast} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onAssign={(map) => {
         const mes = new Date().toISOString().slice(0, 7);

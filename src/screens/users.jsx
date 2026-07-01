@@ -55,6 +55,8 @@ const USER_COLS = [
   { key: "nome", label: "Usuário", always: true },
   { key: "email", label: "Email" },
   { key: "role", label: "Cargo" },
+  // REQ 1.4: coluna grupo de acesso na lista
+  { key: "grupo", label: "Grupo" },
   { key: "status", label: "Status" },
   { key: "carga", label: "Carga (PIs)" },
   { key: "sla", label: "SLA médio" },
@@ -83,7 +85,7 @@ function ColumnsMenu({ cols, visible, onToggle }) {
   );
 }
 
-function UserDrawer({ user, checkings, onClose, onRole, onStatus }) {
+function UserDrawer({ user, checkings, onClose, onRole, onStatus, onGrupo }) {
   const H = window.H;
   /* FIX A7.4: normalizar name matching */
   const uName = (user.nome || "").trim().toLowerCase();
@@ -120,6 +122,8 @@ function UserDrawer({ user, checkings, onClose, onRole, onStatus }) {
           <div className="eyebrow" style={{ marginBottom: 10 }}>Permissão e acesso</div>
           <div className="row gap-2" style={{ alignItems: "center" }}>
             <select className="input" value={user.role} onChange={(e) => onRole(user.id, e.target.value)} style={{ flex: 1, height: 34 }}><option value="viewer">Viewer · só consulta</option><option value="analyst">Analyst · aprova e reprova</option><option value="admin">Admin · acesso total</option></select>
+            {/* REQ 1.4: grupo editavel no UserDrawer */}
+            <select className="input" value={user.grupo || "boticario"} onChange={(e) => onGrupo && onGrupo(user.id, e.target.value)} style={{ flex: 1, height: 34 }}><option value="boticario">Boticario</option><option value="kauana">Kauana / Uninter</option><option value="todos">Todos (admin)</option></select>
             <Button variant="ghost" size="sm" onClick={() => onStatus(user.id)}>{user.status === "active" ? "Desativar" : "Ativar"}</Button>
           </div>
           <div className="row gap-3" style={{ marginTop: 10, fontSize: 12, color: "var(--ink-3)" }}>
@@ -156,7 +160,7 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
   const [users, setUsers] = React.useState(() => window.MOCK.users.map((u, i) => ({ ...u, nome: u.name, lastSeen: u.last_seen })));
   const [showInvite, setShowInvite] = React.useState(false);
   const [detail, setDetail] = React.useState(null);
-  const [visCols, setVisCols] = React.useState(() => new Set(["nome", "email", "role", "status", "carga", "lastSeen"]));
+  const [visCols, setVisCols] = React.useState(() => new Set(["nome", "email", "role", "grupo", "status", "carga", "lastSeen"]));
   const toggleCol = (k) => setVisCols(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
 
   const carga = React.useMemo(() => { const m = {}; checkings.forEach(c => { const who = c.assigned_to || c.approval_user; if (who) m[who] = (m[who] || 0) + 1; }); return m; }, [checkings]);
@@ -168,10 +172,20 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
   const setRole = async (id, role) => { const prev = users.find(u => u.id === id)?.role; setUsers(users.map(u => u.id === id ? { ...u, role } : u)); setDetail(d => d && d.id === id ? { ...d, role } : d); try { await window.PainelAPI.updateUserRole(id, role); onToast?.({ type: "success", message: "Cargo atualizado." }); } catch (e) { setUsers(users.map(u => u.id === id ? { ...u, role: prev } : u)); setDetail(d => d && d.id === id ? { ...d, role: prev } : d); onToast?.({ type: "error", message: "Falha ao atualizar cargo: " + e.message }); } };
   const toggleStatus = (id) => { setUsers(users.map(u => u.id === id ? { ...u, status: u.status === "active" ? "inactive" : "active" } : u)); setDetail(d => d && d.id === id ? { ...d, status: d.status === "active" ? "inactive" : "active" } : d); };
   const addUser = (nu) => { setUsers([...users, { id: "u_" + Date.now(), name: nu.name, nome: nu.name, email: nu.email, role: nu.role, grupo: nu.grupo || "boticario", status: "active", color: colors[users.length % colors.length], avatar: nu.name.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase(), googlePic: false, lastSeen: Date.now() }]); onToast?.({ type: "success", message: `${nu.name} adicionado.` }); };
+  // REQ 1.4: atualizar grupo do usuario existente
+  const setGrupo = (id, grupo) => {
+    setUsers(users.map(u => u.id === id ? { ...u, grupo } : u));
+    setDetail(d => d && d.id === id ? { ...d, grupo } : d);
+    window.PainelAPI?.updateUserGrupo?.(id, grupo).catch(() => {});
+    onToast?.({ type: "success", message: "Grupo atualizado." });
+  };
+  // BUG 2.4: escape de aspas duplicadas + BOM UTF-8 para Excel
   const exportCsv = () => {
-    const header = "Nome,Email,Role,Status,Último Acesso\n";
-    const r = users.map(u => `"${u.nome}","${u.email}","${u.role}","${u.status}","${new Date(u.lastSeen).toLocaleString("pt-BR")}"`).join("\n");
-    const blob = new Blob([header + r], { type: "text/csv;charset=utf-8;" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "usuarios_painel.csv"; a.click(); URL.revokeObjectURL(a.href);
+    const esc = (v) => '"' + String(v || "").replace(/"/g, '""') + '"';
+    const header = "Nome,Email,Role,Grupo,Status,Último Acesso\n";
+    const r = users.map(u => [esc(u.nome), esc(u.email), esc(u.role), esc(u.grupo || "boticario"), esc(u.status), esc(new Date(u.lastSeen).toLocaleString("pt-BR"))].join(",")).join("\n");
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + header + r], { type: "text/csv;charset=utf-8;" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "usuarios_painel.csv"; a.click(); URL.revokeObjectURL(a.href);
   };
 
   return (
@@ -206,6 +220,8 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
                   {visCols.has("nome") && <td><div className="row gap-2"><Avatar user={user} size={26} online={user.status === "active" && i < 5}/><span style={{ fontWeight: 500 }}>{user.nome}</span></div></td>}
                   {visCols.has("email") && <td className="cell-mono cell-secondary" style={{ fontSize: 12 }}>{user.email}</td>}
                   {visCols.has("role") && <td>{user.role === "admin" ? <Pill status="admin">Admin</Pill> : user.role === "viewer" ? <span className="pill pill-viewer">Viewer</span> : <span className="pill pill-neutral">Analyst</span>}</td>}
+                  {/* REQ 1.4: coluna grupo */}
+                  {visCols.has("grupo") && <td><span className="pill pill-neutral" style={{ fontSize: 10.5 }}>{({ boticario: "Boticario", kauana: "Kauana", todos: "Todos" })[user.grupo || "boticario"] || user.grupo || "Boticario"}</span></td>}
                   {visCols.has("status") && <td><span className="row gap-2" style={{ fontSize: 12.5 }}><span style={{ width: 6, height: 6, borderRadius: 99, background: user.status === "active" ? "var(--accent)" : "var(--ink-4)" }}/>{user.status === "active" ? "ativo" : "inativo"}</span></td>}
                   {visCols.has("carga") && <td className="cell-mono">{carga[user.nome] || 0}</td>}
                   {visCols.has("sla") && <td className="cell-mono">{slaBy[user.nome] ? slaBy[user.nome].toFixed(1) + "h" : "·"}</td>}
@@ -244,7 +260,50 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
         ))}
       </div>
       )}
-      {detail && <UserDrawer user={detail} checkings={checkings} onClose={() => setDetail(null)} onRole={setRole} onStatus={toggleStatus}/>}
+      {detail && <UserDrawer user={detail} checkings={checkings} onClose={() => setDetail(null)} onRole={setRole} onStatus={toggleStatus} onGrupo={setGrupo}/>}
+
+      {/* REQ 1.4c: secao Equipes derivada */}
+      <div style={{ marginTop: 32 }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Equipes de checking</div>
+        <div className="grid-cols-2" style={{ gap: 16 }}>
+          {["boticario", "kauana"].map(g => {
+            const membros = window.MOCK?.teamMembers?.(g) || [];
+            const gestoras = window.MOCK?.teamManagers?.(g) || [];
+            const label = g === "boticario" ? "Checking Boticario" : "Checking Uninter";
+            return (
+              <div key={g} className="card card-pad">
+                <div className="row gap-2" style={{ alignItems: "center", marginBottom: 12 }}>
+                  <Icon name="users" size={15} style={{ color: "var(--accent)" }}/>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
+                  <span className="spacer"/>
+                  <span className="pill pill-neutral" style={{ fontSize: 10 }}>{membros.length} membro{membros.length !== 1 ? "s" : ""}</span>
+                </div>
+                {gestoras.length > 0 && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-4)", fontWeight: 600, marginBottom: 6 }}>Gestoras</div>
+                    <div className="row gap-2" style={{ flexWrap: "wrap" }}>
+                      {gestoras.map(u => <span key={u.id || u.email} className="row gap-2" style={{ fontSize: 12.5, color: "var(--ink-2)", background: "var(--bg)", padding: "4px 10px", borderRadius: 8 }}><Avatar user={u} size={18}/>{u.nome || u.name}</span>)}
+                    </div>
+                  </div>
+                )}
+                {membros.length > 0 ? (
+                  <div className="col" style={{ gap: 0 }}>
+                    <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-4)", fontWeight: 600, marginBottom: 6 }}>Membros (analistas)</div>
+                    {membros.map((u, i) => (
+                      <div key={u.id || u.email} className="row gap-2" style={{ padding: "6px 0", borderTop: i ? "1px solid var(--rule)" : "none", alignItems: "center", fontSize: 13 }}>
+                        <Avatar user={u} size={22}/>
+                        <span style={{ fontWeight: 500 }}>{u.nome || u.name}</span>
+                        <span className="spacer"/>
+                        <span className="cell-mono" style={{ fontSize: 11.5, color: "var(--ink-3)" }}>{u.email}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : <div className="body-xs muted">Nenhum analista com grupo "{g}" cadastrado.</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
