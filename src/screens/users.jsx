@@ -38,7 +38,7 @@ function InviteModal({ onClose, onSuccess }) {
             </div>
             {/* REQ 6.4 (01/07): grupo de acesso */}
             <div className="col" style={{ gap: 5 }}><Lbl>Grupo de acesso</Lbl>
-              <select className="input" value={grupo} onChange={e => setGrupo(e.target.value)}><option value="boticario">Equipe Anne (Boticario)</option><option value="kauana">Equipe Kauane (restante)</option><option value="todos">Todos (admin)</option><option value="nao_definido" disabled>Nao definido</option></select>
+              <select className="input" value={grupo} onChange={e => setGrupo(e.target.value)}><option value="boticario">Equipe Anne (Boticario)</option><option value="kauana">Equipe Kauane (Uninter)</option><option value="todos">Todos (admin)</option><option value="nao_definido" disabled>Nao definido</option></select>
             </div>
           </div>
           {error && <div style={{ marginTop: 14, padding: "10px 14px", background: "var(--alert-soft)", color: "var(--alert)", borderRadius: 10, fontSize: 13, display: "flex", gap: 8, alignItems: "center", border: "1px solid color-mix(in srgb, var(--alert) 25%, transparent)" }}><Icon name="warn" size={14}/> {error}</div>}
@@ -98,7 +98,7 @@ function UserDrawer({ user, checkings, onClose, onRole, onStatus, onGrupo }) {
   const done = mine.filter(c => c.approvedAt || c.rejectedAt);
   const avgSla = done.length ? done.reduce((s, c) => s + ((c.approvedAt || c.rejectedAt) - c.submittedAt) / 3600000, 0) / done.length : 0;
   const isWorker = user.role === "admin" || user.role === "analyst";
-  const grupoLabel = ({ boticario: "Equipe Anne (Boticario)", kauana: "Equipe Kauane (restante)", todos: "Todos", nao_definido: "Nao definido" })[user.grupo || "nao_definido"] || user.grupo;
+  const grupoLabel = ({ boticario: "Equipe Anne (Boticario)", kauana: "Equipe Kauane (Uninter)", todos: "Todos", nao_definido: "Nao definido" })[user.grupo || "nao_definido"] || user.grupo;
 
   /* UXP: atividade recente (ultimas 5 decisoes deste usuario) */
   const recentActivity = React.useMemo(() => {
@@ -193,7 +193,7 @@ function UserDrawer({ user, checkings, onClose, onRole, onStatus, onGrupo }) {
               <label className="ud-field-label" htmlFor={"ud-grupo-" + user.id}>Grupo de acesso</label>
               <select className="input" id={"ud-grupo-" + user.id} value={user.grupo || "nao_definido"} onChange={(e) => onGrupo && onGrupo(user.id, e.target.value)}>
                 <option value="boticario">Equipe Anne (Boticario)</option>
-                <option value="kauana">Equipe Kauane (restante)</option>
+                <option value="kauana">Equipe Kauane (Uninter)</option>
                 <option value="todos">Todos (admin)</option>
                 {(user.grupo === "nao_definido" || !user.grupo) && <option value="nao_definido" disabled>Nao definido</option>}
               </select>
@@ -340,7 +340,7 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
                   {visCols.has("email") && <td className="cell-mono cell-secondary" style={{ fontSize: 12 }}>{user.email}</td>}
                   {visCols.has("role") && <td>{user.role === "admin" ? <Pill status="admin">Admin</Pill> : user.role === "viewer" ? <span className="pill pill-viewer">Viewer</span> : <span className="pill pill-neutral">Analyst</span>}</td>}
                   {/* REQ 1.4: coluna grupo */}
-                  {visCols.has("grupo") && <td><span className={"pill " + (user.grupo === "nao_definido" ? "pill-warn" : "pill-neutral")} style={{ fontSize: 10.5 }}>{({ boticario: "Anne (Boticario)", kauana: "Kauane (restante)", todos: "Todos", nao_definido: "Nao definido" })[user.grupo || "nao_definido"] || user.grupo}</span></td>}
+                  {visCols.has("grupo") && <td><span className={"pill " + (user.grupo === "nao_definido" ? "pill-warn" : "pill-neutral")} style={{ fontSize: 10.5 }}>{({ boticario: "Anne (Boticario)", kauana: "Kauane (Uninter)", todos: "Todos", nao_definido: "Nao definido" })[user.grupo || "nao_definido"] || user.grupo}</span></td>}
                   {visCols.has("status") && <td><span className="row gap-2" style={{ fontSize: 12.5 }}><span style={{ width: 6, height: 6, borderRadius: 99, background: user.status === "active" ? "var(--accent)" : "var(--ink-4)" }}/>{user.status === "active" ? "ativo" : "inativo"}</span></td>}
                   {visCols.has("carga") && <td className="cell-mono">{carga[user.nome] || 0}</td>}
                   {visCols.has("sla") && <td className="cell-mono">{slaBy[user.nome] ? slaBy[user.nome].toFixed(1) + "h" : "·"}</td>}

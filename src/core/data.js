@@ -32,7 +32,7 @@
     boticario: { label: "Equipe Anne (Boticario)", contas: CONTAS_BOTICARIO },
     // Kauane = gestora. Ve TUDO que NAO e Boticario (UNINTER + qualquer outro cliente).
     // contas: null sinaliza logica invertida (complemento do boticario).
-    kauana:    { label: "Equipe Kauane (restante)", contas: null, complementoDe: "boticario" },
+    kauana:    { label: "Equipe Kauane (Uninter)", contas: null, complementoDe: "boticario" },
     todos:     { label: "Todos", contas: null }, // admin: sem filtro
   };
 
