@@ -5121,7 +5121,7 @@
           "value": "checking-grupoom",
           "mode": "list"
         },
-        "sqlQuery": "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET status = '{{ $json.body.status }}',\n    approval_user = '{{ $json.body.approval_user || $json.authenticatedUser?.email || \"\" }}',\n    approved_at = CASE WHEN '{{ $json.body.status }}' = 'approved' THEN CURRENT_TIMESTAMP() ELSE approved_at END,\n    rejected_at = CASE WHEN '{{ $json.body.status }}' = 'rejected' THEN CURRENT_TIMESTAMP() ELSE rejected_at END\nWHERE submission_id = '{{ $json.body.id }}'",
+        "sqlQuery": "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET status = '{{ $json.body.status }}',\n    approval_user = CASE WHEN '{{ $json.body.status }}' = 'pending' THEN NULL ELSE '{{ $json.body.approval_user || $json.authenticatedUser?.email || \"\" }}' END,\n    approved_at = CASE WHEN '{{ $json.body.status }}' = 'approved' THEN CURRENT_TIMESTAMP() WHEN '{{ $json.body.status }}' = 'pending' THEN NULL ELSE approved_at END,\n    rejected_at = CASE WHEN '{{ $json.body.status }}' = 'rejected' THEN CURRENT_TIMESTAMP() WHEN '{{ $json.body.status }}' = 'pending' THEN NULL ELSE rejected_at END\nWHERE submission_id = '{{ $json.body.id }}'",
         "options": {}
       },
       "type": "n8n-nodes-base.googleBigQuery",
