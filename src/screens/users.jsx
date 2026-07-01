@@ -87,7 +87,7 @@ function ColumnsMenu({ cols, visible, onToggle }) {
 
 function UserDrawer({ user, checkings, onClose, onRole, onStatus, onGrupo }) {
   const H = window.H;
-  /* FIX A7.4: normalizar name matching */
+  /* UXP: normalizar name matching */
   const uName = (user.nome || "").trim().toLowerCase();
   const mine = React.useMemo(() => checkings.filter(c => {
     const a = (c.assigned_to || "").trim().toLowerCase();
@@ -97,53 +97,170 @@ function UserDrawer({ user, checkings, onClose, onRole, onStatus, onGrupo }) {
   const pend = mine.filter(c => H.norm(c.status) === "pending");
   const done = mine.filter(c => c.approvedAt || c.rejectedAt);
   const avgSla = done.length ? done.reduce((s, c) => s + ((c.approvedAt || c.rejectedAt) - c.submittedAt) / 3600000, 0) / done.length : 0;
-  const roleLabel = { admin: "Admin", analyst: "Analyst", viewer: "Viewer de mídia" }[user.role];
+  const isWorker = user.role === "admin" || user.role === "analyst";
+  const grupoLabel = ({ boticario: "Equipe Anne (Boticario)", kauana: "Equipe Kauane (restante)", todos: "Todos", nao_definido: "Nao definido" })[user.grupo || "nao_definido"] || user.grupo;
+
+  /* UXP: atividade recente (ultimas 5 decisoes deste usuario) */
+  const recentActivity = React.useMemo(() => {
+    return checkings
+      .filter(c => {
+        const p = (c.approval_user || "").trim().toLowerCase();
+        return p === uName && (c.approvedAt || c.rejectedAt);
+      })
+      .sort((a, b) => (b.approvedAt || b.rejectedAt) - (a.approvedAt || a.rejectedAt))
+      .slice(0, 5);
+  }, [checkings, uName]);
+
+  /* UXP: focus trap + ESC handler */
+  const drawerRef = React.useRef(null);
+  const closeRef = React.useRef(null);
+  React.useEffect(() => {
+    /* UXP: foco inicial no botao X */
+    if (closeRef.current) closeRef.current.focus();
+    /* UXP: ESC fecha o drawer */
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  /* UXP: focus trap simples (TAB cicla dentro do drawer) */
+  const onTrapFocus = React.useCallback((e) => {
+    const el = drawerRef.current;
+    if (!el) return;
+    const focusable = el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }, []);
+  React.useEffect(() => {
+    const el = drawerRef.current;
+    if (!el) return;
+    const handler = (e) => { if (e.key === "Tab") onTrapFocus(e); };
+    el.addEventListener("keydown", handler);
+    return () => el.removeEventListener("keydown", handler);
+  }, [onTrapFocus]);
+
   return (<>
-    <div className="scrim" onClick={onClose} style={{ zIndex: 130 }}/>
-    <div className="user-drawer content">
-      <div className="row" style={{ justifyContent: "space-between", padding: "18px 22px", borderBottom: "1px solid var(--rule)" }}>
-        <div className="eyebrow">Perfil do usuário</div>
-        <button className="icon-btn" onClick={onClose}><Icon name="x" size={15}/></button>
+    {/* UXP: scrim proprio z190 (acima topbar z20) */}
+    <div className="user-drawer-scrim" onClick={onClose}/>
+    {/* UXP: drawer z200, height 100vh, slide-in translateX */}
+    <div className="user-drawer" ref={drawerRef} role="dialog" aria-label={"Perfil de " + user.nome}>
+      {/* UXP: header fixo */}
+      <div className="user-drawer-head">
+        <div className="eyebrow">Perfil do usuario</div>
+        <button className="icon-btn" onClick={onClose} ref={closeRef} aria-label="Fechar perfil"><Icon name="x" size={15}/></button>
       </div>
-      <div style={{ padding: "22px", overflowY: "auto" }}>
-        <div className="row gap-3" style={{ alignItems: "center", marginBottom: 18 }}>
-          <Avatar user={user} size={52}/>
-          <div className="col" style={{ gap: 3, minWidth: 0 }}>
-            <div className="row gap-2" style={{ alignItems: "center" }}><span style={{ fontSize: 18, fontWeight: 600 }}>{user.nome}</span>{user.role === "admin" && <Pill status="admin">Admin</Pill>}</div>
+      {/* UXP: body scrollable */}
+      <div className="user-drawer-body">
+        {/* UXP: identidade (avatar 56, nome 18/600, pill cargo, email mono, meta flex-wrap) */}
+        <div className="row gap-3" style={{ alignItems: "center" }}>
+          <Avatar user={user} size={56}/>
+          <div className="col" style={{ gap: 3, minWidth: 0, flex: 1 }}>
+            <div className="row gap-2" style={{ alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ fontSize: 18, fontWeight: 600 }}>{user.nome}</span>
+              {user.role === "admin" && <Pill status="admin">Admin</Pill>}
+              {user.role === "analyst" && <span className="pill pill-neutral">Analyst</span>}
+              {user.role === "viewer" && <span className="pill pill-viewer">Viewer</span>}
+            </div>
             <span style={{ fontSize: 12.5, fontFamily: "var(--font-mono)", color: "var(--ink-3)" }}>{user.email}</span>
+            {/* UXP: meta em flex-wrap (status + visto + SSO) */}
+            <div className="row gap-2" style={{ flexWrap: "wrap", marginTop: 4, fontSize: 12, color: "var(--ink-3)", alignItems: "center" }}>
+              <span className="row gap-2" style={{ alignItems: "center" }}><span style={{ width: 6, height: 6, borderRadius: 99, background: user.status === "active" ? "var(--accent)" : "var(--ink-4)", flexShrink: 0 }}/>{user.status === "active" ? "ativo" : "inativo"}</span>
+              <span style={{ color: "var(--ink-4)" }}>·</span>
+              <span>visto {H.fmtRelTime(user.lastSeen)}</span>
+              {user.googlePic && <><span style={{ color: "var(--ink-4)" }}>·</span><span className="row gap-2" style={{ alignItems: "center" }}>SSO <Icon name="google" size={11} strokeWidth={1}/></span></>}
+            </div>
           </div>
         </div>
-        <div className="grid-cols-3" style={{ marginBottom: 18 }}>
-          <div className="kpi" style={{ padding: "14px 16px" }}><div className="kpi-label">Em carga</div><div className="kpi-value" style={{ fontSize: 24 }}>{pend.length}</div></div>
-          <div className="kpi" style={{ padding: "14px 16px" }}><div className="kpi-label">Concluídos</div><div className="kpi-value" style={{ fontSize: 24, color: "var(--accent)" }}>{done.length}</div></div>
-          <div className="kpi" style={{ padding: "14px 16px" }}><div className="kpi-label">SLA médio</div><div className="kpi-value" style={{ fontSize: 24 }}>{avgSla ? avgSla.toFixed(1) + "h" : "·"}</div></div>
-        </div>
-        <div className="card card-pad" style={{ marginBottom: 18 }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>Permissão e acesso</div>
-          <div className="row gap-2" style={{ alignItems: "center" }}>
-            <select className="input" value={user.role} onChange={(e) => onRole(user.id, e.target.value)} style={{ flex: 1, height: 34 }}><option value="viewer">Viewer · só consulta</option><option value="analyst">Analyst · aprova e reprova</option><option value="admin">Admin · acesso total</option></select>
-            {/* REQ 1.4: grupo editavel no UserDrawer */}
-            <select className="input" value={user.grupo || "nao_definido"} onChange={(e) => onGrupo && onGrupo(user.id, e.target.value)} style={{ flex: 1, height: 34 }}><option value="boticario">Equipe Anne (Boticario)</option><option value="kauana">Equipe Kauane (restante)</option><option value="todos">Todos (admin)</option>{(user.grupo === "nao_definido" || !user.grupo) && <option value="nao_definido" disabled>Nao definido</option>}</select>
-            <Button variant="ghost" size="sm" onClick={() => onStatus(user.id)}>{user.status === "active" ? "Desativar" : "Ativar"}</Button>
+
+        {/* UXP: card Permissao e acesso (campos EMPILHADOS com labels) */}
+        <div className="card card-pad">
+          <div className="eyebrow" style={{ marginBottom: 14 }}>Permissao e acesso</div>
+          <div className="col" style={{ gap: 12 }}>
+            {/* UXP: campo Cargo */}
+            <div className="ud-field">
+              <label className="ud-field-label" htmlFor={"ud-role-" + user.id}>Cargo</label>
+              <select className="input" id={"ud-role-" + user.id} value={user.role} onChange={(e) => onRole(user.id, e.target.value)}>
+                <option value="viewer">Viewer · so consulta</option>
+                <option value="analyst">Analyst · aprova e reprova</option>
+                <option value="admin">Admin · acesso total</option>
+              </select>
+            </div>
+            {/* UXP: campo Grupo de acesso */}
+            <div className="ud-field">
+              <label className="ud-field-label" htmlFor={"ud-grupo-" + user.id}>Grupo de acesso</label>
+              <select className="input" id={"ud-grupo-" + user.id} value={user.grupo || "nao_definido"} onChange={(e) => onGrupo && onGrupo(user.id, e.target.value)}>
+                <option value="boticario">Equipe Anne (Boticario)</option>
+                <option value="kauana">Equipe Kauane (restante)</option>
+                <option value="todos">Todos (admin)</option>
+                {(user.grupo === "nao_definido" || !user.grupo) && <option value="nao_definido" disabled>Nao definido</option>}
+              </select>
+            </div>
+            {/* UXP: botao Ativar/Desativar separado, alinhado a direita */}
+            <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 4 }}>
+              <Button variant="ghost" size="sm" onClick={() => onStatus(user.id)} style={{ color: user.status === "active" ? "var(--alert)" : "var(--accent)" }}>{user.status === "active" ? "Desativar usuario" : "Ativar usuario"}</Button>
+            </div>
           </div>
-          <div className="row gap-3" style={{ marginTop: 10, fontSize: 12, color: "var(--ink-3)" }}>
-            <span className="row gap-2"><span style={{ width: 6, height: 6, borderRadius: 99, background: user.status === "active" ? "var(--accent)" : "var(--ink-4)" }}/>{user.status === "active" ? "ativo" : "inativo"}</span>
-            <span>·</span><span>visto {H.fmtRelTime(user.lastSeen)}</span>
-            {user.googlePic && <><span>·</span><span className="row gap-2">SSO <Icon name="google" size={11} strokeWidth={1}/></span></>}
-          </div>
         </div>
-        <div className="eyebrow" style={{ marginBottom: 8 }}>Checkings atribuídos · {mine.length}</div>
-        {mine.length === 0 ? <div className="body-xs muted">Nenhum checking atribuído a este usuário.</div> : (
-          <div className="col" style={{ gap: 0 }}>
-            {mine.slice(0, 10).map((c, i) => (
-              <div key={c.submission_id} className="row gap-2" style={{ padding: "9px 0", borderTop: i ? "1px solid var(--rule)" : "none", alignItems: "center" }}>
-                <span style={{ width: 7, height: 7, borderRadius: 99, background: H.norm(c.status) === "pending" ? "var(--warn)" : H.norm(c.status) === "approved" ? "var(--accent)" : "var(--alert)", flexShrink: 0 }}/>
-                <span className="cell-pi" style={{ fontSize: 12 }}>{c.n_pi}</span>
-                <span style={{ fontSize: 12.5, color: "var(--ink-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cliente}</span>
-                <span className="spacer"/><span className="cell-time">{H.fmtRelTime(c.submittedAt)}</span>
-              </div>
-            ))}
-            {mine.length > 10 && <div className="body-xs muted" style={{ paddingTop: 8 }}>+{mine.length - 10} outros</div>}
+
+        {/* UXP: secao adaptativa por cargo */}
+        {isWorker ? (<>
+          {/* UXP: KPIs so para admin/analyst */}
+          <div className="grid-cols-3">
+            <div className="kpi" style={{ padding: "14px 16px" }}><div className="kpi-label">Em carga</div><div className="kpi-value" style={{ fontSize: 24 }}>{pend.length}</div></div>
+            <div className="kpi" style={{ padding: "14px 16px" }}><div className="kpi-label">Concluidos</div><div className="kpi-value" style={{ fontSize: 24, color: "var(--accent)" }}>{done.length}</div></div>
+            <div className="kpi" style={{ padding: "14px 16px" }}><div className="kpi-label">SLA medio</div><div className="kpi-value" style={{ fontSize: 24 }}>{avgSla ? avgSla.toFixed(1) + "h" : "·"}</div></div>
+          </div>
+
+          {/* UXP: checkings atribuidos ou empty centralizado */}
+          <div className="eyebrow">Checkings atribuidos · {mine.length}</div>
+          {mine.length === 0 ? (
+            <div className="ud-empty-center">
+              <Empty title="Nenhum checking atribuido" hint="Atribua demandas na Divisao por conta" icon="users"/>
+            </div>
+          ) : (
+            <div className="col" style={{ gap: 0 }}>
+              {mine.slice(0, 10).map((c, i) => (
+                <div key={c.submission_id} className="row gap-2" style={{ padding: "9px 0", borderTop: i ? "1px solid var(--rule)" : "none", alignItems: "center" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: 99, background: H.norm(c.status) === "pending" ? "var(--warn)" : H.norm(c.status) === "approved" ? "var(--accent)" : "var(--alert)", flexShrink: 0 }}/>
+                  <span className="cell-pi" style={{ fontSize: 12 }}>{c.n_pi}</span>
+                  <span style={{ fontSize: 12.5, color: "var(--ink-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cliente}</span>
+                  <span className="spacer"/><span className="cell-time">{H.fmtRelTime(c.submittedAt)}</span>
+                </div>
+              ))}
+              {mine.length > 10 && <div className="body-xs muted" style={{ paddingTop: 8 }}>+{mine.length - 10} outros</div>}
+            </div>
+          )}
+
+          {/* UXP: atividade recente (ultimas 5 decisoes) */}
+          {recentActivity.length > 0 && (<>
+            <div className="eyebrow">Atividade recente</div>
+            <div className="col" style={{ gap: 0 }}>
+              {recentActivity.map((c, i) => {
+                const wasApproved = !!c.approvedAt;
+                const when = c.approvedAt || c.rejectedAt;
+                return (
+                  <div key={c.submission_id + "-act"} className="ud-activity-row">
+                    <span style={{ width: 7, height: 7, borderRadius: 99, background: wasApproved ? "var(--accent)" : "var(--alert)", flexShrink: 0 }}/>
+                    <span style={{ fontWeight: 500, color: wasApproved ? "var(--accent)" : "var(--alert)", fontSize: 12 }}>{wasApproved ? "Aprovou" : "Reprovou"}</span>
+                    <span className="cell-pi" style={{ fontSize: 11.5 }}>{c.n_pi}</span>
+                    <span style={{ color: "var(--ink-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12 }}>{c.cliente}</span>
+                    <span className="spacer"/>
+                    <span className="cell-time">{H.fmtRelTime(when)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </>)}
+        </>) : (
+          /* UXP: viewer nao ve KPIs; ve bloco informativo */
+          <div className="ud-viewer-info">
+            <div className="ud-vi-icon"><Icon name="eye" size={20}/></div>
+            <div className="ud-vi-title">Perfil de consulta</div>
+            <div className="ud-vi-text">Este usuario visualiza o painel do grupo {grupoLabel} sem poder aprovar ou reprovar.</div>
+            <div style={{ fontSize: 12, color: "var(--ink-4)", fontFamily: "var(--font-mono)" }}>Ultimo acesso: {H.fmtRelTime(user.lastSeen)}</div>
           </div>
         )}
       </div>
