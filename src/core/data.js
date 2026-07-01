@@ -265,9 +265,9 @@
         // Prioridade: 1) localStorage (admin editou), 2) backend, 3) mapa inicial, 4) padrao
         var grupoSalvo = null;
         try { grupoSalvo = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}")[u.id || u.email]; } catch {}
-        var grupoBackend = u.grupo || null;
-        // Mapa inicial: nomes conhecidos da equipe Anne (Boticario).
-        // Todos os OUTROS analysts vao para kauana (restante).
+        // UXP: "nao_definido" no backend nao conta como grupo real.
+        // Sem isso, admin com "nao_definido" no BigQuery ficaria sem ver nada.
+        var grupoBackend = (u.grupo && u.grupo !== "nao_definido") ? u.grupo : null;
         var grupoInicial = resolverGrupoInicial(nome, u.role);
         var grupo = grupoSalvo || grupoBackend || grupoInicial;
         return {
