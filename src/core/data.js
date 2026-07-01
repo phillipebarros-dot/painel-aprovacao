@@ -137,6 +137,34 @@
     { num: 9, label: "RBAC", desc: "Admin / Analyst / Viewer" },
   ];
 
+  // REQ EQUIPE: mapa inicial de nomes conhecidos da equipe Anne (Boticario).
+  // So precisa listar a equipe MENOR (Boticario = 3 pessoas). Todo o restante cai em kauana.
+  // Esse mapa e um fallback: se o admin editar o grupo na UI, o localStorage tem prioridade.
+  var EQUIPE_BOTICARIO_NOMES = ["marlene", "rose", "roseli", "brenda nunes"];
+
+  function resolverGrupoInicial(nome, role) {
+    // Admins = todos (veem tudo)
+    if (role === "admin") return "todos";
+    // Viewers = todos (so consultam, nao precisam de grupo)
+    if (role === "viewer") return "todos";
+    // Analysts: verificar se o nome bate com equipe Boticario
+    var lower = (nome || "").trim().toLowerCase();
+    for (var i = 0; i < EQUIPE_BOTICARIO_NOMES.length; i++) {
+      if (lower.includes(EQUIPE_BOTICARIO_NOMES[i])) return "boticario";
+    }
+    // Padrao para analyst: kauana (restante)
+    return "kauana";
+  }
+
+  // REQ EQUIPE: salva grupo do usuario no localStorage (persistencia local ate backend suportar)
+  function saveGrupo(userId, grupo) {
+    try {
+      var map = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}");
+      map[userId] = grupo;
+      localStorage.setItem("painel_user_grupos", JSON.stringify(map));
+    } catch {}
+  }
+
   const MOCK = {
     checkings: [],
     filesById: {},
@@ -163,6 +191,9 @@
     teamFor: teamFor,
     teamManagers: teamManagers,
     inferRegiao: inferRegiao,
+    // REQ EQUIPE: persistencia de grupo
+    saveGrupo: saveGrupo,
+    EQUIPE_BOTICARIO_NOMES: EQUIPE_BOTICARIO_NOMES,
     getFiles: (id) => MOCK.filesById[id] || [],
   };
 
@@ -227,11 +258,23 @@
       MOCK.checkings = checkingsRes.value.checkings.map(normalizeChecking);
     }
     if (usersRes.status === "fulfilled" && usersRes.value?.users) {
-      MOCK.users = usersRes.value.users.map(u => ({
-        ...u, nome: u.name || u.email, name: u.name || u.email,
-        color: "#0E7490", last_seen: u.lastSeen || u.created_at || Date.now(),
-        avatar: (u.avatar && String(u.avatar).startsWith("http")) ? u.avatar : (u.googlePic || u.google_pic || (u.name || u.email || "?").split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()),
-      }));
+      MOCK.users = usersRes.value.users.map(u => {
+        const nome = u.name || u.email || "";
+        // REQ EQUIPE: resolver grupo do usuario.
+        // Prioridade: 1) localStorage (admin editou), 2) backend, 3) mapa inicial, 4) padrao
+        var grupoSalvo = null;
+        try { grupoSalvo = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}")[u.id || u.email]; } catch {}
+        var grupoBackend = u.grupo || null;
+        // Mapa inicial: nomes conhecidos da equipe Anne (Boticario).
+        // Todos os OUTROS analysts vao para kauana (restante).
+        var grupoInicial = resolverGrupoInicial(nome, u.role);
+        var grupo = grupoSalvo || grupoBackend || grupoInicial;
+        return {
+          ...u, nome: nome, name: nome, grupo: grupo,
+          color: "#0E7490", last_seen: u.lastSeen || u.created_at || Date.now(),
+          avatar: (u.avatar && String(u.avatar).startsWith("http")) ? u.avatar : (u.googlePic || u.google_pic || nome.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()),
+        };
+      });
     }
     if (onlineRes.status === "fulfilled") {
       MOCK.onlineUsers = onlineRes.value?.online || onlineRes.value?.users || [];

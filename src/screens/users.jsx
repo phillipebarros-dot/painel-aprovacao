@@ -172,10 +172,12 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
   const setRole = async (id, role) => { const prev = users.find(u => u.id === id)?.role; setUsers(users.map(u => u.id === id ? { ...u, role } : u)); setDetail(d => d && d.id === id ? { ...d, role } : d); try { await window.PainelAPI.updateUserRole(id, role); onToast?.({ type: "success", message: "Cargo atualizado." }); } catch (e) { setUsers(users.map(u => u.id === id ? { ...u, role: prev } : u)); setDetail(d => d && d.id === id ? { ...d, role: prev } : d); onToast?.({ type: "error", message: "Falha ao atualizar cargo: " + e.message }); } };
   const toggleStatus = (id) => { setUsers(users.map(u => u.id === id ? { ...u, status: u.status === "active" ? "inactive" : "active" } : u)); setDetail(d => d && d.id === id ? { ...d, status: d.status === "active" ? "inactive" : "active" } : d); };
   const addUser = (nu) => { setUsers([...users, { id: "u_" + Date.now(), name: nu.name, nome: nu.name, email: nu.email, role: nu.role, grupo: nu.grupo || "boticario", status: "active", color: colors[users.length % colors.length], avatar: nu.name.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase(), googlePic: false, lastSeen: Date.now() }]); onToast?.({ type: "success", message: `${nu.name} adicionado.` }); };
-  // REQ 1.4: atualizar grupo do usuario existente
+  // REQ 1.4: atualizar grupo do usuario existente + persistir localStorage
   const setGrupo = (id, grupo) => {
     setUsers(users.map(u => u.id === id ? { ...u, grupo } : u));
     setDetail(d => d && d.id === id ? { ...d, grupo } : d);
+    // Persistir no localStorage (sobrevive reload)
+    window.MOCK?.saveGrupo?.(id, grupo);
     window.PainelAPI?.updateUserGrupo?.(id, grupo).catch(() => {});
     onToast?.({ type: "success", message: "Grupo atualizado." });
   };
