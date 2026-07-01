@@ -81,7 +81,9 @@
     var grupo = user?.grupo || "todos";
     if (grupo === "todos") return checkings;
     var g = GRUPOS[grupo];
-    if (!g) return checkings;
+    // UXP: grupo nao reconhecido (ex: "nao_definido") nao ve NADA.
+    // Admin precisa definir o grupo antes do analyst ver PIs.
+    if (!g) return [];
 
     // Set das contas do Boticario (referencia fixa para ambos os grupos)
     var botiSet = new Set(CONTAS_BOTICARIO.map(function (s) { return s.toLowerCase(); }));
