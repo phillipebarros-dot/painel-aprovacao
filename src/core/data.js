@@ -139,40 +139,30 @@
     { num: 9, label: "RBAC", desc: "Admin / Analyst / Viewer" },
   ];
 
-  // REQ EQUIPE: mapa inicial de nomes conhecidos da equipe Anne (Boticario).
-  // So precisa listar a equipe MENOR (Boticario = 3 pessoas). Todo o restante cai em kauana.
-  // Esse mapa e um fallback: se o admin editar o grupo na UI, o localStorage tem prioridade.
-  var EQUIPE_BOTICARIO_NOMES = ["marlene", "rose", "roseli", "brenda nunes"];
-  // Admins PUROS: so gerenciam, NAO fazem checking. Ficam grupo="todos".
-  var ADMINS_PUROS = ["anne", "kauane", "kauana", "phillipe"];
-
+  // REQ EQUIPE: resolucao de grupo do usuario.
+  // O grupo e 100% dinamico: admin define via tela Usuarios, salva no BigQuery.
+  // localStorage serve como cache local ate o backend responder.
+  // SEM nomes hardcoded: se o user nao tem grupo definido, fica como "nao_definido"
+  // e o admin precisa definir na tela de Usuarios.
   function resolverGrupoInicial(nome, role) {
-    var lower = (nome || "").trim().toLowerCase();
-    // 1) NOME primeiro: se bate com equipe boticario, e boticario (mesmo se admin)
-    for (var i = 0; i < EQUIPE_BOTICARIO_NOMES.length; i++) {
-      if (lower.includes(EQUIPE_BOTICARIO_NOMES[i])) return "boticario";
-    }
-    // 2) Admin puro (Anne, Kauane, Phillipe) = todos
-    if (role === "admin") {
-      for (var j = 0; j < ADMINS_PUROS.length; j++) {
-        if (lower.includes(ADMINS_PUROS[j])) return "todos";
-      }
-      // Admin desconhecido: default todos
-      return "todos";
-    }
-    // 3) Viewer = todos
-    if (role === "viewer") return "todos";
-    // 4) Analyst nao mapeado = kauana (restante)
-    return "kauana";
+    // Admins e viewers sem grupo definido = "todos" (veem tudo)
+    if (role === "admin" || role === "viewer") return "todos";
+    // Analysts sem grupo definido = "nao_definido" (admin precisa configurar)
+    return "nao_definido";
   }
 
-  // REQ EQUIPE: salva grupo do usuario no localStorage (persistencia local ate backend suportar)
+  // REQ EQUIPE: salva grupo do usuario no localStorage (cache local)
+  // + chama API para persistir no BigQuery
   function saveGrupo(userId, grupo) {
     try {
       var map = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}");
       map[userId] = grupo;
       localStorage.setItem("painel_user_grupos", JSON.stringify(map));
     } catch {}
+    // Persistir no BigQuery via n8n
+    window.PainelAPI?.updateUserGrupo?.(userId, grupo).catch(function(e) {
+      console.warn("[saveGrupo] Falha ao salvar no BigQuery:", e.message || e);
+    });
   }
 
   const MOCK = {
@@ -203,7 +193,6 @@
     inferRegiao: inferRegiao,
     // REQ EQUIPE: persistencia de grupo
     saveGrupo: saveGrupo,
-    EQUIPE_BOTICARIO_NOMES: EQUIPE_BOTICARIO_NOMES,
     getFiles: (id) => MOCK.filesById[id] || [],
   };
 
