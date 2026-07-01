@@ -52,10 +52,12 @@
   }
 
   // REQ EQUIPE: deriva membros da equipe a partir dos users cadastrados.
-  // NAO hardcoded: filtra por role===analyst e grupo.
+  // Inclui QUALQUER user cujo grupo bate (admin que faz checking tambem entra).
+  // Exclui viewers (nao fazem checking).
   function teamMembers(grupo) {
     return (window.MOCK?.users || []).filter(function (u) {
-      return u.role === "analyst" && (u.grupo || "boticario") === grupo;
+      if (u.role === "viewer") return false;
+      return (u.grupo || "boticario") === grupo;
     });
   }
   // REQ EQUIPE: retorna equipe do usuario (null se admin/todos)
@@ -141,18 +143,26 @@
   // So precisa listar a equipe MENOR (Boticario = 3 pessoas). Todo o restante cai em kauana.
   // Esse mapa e um fallback: se o admin editar o grupo na UI, o localStorage tem prioridade.
   var EQUIPE_BOTICARIO_NOMES = ["marlene", "rose", "roseli", "brenda nunes"];
+  // Admins PUROS: so gerenciam, NAO fazem checking. Ficam grupo="todos".
+  var ADMINS_PUROS = ["anne", "kauane", "kauana", "phillipe"];
 
   function resolverGrupoInicial(nome, role) {
-    // Admins = todos (veem tudo)
-    if (role === "admin") return "todos";
-    // Viewers = todos (so consultam, nao precisam de grupo)
-    if (role === "viewer") return "todos";
-    // Analysts: verificar se o nome bate com equipe Boticario
     var lower = (nome || "").trim().toLowerCase();
+    // 1) NOME primeiro: se bate com equipe boticario, e boticario (mesmo se admin)
     for (var i = 0; i < EQUIPE_BOTICARIO_NOMES.length; i++) {
       if (lower.includes(EQUIPE_BOTICARIO_NOMES[i])) return "boticario";
     }
-    // Padrao para analyst: kauana (restante)
+    // 2) Admin puro (Anne, Kauane, Phillipe) = todos
+    if (role === "admin") {
+      for (var j = 0; j < ADMINS_PUROS.length; j++) {
+        if (lower.includes(ADMINS_PUROS[j])) return "todos";
+      }
+      // Admin desconhecido: default todos
+      return "todos";
+    }
+    // 3) Viewer = todos
+    if (role === "viewer") return "todos";
+    // 4) Analyst nao mapeado = kauana (restante)
     return "kauana";
   }
 
