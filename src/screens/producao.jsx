@@ -437,8 +437,13 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                             )}
                           </div>
                         </td>
-                        <td>
-                          <span className="cell-secondary" style={{ fontSize: 12 }}>{c.assigned_to || <span className="muted">Sem resp.</span>}</span>
+                        <td className="plan-edit" onClick={e => e.stopPropagation()}>
+                          {!isManager ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.assigned_to || "Sem resp."}</span> : (
+                            <select className="plan-select" value={c.assigned_to || ""} onChange={e => { assignOne(c.submission_id, e.target.value); }} style={{ fontSize: 12 }}>
+                              <option value="">Sem resp.</option>
+                              {equipe.map(m => <option key={m.email || m.nome} value={m.nome || m.name}>{(m.nome || m.name || "").split(" ")[0]}</option>)}
+                            </select>
+                          )}
                         </td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
                           {!isManager ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.comentario || "-"}</span> : (
@@ -466,7 +471,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
           </div>
         )}
 
-        {divOpen && <DividirDemanda checkings={checkings} team={prod.rows.map(r => r.name)} onClose={() => setDivOpen(false)} onAssign={onAssign} onToast={onToast}/>}
+        {divOpen && <DividirDemanda checkings={checkings} team={equipe.map(m => m.nome || m.name)} onClose={() => setDivOpen(false)} onAssign={onAssign} onToast={onToast}/>}
         {/* REQ 4 (01/07): modal de preview da divisao automatica com distribuicao regional */}
         {autoPreview && (<>
           <div className="scrim" onClick={() => setAutoPreview(null)}/>
