@@ -22,6 +22,8 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
   const [saved, setSaved] = React.useState(() => { try { return JSON.parse(localStorage.getItem("painel_saved_filters") || "[]"); } catch { return []; } });
   const [planAccount, setPlanAccount] = React.useState("all");
   const perPage = view === "cards" ? 12 : 15;
+  // REQ 1 (01/07): filtros estilo Sheets por coluna
+  const colF = window.useColumnFilters("approvals");
 
   const clientes = React.useMemo(() => H.extractList(checkings, "cliente"), [checkings]);
   const campanhas = React.useMemo(() => { const s = new Set(); checkings.forEach(c => { if (c.campanha) s.add(c.campanha); }); return [...s].sort(); }, [checkings]);
@@ -41,7 +43,8 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
     if (filterCampanha !== "all") rows = rows.filter(r => r.campanha === filterCampanha);
     if (dateFrom) { const d = dateFrom; rows = rows.filter(r => { const s = r.submittedAt || r.created_at || ""; return s >= d; }); }
     if (dateTo) { const d = dateTo + "T23:59:59"; rows = rows.filter(r => { const s = r.submittedAt || r.created_at || ""; return s <= d; }); }
-    if (view === "planilha" && planAccount !== "all") rows = rows.filter(r => r.conta === planAccount);
+    // REQ 1 (01/07): aplicar filtros por coluna estilo Sheets
+    rows = window.applyColumnFilters(rows, colF.filters);
     const dir = sort.dir === "asc" ? 1 : -1;
     rows.sort((a, b) => {
       let va = a[sort.key], vb = b[sort.key];
@@ -49,7 +52,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
       if (va < vb) return -dir; if (va > vb) return dir; return 0;
     });
     return rows;
-  }, [checkings, tab, search, filterClient, filterMeio, filterCampanha, dateFrom, dateTo, sort, view, planAccount]);
+  }, [checkings, tab, search, filterClient, filterMeio, filterCampanha, dateFrom, dateTo, sort, view, planAccount, colF.filters]);
 
   React.useEffect(() => { setPage(0); setSelected(new Set()); }, [tab, search, filterClient, filterMeio, filterCampanha, dateFrom, dateTo, viewMode]);
 
@@ -230,6 +233,8 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
         </div>
       )}
 
+      {/* REQ 1.3 (01/07): chips de filtros ativos + contador */}
+      <FilterChipsBar filters={colF.filters} onClear={(k) => colF.setColumnFilter(k, [])} onClearAll={colF.clearAll} total={checkings.length} shown={filtered.length} labels={{ cliente: "Cliente", veiculo: "Veiculo", meio: "Meio" }}/>
       {/* Bulk bar */}
       {selected.size > 0 && !isViewer && !compareMode && (
         <div className="bulk-bar row gap-3" style={{ padding: "12px 16px", background: "linear-gradient(180deg,#16181d,#0c0d11)", color: "#F5F4EF", borderRadius: 11, marginBottom: 14 }}>
@@ -251,12 +256,13 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
                 {!isViewer && !compareMode && <th style={{ width: 38, paddingLeft: 18 }}><button onClick={toggleAll} className={"checkbox " + (pageRows.length && pageRows.every(r => selected.has(r.submission_id)) ? "on" : "")}>{pageRows.length && pageRows.every(r => selected.has(r.submission_id)) && <Icon name="check" size={10} strokeWidth={2.2}/>}</button></th>}
                 <th style={{ width: 54 }}>Status</th>
                 <SortHead k="submittedAt">Recebido</SortHead>
-                <SortHead k="cliente">Cliente</SortHead>
+                {/* REQ 1 (01/07): filtros estilo Sheets nos headers */}
+                <ColumnFilter colKey="cliente" label="Cliente" rows={checkings} selected={colF.filters.cliente || []} onSelect={colF.setColumnFilter}>Cliente</ColumnFilter>
                 <SortHead k="campanha">Campanha</SortHead>
                 <SortHead k="n_pi">PI</SortHead>
-                <SortHead k="veiculo">Veículo</SortHead>
-                <SortHead k="meio">Meio</SortHead>
-                <SortHead k="praca">Praça</SortHead>
+                <ColumnFilter colKey="veiculo" label="Veiculo" rows={checkings} selected={colF.filters.veiculo || []} onSelect={colF.setColumnFilter}>Veiculo</ColumnFilter>
+                <ColumnFilter colKey="meio" label="Meio" rows={checkings} selected={colF.filters.meio || []} onSelect={colF.setColumnFilter}>Meio</ColumnFilter>
+                <SortHead k="praca">Praca</SortHead>
                 <SortHead k="total_arquivos" style={{ width: 70, textAlign: "right" }}>Arq.</SortHead>
                 {copilotOn && <th style={{ width: 96 }}>Confiança</th>}
                 {(tab === "approved" || tab === "rejected") && <th style={{ width: 130 }}>Data decisão</th>}

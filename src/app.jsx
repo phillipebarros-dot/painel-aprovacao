@@ -365,12 +365,15 @@ function App() {
   const gKey = aUseRef(false);
 
 
-  const stats = aUseMemo(() => window.H.computeStats(checkings), [checkings]);
-  const alerts = aUseMemo(() => window.AI.computeAlerts(checkings), [checkings]);
+  // REQ 6 (01/07): segmentacao central. Filtra checkings pelo grupo do usuario ANTES de tudo.
+  const scopedCheckings = aUseMemo(() => window.MOCK.visibleCheckings(user, checkings), [user, checkings]);
+
+  const stats = aUseMemo(() => window.H.computeStats(scopedCheckings), [scopedCheckings]);
+  const alerts = aUseMemo(() => window.AI.computeAlerts(scopedCheckings), [scopedCheckings]);
   const alertCounts = aUseMemo(() => window.AI.alertCounts(alerts), [alerts]);
-  const auditLog = aUseMemo(() => buildAuditLog(checkings), [checkings]);
-  const notifications = aUseMemo(() => buildNotifs(checkings), [checkings]);
-  const preSuppliers = aUseMemo(() => typeof aggregateSuppliers === "function" ? aggregateSuppliers(checkings) : [], [checkings]);
+  const auditLog = aUseMemo(() => buildAuditLog(scopedCheckings), [scopedCheckings]);
+  const notifications = aUseMemo(() => buildNotifs(scopedCheckings), [scopedCheckings]);
+  const preSuppliers = aUseMemo(() => typeof aggregateSuppliers === "function" ? aggregateSuppliers(scopedCheckings) : [], [scopedCheckings]);
 
   const addToast = aUseCallback((t) => { const id = ++toastId.current; setToasts(p => [...p.slice(-3), { id, ...t }]); }, []);
   const dismissToast = aUseCallback((id) => setToasts(p => p.filter(t => t.id !== id)), []);
@@ -426,7 +429,7 @@ function App() {
   };
   const startTriage = (queue) => {
     if (user?.role === "viewer") { addToast({ type: "error", message: "Sem permissão para decidir." }); return; }
-    const q = (Array.isArray(queue) && queue.length ? queue.slice() : checkings.filter(c => window.H.norm(c.status) === "pending")).sort((a, b) => a.submittedAt - b.submittedAt);
+    const q = (Array.isArray(queue) && queue.length ? queue.slice() : scopedCheckings.filter(c => window.H.norm(c.status) === "pending")).sort((a, b) => a.submittedAt - b.submittedAt);
     if (!q.length) { addToast({ type: "info", message: "Nenhum checking pendente na fila." }); return; }
     setReviewing(null); setTriageQueue(q);
   };
@@ -453,9 +456,10 @@ function App() {
       addToast({ type: "info", message: `${checking.n_pi} reaberto. Voltou para a fila.` });
       setReviewing(null); return;
     }
-    const isApprove = decision === "approve" || decision === "ressalva";
+    // REQ 8.1 (01/07): removido fluxo "ressalva" (aprovado com restricao)
+    const isApprove = decision === "approve";
 
-    const label = decision === "ressalva" ? "Aprovado com sugestoes" : decision === "sem_checking" ? "Sem checking" : "";
+    const label = decision === "sem_checking" ? "Sem checking" : "";
     const who = user.nome || user.name;
     // Salvar estado anterior para reverter se a API falhar
     const prevStatus = checking.status;
@@ -476,9 +480,10 @@ function App() {
     else window.PainelAPI?.reject(sid, who, reason || "").catch(rollback);
 
     // Update otimista (sera revertido pelo rollback se a API falhar)
-    setCheckings(prev => prev.map(c => c.submission_id === sid ? { ...c, status: isApprove ? "approved" : "rejected", approvedAt: isApprove ? now : null, rejectedAt: isApprove ? null : now, approval_user: who, rejection_reason: (decision === "reject" || decision === "ressalva") ? reason : "", decision_label: label } : c));
+    // REQ 8.1 (01/07): removido fluxo "ressalva"
+    setCheckings(prev => prev.map(c => c.submission_id === sid ? { ...c, status: isApprove ? "approved" : "rejected", approvedAt: isApprove ? now : null, rejectedAt: isApprove ? null : now, approval_user: who, rejection_reason: decision === "reject" ? reason : "", decision_label: label } : c));
     if (!silent) {
-      const msg = decision === "approve" ? `${checking.n_pi} aprovado!` : decision === "ressalva" ? `${checking.n_pi} aprovado com ressalva.` : decision === "sem_checking" ? `${checking.n_pi} marcado como sem checking.` : `${checking.n_pi} reprovado.`;
+      const msg = decision === "approve" ? `${checking.n_pi} aprovado!` : decision === "sem_checking" ? `${checking.n_pi} marcado como sem checking.` : `${checking.n_pi} reprovado.`;
       addToast({ type: isApprove ? "success" : "info", color: isApprove ? undefined : "#ef4444", message: msg });
     }
     setReviewing(null);
@@ -513,21 +518,22 @@ function App() {
   if (!user) return <><ScreenLogin onLogin={handleLogin}/><ToastStack toasts={toasts} onDismiss={dismissToast}/></>;
 
   const screenKey = reviewing ? "review_" + reviewing.submission_id : route;
+  // REQ 6 (01/07): telas recebem scopedCheckings (filtrado por grupo)
   const screenContent = reviewing ? <ScreenReview checking={reviewing} currentUser={user} onBack={() => setReviewing(null)} onDecide={handleDecide}/>
-    : route === "dashboard" ? <ScreenDashboard stats={stats} checkings={checkings} auditLog={auditLog} onOpenReview={openReview} onNavigate={handleNav} loading={false} onStartTriage={startTriage} viewMode={curView}/>
-    : route === "approvals" ? <ScreenApprovals currentUser={user} checkings={checkings} stats={stats} onOpenReview={openReview} onRefresh={() => {}} onToast={addToast} onDecide={handleDecide} onStartTriage={startTriage} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onSetResponsavel={(id, who) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, assigned_to: who, approval_user: c.status !== "pending" ? who : c.approval_user } : c)); window.PainelAPI?.assignResponsible(id, who, new Date().toISOString().slice(0, 7)).catch(e => addToast({ type: "error", message: "Falha ao atribuir: " + (e.message || "") })); }}/>
-    : route === "alerts" ? <ScreenAlerts checkings={checkings} currentUser={user} onOpenReview={openReview} onStartTriage={startTriage} onDecide={handleDecide} onToast={addToast} viewMode={curView} preAlerts={alerts}/>
-    : route === "producao" ? <ScreenProducao checkings={checkings} currentUser={user} onOpenReview={openReview} onToast={addToast} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onAssign={(map) => {
+    : route === "dashboard" ? <ScreenDashboard stats={stats} checkings={scopedCheckings} auditLog={auditLog} onOpenReview={openReview} onNavigate={handleNav} loading={false} onStartTriage={startTriage} viewMode={curView}/>
+    : route === "approvals" ? <ScreenApprovals currentUser={user} checkings={scopedCheckings} stats={stats} onOpenReview={openReview} onRefresh={() => {}} onToast={addToast} onDecide={handleDecide} onStartTriage={startTriage} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onSetResponsavel={(id, who) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, assigned_to: who, approval_user: c.status !== "pending" ? who : c.approval_user } : c)); window.PainelAPI?.assignResponsible(id, who, new Date().toISOString().slice(0, 7)).catch(e => addToast({ type: "error", message: "Falha ao atribuir: " + (e.message || "") })); }}/>
+    : route === "alerts" ? <ScreenAlerts checkings={scopedCheckings} currentUser={user} onOpenReview={openReview} onStartTriage={startTriage} onDecide={handleDecide} onToast={addToast} viewMode={curView} preAlerts={alerts}/>
+    : route === "producao" ? <ScreenProducao checkings={scopedCheckings} currentUser={user} onOpenReview={openReview} onToast={addToast} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onAssign={(map) => {
         const mes = new Date().toISOString().slice(0, 7);
         setCheckings(prev => prev.map(c => map[c.submission_id] ? { ...c, assigned_to: map[c.submission_id] } : c));
         Object.entries(map).forEach(([id, who]) => window.PainelAPI?.assignResponsible(id, who, mes).catch(() => {}));
       }}/>
-    : route === "reports" ? <ScreenReports checkings={checkings} currentUser={user} onToast={addToast}/>
-    : route === "users" ? <ScreenUsers onToast={addToast} viewMode={curView} checkings={checkings}/>
-    : route === "operations" ? <ScreenOperations onToast={addToast} checkings={checkings}/>
-    : route === "fornecedores" ? <ScreenFornecedores checkings={checkings} onOpenReview={openReview} viewMode={curView} onToast={addToast} preSuppliers={preSuppliers}/>
+    : route === "reports" ? <ScreenReports checkings={scopedCheckings} currentUser={user} onToast={addToast}/>
+    : route === "users" ? <ScreenUsers onToast={addToast} viewMode={curView} checkings={scopedCheckings}/>
+    : route === "operations" ? <ScreenOperations onToast={addToast} checkings={scopedCheckings}/>
+    : route === "fornecedores" ? <ScreenFornecedores checkings={scopedCheckings} onOpenReview={openReview} viewMode={curView} onToast={addToast} preSuppliers={preSuppliers}/>
     : route === "automacoes" ? <ScreenAutomacoes onToast={addToast}/>
-    : <ScreenDashboard stats={stats} checkings={checkings} auditLog={auditLog} onOpenReview={openReview} onNavigate={handleNav} loading={false}/>;
+    : <ScreenDashboard stats={stats} checkings={scopedCheckings} auditLog={auditLog} onOpenReview={openReview} onNavigate={handleNav} loading={false}/>;
   const screen = <ScreenBoundary key={screenKey}>{screenContent}</ScreenBoundary>;
 
   return (
@@ -535,11 +541,11 @@ function App() {
       <div className={"app" + (navCollapsed ? " nav-collapsed" : "")}>
         <Sidebar route={reviewing ? "review" : route} onNav={handleNav} user={user} onLogout={handleLogout} pending={stats.pending} alertCount={alertCounts.total} alertCrit={alertCounts.critical > 0}/>
         <div className="content">
-          <TopBar route={reviewing ? "review" : route} user={user} onNav={handleNav} onlineUsers={onlineUsers} notifications={notifications} checkings={checkings} onOpenReview={openReview} density={density} setDensity={setDensity} theme={theme} onToggleTheme={toggleTheme} onHelp={() => setHelpOpen(true)} onSearch={() => setSearchOpen(true)} onToggleSidebar={toggleNav} navCollapsed={navCollapsed} viewModes={curModes} view={curView} onView={setView}/>
+          <TopBar route={reviewing ? "review" : route} user={user} onNav={handleNav} onlineUsers={onlineUsers} notifications={notifications} checkings={scopedCheckings} onOpenReview={openReview} density={density} setDensity={setDensity} theme={theme} onToggleTheme={toggleTheme} onHelp={() => setHelpOpen(true)} onSearch={() => setSearchOpen(true)} onToggleSidebar={toggleNav} navCollapsed={navCollapsed} viewModes={curModes} view={curView} onView={setView}/>
           {screen}
         </div>
       </div>
-      {searchOpen && <SearchPalette checkings={checkings} onSelect={openReview} onNav={handleNav} onClose={() => setSearchOpen(false)}/>}
+      {searchOpen && <SearchPalette checkings={scopedCheckings} onSelect={openReview} onNav={handleNav} onClose={() => setSearchOpen(false)}/>}
       {helpOpen && <HelpOverlay onClose={() => setHelpOpen(false)}/>}
       {triageQueue && <ScreenTriage queue={triageQueue} currentUser={user} onDecide={(c, d, r) => handleDecide(c, d, r, true)} onClose={() => setTriageQueue(null)}/>}
 

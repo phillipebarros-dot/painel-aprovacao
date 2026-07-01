@@ -141,7 +141,7 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
                   </div>
                 </>;
               })()}
-              {c.observacoes && <div className="card card-pad" style={{ background: "var(--surface-2)", marginTop: 18 }}><div className="eyebrow" style={{ marginBottom: 6 }}>Observação do fornecedor</div><p style={{ margin: 0, fontSize: 13.5, color: "var(--ink-2)" }}>"{c.observacoes}"</p></div>}
+              {/* REQ 2 (01/07): removida exibicao de c.observacoes (Publi). */}
               {/* Alertas */}
               {/* FIX B1.2: blindar toFixed contra NaN */}
               {isLate && <div className="card card-pad" style={{ background: "var(--alert-soft)", border: "1px solid color-mix(in srgb, var(--alert) 30%, var(--rule))", padding: "10px 14px", marginTop: 12 }}><div className="row gap-2" style={{ alignItems: "center" }}><Icon name="warn" size={14} style={{ color: "var(--alert-ink)" }}/><span style={{ fontSize: 12.5, color: "var(--alert-ink)" }}><b>SLA {(Number(ageH) || 0).toFixed(0)}h</b> desde o fim da veiculacao. Priorize a decisao.</span></div></div>}

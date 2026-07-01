@@ -6,6 +6,47 @@
   // Constantes de dominio (NAO sao dados falsos — sao categorias fixas do negocio)
   const MEIOS = ["TV Aberta", "Rádio", "Impresso", "Mídia Exterior", "Digital"];
 
+  // REQ 6 (01/07): grupos de acesso e contas por grupo.
+  // Alinhado com automacao_pauta_checking.py (linhas 535-544):
+  //   8 grupos nomeados: Eudora, Unicred, Boti Sul, Boti SP, Boti SP INT, Boti NE, Boti SE, Boti RS
+  //   + clientes restantes que viram aba propria (AERO, VULT, BOTI SC, etc.)
+  // O campo 'conta' no BigQuery corresponde ao nome da aba no Sheets.
+  const CONTAS_BOTICARIO = [
+    "BOTI NE", "BOTI SE", "BOTI SP INT", "BOTI SUL", "BOTI SP",
+    "EUDORA", "AERO", "BOTI RS", "BOTI SC", "BOTI SC FRANQUEADOS",
+    "VULT", "BOTI BRASIL",
+    // Script Python: grupos com cod_cliente agrupados (535-544)
+    // Eudora: 65612,65613,65614,65767,65768,65769,67747
+    // Unicred: 66384,65253,66385 (NAO e Boticario; tratar separadamente se necessario)
+    // Boti Sul: 58587,59075
+    // Boti SP: 58589,59074
+    // Boti SP INT: 63642,63643
+    // Boti NE: 58590,62313
+    // Boti SE: 58591,59073
+    // Boti RS: 68294,68293
+  ];
+  const CONTAS_KAUANA = ["UNINTER"];
+
+  const GRUPOS = {
+    boticario: { label: "Boticario", contas: CONTAS_BOTICARIO },
+    kauana:    { label: "Kauana / Uninter", contas: CONTAS_KAUANA },
+    todos:     { label: "Todos", contas: null }, // admin: sem filtro
+  };
+
+  // REQ 6.2 (01/07): filtra checkings pelo grupo do usuario logado.
+  // Retorna somente os PIs cujo campo 'conta' pertence ao grupo.
+  // grupo "todos" ou ausente = sem filtro (admin).
+  function visibleCheckings(user, checkings) {
+    const grupo = user?.grupo || "todos";
+    if (grupo === "todos") return checkings;
+    const g = GRUPOS[grupo];
+    if (!g || !g.contas) return checkings;
+    const set = new Set(g.contas.map(function (s) { return s.toLowerCase(); }));
+    return checkings.filter(function (c) {
+      return set.has((c.conta || "").toLowerCase());
+    });
+  }
+
   // Arquitetura real do pipeline (mostrada em Operações). Descreve o fluxo n8n real.
   const N8N_FLOW = [
     { id: "form",    label: "Formulário",   sub: "Fornecedor envia",      icon: "inbox",     status: "ok" },
@@ -43,6 +84,11 @@
     securityLayers: SECURITY_LAYERS,
     accounts: [], // sem contas de teste — login real via n8n
     meios: MEIOS,
+    // REQ 6 (01/07): segmentacao de acesso
+    GRUPOS: GRUPOS,
+    CONTAS_BOTICARIO: CONTAS_BOTICARIO,
+    CONTAS_KAUANA: CONTAS_KAUANA,
+    visibleCheckings: visibleCheckings,
     getFiles: (id) => MOCK.filesById[id] || [],
   };
 
@@ -82,6 +128,15 @@
       // SLA: datas de veiculacao (regra Marlene: revisao comeca apos dt_fim_veic)
       dt_inicio_veic: c.dt_inicio_veic || c.dt_inicio || null,
       dt_fim_veic: c.dt_fim_veic || c.dt_fim || null,
+      // Campos do Publi/ERP mapeados pelo script automacao_pauta_checking.py.
+      // Nomes flexiveis para casar com BigQuery (snake_case) ou Sheets (acentuado).
+      situacao_pi: c.situacao_pi || c["Situação PI"] || c.situacao || "",
+      planilha: c.planilha || c.Planilha || "",
+      produto: c.produto || c.Produto || "",
+      vencimento: c.vencimento || c.Vencimento || null,
+      liberado_publi: c.liberado_publi || c["Liberado no publi"] || "",
+      sit_contas_pagar: c.sit_contas_pagar || c["Situação Contas a Pagar"] || "",
+      valor_liquido: c.valor_liquido || c["Líquido"] || c.liquido || c.valor || 0,
     };
   }
 

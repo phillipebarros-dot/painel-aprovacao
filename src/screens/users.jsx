@@ -4,6 +4,8 @@ function InviteModal({ onClose, onSuccess }) {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [role, setRole] = React.useState("viewer");
+  // REQ 6.4 (01/07): grupo de acesso por usuario
+  const [grupo, setGrupo] = React.useState("boticario");
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState("");
   const [success, setSuccess] = React.useState("");
@@ -15,7 +17,7 @@ function InviteModal({ onClose, onSuccess }) {
     if (password.length < 6) { setError("Senha deve ter pelo menos 6 caracteres."); return; }
     setSaving(true);
     /* FIX B2.6: submit nao persiste no backend (setTimeout fake). Rotulo explicita cadastro local */
-    setTimeout(() => { setSaving(false); setSuccess(`Usuário ${name.trim()} cadastrado localmente!`); setTimeout(() => { onSuccess({ name: name.trim(), email: email.trim().toLowerCase(), role }); onClose(); }, 1000); }, 800);
+    setTimeout(() => { setSaving(false); setSuccess(`Usuário ${name.trim()} cadastrado localmente!`); setTimeout(() => { onSuccess({ name: name.trim(), email: email.trim().toLowerCase(), role, grupo }); onClose(); }, 1000); }, 800);
   };
 
   const Lbl = ({ children }) => <label style={{ fontSize: 11.5, fontWeight: 500, color: "var(--ink-2)", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{children}</label>;
@@ -32,7 +34,11 @@ function InviteModal({ onClose, onSuccess }) {
             <div className="col" style={{ gap: 5 }}><Lbl>Email corporativo *</Lbl><input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="victor@grupoom.com.br"/></div>
             <div className="col" style={{ gap: 5 }}><Lbl>Senha temporária *</Lbl><input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres"/></div>
             <div className="col" style={{ gap: 5 }}><Lbl>Permissão</Lbl>
-              <select className="input" value={role} onChange={e => setRole(e.target.value)}><option value="viewer">Viewer · só consulta</option><option value="analyst">Analyst · aprova e reprova</option><option value="admin">Admin · acesso total</option></select>
+              <select className="input" value={role} onChange={e => setRole(e.target.value)}><option value="viewer">Viewer · so consulta</option><option value="analyst">Analyst · aprova e reprova</option><option value="admin">Admin · acesso total</option></select>
+            </div>
+            {/* REQ 6.4 (01/07): grupo de acesso */}
+            <div className="col" style={{ gap: 5 }}><Lbl>Grupo de acesso</Lbl>
+              <select className="input" value={grupo} onChange={e => setGrupo(e.target.value)}><option value="boticario">Boticario</option><option value="kauana">Kauana / Uninter</option><option value="todos">Todos (admin)</option></select>
             </div>
           </div>
           {error && <div style={{ marginTop: 14, padding: "10px 14px", background: "var(--alert-soft)", color: "var(--alert)", borderRadius: 10, fontSize: 13, display: "flex", gap: 8, alignItems: "center", border: "1px solid color-mix(in srgb, var(--alert) 25%, transparent)" }}><Icon name="warn" size={14}/> {error}</div>}
@@ -161,7 +167,7 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
 
   const setRole = async (id, role) => { const prev = users.find(u => u.id === id)?.role; setUsers(users.map(u => u.id === id ? { ...u, role } : u)); setDetail(d => d && d.id === id ? { ...d, role } : d); try { await window.PainelAPI.updateUserRole(id, role); onToast?.({ type: "success", message: "Cargo atualizado." }); } catch (e) { setUsers(users.map(u => u.id === id ? { ...u, role: prev } : u)); setDetail(d => d && d.id === id ? { ...d, role: prev } : d); onToast?.({ type: "error", message: "Falha ao atualizar cargo: " + e.message }); } };
   const toggleStatus = (id) => { setUsers(users.map(u => u.id === id ? { ...u, status: u.status === "active" ? "inactive" : "active" } : u)); setDetail(d => d && d.id === id ? { ...d, status: d.status === "active" ? "inactive" : "active" } : d); };
-  const addUser = (nu) => { setUsers([...users, { id: "u_" + Date.now(), name: nu.name, nome: nu.name, email: nu.email, role: nu.role, status: "active", color: colors[users.length % colors.length], avatar: nu.name.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase(), googlePic: false, lastSeen: Date.now() }]); onToast?.({ type: "success", message: `${nu.name} adicionado.` }); };
+  const addUser = (nu) => { setUsers([...users, { id: "u_" + Date.now(), name: nu.name, nome: nu.name, email: nu.email, role: nu.role, grupo: nu.grupo || "boticario", status: "active", color: colors[users.length % colors.length], avatar: nu.name.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase(), googlePic: false, lastSeen: Date.now() }]); onToast?.({ type: "success", message: `${nu.name} adicionado.` }); };
   const exportCsv = () => {
     const header = "Nome,Email,Role,Status,Último Acesso\n";
     const r = users.map(u => `"${u.nome}","${u.email}","${u.role}","${u.status}","${new Date(u.lastSeen).toLocaleString("pt-BR")}"`).join("\n");

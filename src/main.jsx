@@ -29,6 +29,8 @@ import './components/ui.jsx';
 import './components/viz.jsx';
 import './components/copilot.jsx';
 import './components/shader-login.jsx';
+// REQ 1 (01/07): filtros estilo Sheets por coluna
+import './components/column-filter.jsx';
 
 // Screens (expõem para window via window.Screen*)
 import './screens/login.jsx';

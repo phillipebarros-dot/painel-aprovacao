@@ -13,6 +13,10 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const [filterCliente, setFilterCliente] = React.useState("all");
   const [filterMeio, setFilterMeio] = React.useState("all");
   const [customTo, setCustomTo] = React.useState("");
+  // REQ 1 (01/07): filtros estilo Sheets na divisao
+  const colFDiv = window.useColumnFilters("producao_div");
+  // REQ 4 (01/07): divisao automatica
+  const [autoPreview, setAutoPreview] = React.useState(null);
   const changePeriod = (v) => { if (React.startTransition) React.startTransition(() => setPeriod(v)); else setPeriod(v); };
 
   // ── Lazy load: carregar board de produção do n8n (BigQuery) ──
@@ -112,15 +116,29 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
       if (H.norm(c.status) === "pending") m[k].pend++;
       if (c.assigned_to) m[k].resp[c.assigned_to] = (m[k].resp[c.assigned_to] || 0) + 1;
     });
-    return Object.values(m).sort((a, b) => b.total - a.total);
+    // REQ 6 (01/07): ordenar pelas contas fixas do Boticario (ordem do print da Marlene)
+    var fixas = window.MOCK?.CONTAS_BOTICARIO || [];
+    var arr = Object.values(m);
+    arr.sort(function (a, b) {
+      var ia = fixas.indexOf(a.conta), ib = fixas.indexOf(b.conta);
+      if (ia === -1 && ib === -1) return b.total - a.total;
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+    return arr;
   }, [checkings, divMonth]);
-  const divMonths = React.useMemo(() => H.recentMonths(6), []);
+  // REQ 5 (01/07): mes fechado como seletor principal. 12 meses.
+  const divMonths = React.useMemo(() => H.recentMonths(12), []);
   const divTotalPIs = React.useMemo(() => contaAgg.reduce((s, r) => s + r.total, 0), [contaAgg]);
   const activeConta = divConta || (contaAgg[0] && contaAgg[0].conta);
   const divRows = React.useMemo(() => {
     const src = divMonth === "all" ? checkings : checkings.filter(c => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === divMonth; });
-    return src.filter(c => (c.conta || "Sem conta") === activeConta);
-  }, [checkings, divMonth, activeConta]);
+    var rows = src.filter(c => (c.conta || "Sem conta") === activeConta);
+    // REQ 1 (01/07): aplicar filtros por coluna
+    rows = window.applyColumnFilters(rows, colFDiv.filters);
+    return rows;
+  }, [checkings, divMonth, activeConta, colFDiv.filters]);
   const assignOne = (id, name) => { onAssign && onAssign({ [id]: name }); onToast && onToast({ type: "success", message: `PI atribuído a ${name.split(" ")[0]}` }); };
   const assignConta = (conta, name) => {
     const map = {}; checkings.forEach(c => { if ((c.conta || "Sem conta") === conta) map[c.submission_id] = name; });
@@ -250,13 +268,34 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
         {pview === "divisao" && (
           <div className="card">
             <div className="card-head">
-              <div className="col" style={{ gap: 2 }}><div className="eyebrow">Divisão de demanda · por conta</div><div className="h2">Atribua o responsável por PI</div></div>
+              <div className="col" style={{ gap: 2 }}><div className="eyebrow">Divisao de demanda por conta</div><div className="h2">Atribua o responsavel por PI</div></div>
               <div className="row gap-3" style={{ alignItems: "center" }}>
+                {/* REQ 4 (01/07): botao de divisao automatica (so admin) */}
+                {isManager && <button className="btn btn-accent sm" onClick={() => {
+                  var team = (window.MOCK?.users || []).filter(u => u.role !== "viewer").map(u => u.nome || u.name);
+                  if (team.length < 2) { onToast?.({ type: "info", message: "Precisa de pelo menos 2 responsaveis cadastrados." }); return; }
+                  var src = divMonth === "all" ? checkings : checkings.filter(c => { var d = new Date(c.submittedAt); return (d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")) === divMonth; });
+                  var unassigned = src.filter(c => !c.assigned_to);
+                  if (!unassigned.length) { onToast?.({ type: "info", message: "Todos os PIs deste periodo ja tem responsavel." }); return; }
+                  // REQ 4.2 (01/07): round-robin igualitario por conta/regiao
+                  var byConta = {};
+                  unassigned.forEach(c => { var k = c.conta || "Sem conta"; if (!byConta[k]) byConta[k] = []; byConta[k].push(c); });
+                  var map = {}, counts = {};
+                  team.forEach(t => { counts[t] = 0; });
+                  Object.keys(byConta).forEach(conta => {
+                    byConta[conta].forEach((c, i) => {
+                      var who = team[i % team.length];
+                      map[c.submission_id] = who;
+                      counts[who] = (counts[who] || 0) + 1;
+                    });
+                  });
+                  setAutoPreview({ map: map, counts: counts, total: unassigned.length, byConta: byConta, team: team });
+                }}><Icon name="sparkles" size={12}/>Dividir automaticamente</button>}
                 <select className="dash-month" value={divMonth} onChange={e => setDivMonth(e.target.value)}>
                   <option value="all">Todos os meses</option>
                   {divMonths.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </select>
-                <span className="cell-mono muted">{activeConta} · {divRows.length} PIs</span>
+                <span className="cell-mono muted">{activeConta} {divRows.length} PIs</span>
               </div>
             </div>
             <div>
@@ -271,9 +310,16 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                   <col style={{ width: "18%" }}/>
                   <col style={{ width: "5%" }}/>
                 </colgroup>
+                {/* REQ 1 (01/07): FilterChipsBar + ColumnFilter nos headers */}
+                <FilterChipsBar filters={colFDiv.filters} onClear={(k) => colFDiv.setColumnFilter(k, [])} onClearAll={colFDiv.clearAll} total={checkings.length} shown={divRows.length} labels={{ cliente: "Cliente", veiculo: "Veiculo", meio: "Meio", assigned_to: "Responsavel" }}/>
                 <thead><tr>
-                  <th>Nº PI</th><th>Cliente</th><th>Veículo</th><th>Meio</th>
-                  <th>Status</th><th>Responsável</th><th>Comentário</th><th>Arq.</th>
+                  <th>No PI</th>
+                  <ColumnFilter colKey="cliente" label="Cliente" rows={checkings} selected={colFDiv.filters.cliente || []} onSelect={colFDiv.setColumnFilter}>Cliente</ColumnFilter>
+                  <ColumnFilter colKey="veiculo" label="Veiculo" rows={checkings} selected={colFDiv.filters.veiculo || []} onSelect={colFDiv.setColumnFilter}>Veiculo</ColumnFilter>
+                  <ColumnFilter colKey="meio" label="Meio" rows={checkings} selected={colFDiv.filters.meio || []} onSelect={colFDiv.setColumnFilter}>Meio</ColumnFilter>
+                  <th>Status</th>
+                  <ColumnFilter colKey="assigned_to" label="Responsavel" rows={checkings} selected={colFDiv.filters.assigned_to || []} onSelect={colFDiv.setColumnFilter}>Responsavel</ColumnFilter>
+                  <th>Comentario</th><th>Arq.</th>
                 </tr></thead>
                 <tbody>
                   {divRows.length === 0
@@ -328,6 +374,41 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
         )}
 
         {divOpen && <DividirDemanda checkings={checkings} team={prod.rows.map(r => r.name)} onClose={() => setDivOpen(false)} onAssign={onAssign} onToast={onToast}/>}
+        {/* REQ 4 (01/07): modal de preview da divisao automatica */}
+        {autoPreview && (<>
+          <div className="scrim" onClick={() => setAutoPreview(null)}/>
+          <div className="modal content" style={{ width: "min(620px, 94vw)" }}><div className="card-pad">
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Divisao automatica</div>
+            <h2 className="display-3" style={{ marginBottom: 14 }}>Preview: {autoPreview.total} PIs divididos igualmente</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
+              {autoPreview.team.map(name => (
+                <div key={name} className="card card-pad" style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 28, fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--accent)" }}>{autoPreview.counts[name] || 0}</div>
+                  <div style={{ fontSize: 12, fontWeight: 500, marginTop: 4 }}>{name.split(" ")[0]}</div>
+                </div>
+              ))}
+            </div>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Por conta/regiao</div>
+            <div style={{ maxHeight: 180, overflowY: "auto", marginBottom: 16 }}>
+              <table className="tbl" style={{ fontSize: 12 }}>
+                <thead><tr><th>Conta</th><th style={{ textAlign: "right" }}>PIs</th></tr></thead>
+                <tbody>
+                  {Object.keys(autoPreview.byConta).sort().map(conta => (
+                    <tr key={conta}><td>{conta}</td><td style={{ textAlign: "right", fontFamily: "var(--font-mono)" }}>{autoPreview.byConta[conta].length}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="row gap-3" style={{ justifyContent: "flex-end" }}>
+              <Button variant="ghost" onClick={() => setAutoPreview(null)}>Cancelar</Button>
+              <Button variant="accent" icon="check" onClick={() => {
+                onAssign && onAssign(autoPreview.map);
+                onToast?.({ type: "success", message: autoPreview.total + " PIs divididos entre " + autoPreview.team.length + " responsaveis." });
+                setAutoPreview(null);
+              }}>Aplicar divisao</Button>
+            </div>
+          </div></div>
+        </>)}
       </>) : (<>
         {/* Colaborador: minhas métricas + minha fila */}
         <div className="grid-cols-4 stagger" style={{ marginBottom: "var(--gap)" }}>

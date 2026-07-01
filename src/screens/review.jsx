@@ -539,12 +539,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
             </div>
           );})}
           {!filesLoading && assets.length === 0 && <Empty title="Nenhum arquivo encontrado" hint="Verifique a pasta no Drive" icon="folder"/>}
-          {checking.observacoes && (
-            <div className="card card-pad" style={{ background: "var(--surface-2)" }}>
-              <div className="eyebrow" style={{ marginBottom: 6 }}>Observação do fornecedor</div>
-              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "var(--ink-2)" }}>"{checking.observacoes}"</p>
-            </div>
-          )}
+          {/* REQ 2 (01/07): removida exibicao de checking.observacoes (Publi). Dados permanecem no BigQuery. */}
           {checking.rejection_reason && (
             <div className="card card-pad" style={{ background: "var(--alert-soft)", border: "1px solid color-mix(in srgb, var(--alert) 30%, var(--rule))" }}>
               <div className="row gap-2" style={{ marginBottom: 8 }}><Icon name="warn" size={16} style={{ color: "var(--alert-ink)" }}/><div className="eyebrow" style={{ color: "var(--alert-ink)" }}>Motivo da reprovação</div></div>

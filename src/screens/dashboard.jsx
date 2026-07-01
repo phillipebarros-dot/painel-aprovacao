@@ -4,7 +4,8 @@ function ScreenDashboard({ stats: globalStats, checkings, auditLog, onOpenReview
   const [period, setPeriod] = React.useState("90d");
   const [chartMode, setChartMode] = React.useState("trend");
   const H = window.H;
-  const months = React.useMemo(() => H.recentMonths(6), []);
+  // REQ 5 (01/07): mes fechado como seletor principal. 12 meses.
+  const months = React.useMemo(() => H.recentMonths(12), []);
   const isMonth = period.startsWith("m:");
   const monthKey = isMonth ? period.slice(2) : null;
   const days = period === "7d" ? 7 : period === "30d" ? 30 : period === "90d" ? 90 : 30;
