@@ -38,7 +38,7 @@ function InviteModal({ onClose, onSuccess }) {
             </div>
             {/* REQ 6.4 (01/07): grupo de acesso */}
             <div className="col" style={{ gap: 5 }}><Lbl>Grupo de acesso</Lbl>
-              <select className="input" value={grupo} onChange={e => setGrupo(e.target.value)}><option value="boticario">Boticario</option><option value="kauana">Kauana / Uninter</option><option value="todos">Todos (admin)</option></select>
+              <select className="input" value={grupo} onChange={e => setGrupo(e.target.value)}><option value="boticario">Equipe Anne (Boticario)</option><option value="kauana">Equipe Kauane (restante)</option><option value="todos">Todos (admin)</option></select>
             </div>
           </div>
           {error && <div style={{ marginTop: 14, padding: "10px 14px", background: "var(--alert-soft)", color: "var(--alert)", borderRadius: 10, fontSize: 13, display: "flex", gap: 8, alignItems: "center", border: "1px solid color-mix(in srgb, var(--alert) 25%, transparent)" }}><Icon name="warn" size={14}/> {error}</div>}
@@ -123,7 +123,7 @@ function UserDrawer({ user, checkings, onClose, onRole, onStatus, onGrupo }) {
           <div className="row gap-2" style={{ alignItems: "center" }}>
             <select className="input" value={user.role} onChange={(e) => onRole(user.id, e.target.value)} style={{ flex: 1, height: 34 }}><option value="viewer">Viewer · só consulta</option><option value="analyst">Analyst · aprova e reprova</option><option value="admin">Admin · acesso total</option></select>
             {/* REQ 1.4: grupo editavel no UserDrawer */}
-            <select className="input" value={user.grupo || "boticario"} onChange={(e) => onGrupo && onGrupo(user.id, e.target.value)} style={{ flex: 1, height: 34 }}><option value="boticario">Boticario</option><option value="kauana">Kauana / Uninter</option><option value="todos">Todos (admin)</option></select>
+            <select className="input" value={user.grupo || "boticario"} onChange={(e) => onGrupo && onGrupo(user.id, e.target.value)} style={{ flex: 1, height: 34 }}><option value="boticario">Equipe Anne (Boticario)</option><option value="kauana">Equipe Kauane (restante)</option><option value="todos">Todos (admin)</option></select>
             <Button variant="ghost" size="sm" onClick={() => onStatus(user.id)}>{user.status === "active" ? "Desativar" : "Ativar"}</Button>
           </div>
           <div className="row gap-3" style={{ marginTop: 10, fontSize: 12, color: "var(--ink-3)" }}>
@@ -221,7 +221,7 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
                   {visCols.has("email") && <td className="cell-mono cell-secondary" style={{ fontSize: 12 }}>{user.email}</td>}
                   {visCols.has("role") && <td>{user.role === "admin" ? <Pill status="admin">Admin</Pill> : user.role === "viewer" ? <span className="pill pill-viewer">Viewer</span> : <span className="pill pill-neutral">Analyst</span>}</td>}
                   {/* REQ 1.4: coluna grupo */}
-                  {visCols.has("grupo") && <td><span className="pill pill-neutral" style={{ fontSize: 10.5 }}>{({ boticario: "Boticario", kauana: "Kauana", todos: "Todos" })[user.grupo || "boticario"] || user.grupo || "Boticario"}</span></td>}
+                  {visCols.has("grupo") && <td><span className="pill pill-neutral" style={{ fontSize: 10.5 }}>{({ boticario: "Anne (Boticario)", kauana: "Kauane (restante)", todos: "Todos" })[user.grupo || "boticario"] || user.grupo || "Anne (Boticario)"}</span></td>}
                   {visCols.has("status") && <td><span className="row gap-2" style={{ fontSize: 12.5 }}><span style={{ width: 6, height: 6, borderRadius: 99, background: user.status === "active" ? "var(--accent)" : "var(--ink-4)" }}/>{user.status === "active" ? "ativo" : "inativo"}</span></td>}
                   {visCols.has("carga") && <td className="cell-mono">{carga[user.nome] || 0}</td>}
                   {visCols.has("sla") && <td className="cell-mono">{slaBy[user.nome] ? slaBy[user.nome].toFixed(1) + "h" : "·"}</td>}

@@ -28,8 +28,11 @@
   const CONTAS_KAUANA = ["UNINTER"];
 
   const GRUPOS = {
-    boticario: { label: "Boticario", contas: CONTAS_BOTICARIO },
-    kauana:    { label: "Kauana / Uninter", contas: CONTAS_KAUANA },
+    // Anne = gestora. Marlene, Rose, Brenda = analistas. Lista fixa de contas.
+    boticario: { label: "Equipe Anne (Boticario)", contas: CONTAS_BOTICARIO },
+    // Kauane = gestora. Ve TUDO que NAO e Boticario (UNINTER + qualquer outro cliente).
+    // contas: null sinaliza logica invertida (complemento do boticario).
+    kauana:    { label: "Equipe Kauane (restante)", contas: null, complementoDe: "boticario" },
     todos:     { label: "Todos", contas: null }, // admin: sem filtro
   };
 
@@ -69,33 +72,48 @@
   }
 
   // REQ 6.2 (01/07): filtra checkings pelo grupo do usuario logado.
-  // Retorna somente os PIs cujo campo 'conta' pertence ao grupo.
-  // grupo "todos" ou ausente = sem filtro (admin).
-  // BUG 2.3: PIs sem conta NAO devem sumir para grupo boticario.
+  // boticario = whitelist (so contas fixas do Boticario)
+  // kauana = complemento (TUDO que NAO e Boticario: UNINTER + qualquer outro)
+  // todos = sem filtro (admin)
   function visibleCheckings(user, checkings) {
     var grupo = user?.grupo || "todos";
     if (grupo === "todos") return checkings;
     var g = GRUPOS[grupo];
-    if (!g || !g.contas) return checkings;
-    var set = new Set(g.contas.map(function (s) { return s.toLowerCase(); }));
-    // BUG 2.3: contar PIs sem conta para log
-    var semConta = 0;
-    var result = checkings.filter(function (c) {
+    if (!g) return checkings;
+
+    // Set das contas do Boticario (referencia fixa para ambos os grupos)
+    var botiSet = new Set(CONTAS_BOTICARIO.map(function (s) { return s.toLowerCase(); }));
+
+    // grupo "kauana": ve TUDO que NAO e Boticario (complemento)
+    if (g.complementoDe) {
+      var semConta = 0;
+      var result = checkings.filter(function (c) {
+        var conta = (c.conta || "").toLowerCase();
+        if (!conta) {
+          // PI sem conta: para kauana, incluir (pode ser cliente novo)
+          semConta++;
+          return true;
+        }
+        // Se a conta esta na lista do Boticario, NAO e da Kauane
+        return !botiSet.has(conta);
+      });
+      if (semConta > 0) console.warn("[visibleCheckings] " + semConta + " PIs sem campo 'conta' incluidos no grupo kauana. Backend deve preencher.");
+      return result;
+    }
+
+    // grupo "boticario": whitelist fixa
+    var result2 = checkings.filter(function (c) {
       var conta = (c.conta || "").toLowerCase();
       if (!conta) {
-        // BUG 2.3: tentar inferir conta de c.planilha
+        // Tentar inferir conta de c.planilha
         var fallback = (c.planilha || "").toLowerCase();
-        if (fallback && set.has(fallback)) return true;
-        // BUG 2.3: para boticario, NAO esconder (mostrar com badge "sem conta")
-        if (grupo === "boticario") { semConta++; return true; }
-        // BUG 2.3: kauana ve so UNINTER confirmado
-        return false;
+        if (fallback && botiSet.has(fallback)) return true;
+        // PI sem conta no grupo boticario: incluir com warn
+        return true;
       }
-      return set.has(conta);
+      return botiSet.has(conta);
     });
-    // BUG 2.3: logar para backend corrigir
-    if (semConta > 0) console.warn("[visibleCheckings] " + semConta + " PIs sem campo 'conta' incluidos no grupo boticario. Backend deve preencher.");
-    return result;
+    return result2;
   }
 
   // Arquitetura real do pipeline (mostrada em Operações). Descreve o fluxo n8n real.
