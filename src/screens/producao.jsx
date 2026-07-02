@@ -702,6 +702,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   // BUG 3 fix: admin pode escolher qual equipe dividir (evita UNINTER no modal do Boticario)
   const [grupoDiv, setGrupoDiv] = React.useState("boticario");
   const botiSet = React.useMemo(() => new Set((window.MOCK?.CONTAS_BOTICARIO || []).map(s => s.toLowerCase())), []);
+  const kauanaSet = React.useMemo(() => new Set((window.MOCK?.CONTAS_KAUANA || []).map(s => s.toLowerCase())), []);
 
   // ── Carregar dados da pauta cruzada (BigQuery) ──
   // FONTE UNICA: pis_clientes LEFT JOIN checking_logs LEFT JOIN pi_responsaveis
@@ -719,15 +720,14 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     }).catch(() => setPautaData([])).finally(() => setPautaLoading(false));
   }, [mes]);
 
-  // ── Filtrar pauta por grupo selecionado ──
   const poolAll = React.useMemo(() => {
     if (!pautaData.length) return [];
     if (grupoDiv === "todos") return pautaData;
     if (grupoDiv === "boticario") {
       return pautaData.filter(p => { const ct = (p.conta || "").toLowerCase(); return ct && botiSet.has(ct); });
     }
-    // Uninter = tudo que NAO e Boticario E tem conta definida
-    return pautaData.filter(p => { const ct = (p.conta || "").toLowerCase(); return ct && !botiSet.has(ct); });
+    // Kauana: filtra por lista explicita de contas
+    return pautaData.filter(p => { const ct = (p.conta || "").toLowerCase(); return ct && kauanaSet.has(ct); });
   }, [pautaData, grupoDiv]);
 
   // ── Stats da pauta cruzada (o que a Marlene pediu) ──
@@ -836,7 +836,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
             <label className="eyebrow" style={{ fontSize: 10 }}>Equipe</label>
             <select className="input" value={grupoDiv} onChange={e => { setGrupoDiv(e.target.value); setShowLimit(30); }} style={{ width: "100%" }}>
               <option value="boticario">Boticario</option>
-              <option value="uninter">Uninter</option>
+              <option value="kauana">Kauana</option>
               <option value="todos">Todos</option>
             </select>
           </div>

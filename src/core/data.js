@@ -36,14 +36,15 @@
     // Boti SE: 58591,59073
     // Boti RS: 68294,68293
   ];
-  const CONTAS_KAUANA = ["UNINTER"];
+  const CONTAS_KAUANA = [
+    "UNINTER", "MAX ATACADISTA", "FRIMESA", "VOLVO", "SHOPPING MULLER", "SERVOPA",
+  ];
 
   const GRUPOS = {
     // Anne = gestora. Marlene, Rose, Brenda = analistas. Lista fixa de contas.
     boticario: { label: "Equipe Anne (Boticario)", contas: CONTAS_BOTICARIO },
-    // Kauane = gestora. Ve TUDO que NAO e Boticario (UNINTER + qualquer outro cliente).
-    // contas: null sinaliza logica invertida (complemento do boticario).
-    kauana:    { label: "Equipe Kauane (Uninter)", contas: null, complementoDe: "boticario" },
+    // Kauane = gestora. Lista propria de clientes. Sem divisao individual.
+    kauana:    { label: "Equipe Kauane", contas: CONTAS_KAUANA },
     todos:     { label: "Todos", contas: null }, // admin: sem filtro
   };
 
@@ -92,67 +93,73 @@
     });
   }
 
-  // REQ 6.2 (01/07): filtra checkings pelo grupo do usuario logado.
-  // boticario = whitelist (so contas fixas do Boticario)
-  // kauana = complemento (TUDO que NAO e Boticario: UNINTER + qualquer outro)
-  // todos = sem filtro (admin)
-  // BUG 6 fix: analyst ve SOMENTE PIs atribuidos a ele (Marlene: "ela so vai ver os dela")
+  // REQ 6.2 (02/07): filtra checkings pelo grupo do usuario logado.
+  // REGRAS:
+  //   1. PIs ANTES de julho/2026: vissiveis pra TODOS (sem filtro de grupo/atribuicao)
+  //   2. PIs de julho/2026+:
+  //      - boticario: filtra por contas do grupo. Analyst ve so os atribuidos a ele.
+  //      - kauana: filtra por contas do grupo. Todo mundo ve tudo (sem filtro individual).
+  //      - todos: admin ve tudo.
+  // Corte temporal: 1 de julho de 2026 00:00 UTC-3
+  var CORTE_VISIBILIDADE = new Date(2026, 6, 1).getTime(); // meses 0-indexed: 6 = julho
+
   function visibleCheckings(user, checkings) {
     var grupo = user?.grupo || "todos";
-    var filtered;
+
+    // Separar PIs antigos (antes do corte) e novos (a partir do corte)
+    var antigos = [];
+    var novos = [];
+    checkings.forEach(function (c) {
+      if ((c.submittedAt || 0) < CORTE_VISIBILIDADE) {
+        antigos.push(c);
+      } else {
+        novos.push(c);
+      }
+    });
+
+    // PIs antigos: todo mundo ve tudo, sem filtro
+    // PIs novos: filtrar por grupo
+    var filteredNovos;
     if (grupo === "todos") {
-      filtered = checkings;
+      filteredNovos = novos;
     } else {
       var g = GRUPOS[grupo];
-      // UXP: grupo nao reconhecido (ex: "nao_definido") nao ve NADA.
-      // Admin precisa definir o grupo antes do analyst ver PIs.
-      if (!g) return [];
-
-      // Set das contas do Boticario (referencia fixa para ambos os grupos)
-      var botiSet = new Set(CONTAS_BOTICARIO.map(function (s) { return s.toLowerCase(); }));
-
-      // grupo "kauana": ve TUDO que NAO e Boticario (complemento)
-      if (g.complementoDe) {
-        var semConta = 0;
-        filtered = checkings.filter(function (c) {
+      // Grupo nao reconhecido (ex: "nao_definido"): nao ve PIs novos.
+      if (!g) {
+        filteredNovos = [];
+      } else if (g.contas) {
+        // Grupo com lista explicita de contas (boticario ou kauana)
+        var contaSet = new Set(g.contas.map(function (s) { return s.toLowerCase(); }));
+        filteredNovos = novos.filter(function (c) {
           var conta = (c.conta || "").toLowerCase();
           if (!conta) {
-            semConta++;
-            return true;
-          }
-          return !botiSet.has(conta);
-        });
-        if (semConta > 0) console.warn("[visibleCheckings] " + semConta + " PIs sem campo 'conta' incluidos no grupo kauana. Backend deve preencher.");
-      } else {
-        // grupo "boticario": whitelist fixa
-        filtered = checkings.filter(function (c) {
-          var conta = (c.conta || "").toLowerCase();
-          if (!conta) {
+            // Fallback: tentar campo planilha
             var fallback = (c.planilha || "").toLowerCase();
-            if (fallback && botiSet.has(fallback)) return true;
-            return true;
+            return fallback ? contaSet.has(fallback) : false;
           }
-          return botiSet.has(conta);
+          return contaSet.has(conta);
         });
+      } else {
+        // Grupo sem lista (ex: futuro grupo generico): ve tudo
+        filteredNovos = novos;
+      }
+
+      // Filtro de atribuicao individual: so pra Boticario + analyst
+      // Kauana: todo mundo ve tudo do grupo (Thay: "qualquer um pode pegar qualquer coisa")
+      if (grupo === "boticario" && user && user.role !== "admin") {
+        var nm = user.nome || user.name || "";
+        var em = user.email || "";
+        if (nm || em) {
+          filteredNovos = filteredNovos.filter(function (c) {
+            var a = c.assigned_to || "";
+            return a && (window.H.sameUser(a, nm) || (em && window.H.sameUser(a, em)));
+          });
+        }
       }
     }
 
-    // BUG 6 fix: QUALQUER usuario que NAO seja admin ve SOMENTE PIs atribuidos a ele.
-    // Admin (Marlene/Anne) ve tudo do grupo pra distribuir e supervisionar.
-    // Regra do Phillipe (01/jul 00:17:45): "Ninguém vai ver. Rose não vai ver."
-    // B4 fix (01/jul): usar H.sameUser centralizado
-    if (user && user.role !== "admin") {
-      var nm = user.nome || user.name || "";
-      var em = user.email || "";
-      if (nm || em) {
-        filtered = filtered.filter(function (c) {
-          var a = c.assigned_to || "";
-          return a && (window.H.sameUser(a, nm) || (em && window.H.sameUser(a, em)));
-        });
-      }
-    }
-
-    return filtered;
+    // Concatenar: antigos (todos veem) + novos (filtrados por grupo)
+    return antigos.concat(filteredNovos);
   }
 
   // Arquitetura real do pipeline (mostrada em Operações). Descreve o fluxo n8n real.
