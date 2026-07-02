@@ -622,6 +622,8 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   const botiSet = React.useMemo(() => new Set((window.MOCK?.CONTAS_BOTICARIO || []).map(s => s.toLowerCase())), []);
 
   // ── Carregar dados da pauta cruzada (BigQuery) ──
+  // FONTE UNICA: pis_clientes LEFT JOIN checking_logs LEFT JOIN pi_responsaveis
+  // Retorna TODOS os PIs planejados, com status de recebimento do formulario
   const [pautaData, setPautaData] = React.useState([]);
   const [pautaLoading, setPautaLoading] = React.useState(false);
   React.useEffect(() => {
@@ -630,50 +632,47 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     setPautaLoading(true);
     API.getPautaCruzada(mes).then(res => {
       if (res?.success && res?.pauta) setPautaData(res.pauta);
+      else if (Array.isArray(res)) setPautaData(res);
       else setPautaData([]);
     }).catch(() => setPautaData([])).finally(() => setPautaLoading(false));
   }, [mes]);
 
-  // ── Stats da pauta cruzada (o que a Marlene pediu) ──
-  const pautaStats = React.useMemo(() => {
-    if (!pautaData.length) return null;
-    const filtrado = grupoDiv === "todos" ? pautaData :
-      grupoDiv === "boticario" ? pautaData.filter(p => botiSet.has((p.conta || "").toLowerCase())) :
-      pautaData.filter(p => !botiSet.has((p.conta || "").toLowerCase()));
-    const total = filtrado.length;
-    const recebidos = filtrado.filter(p => p.status_formulario === "recebido").length;
-    const aguardando = filtrado.filter(p => p.status_formulario === "aguardando").length;
-    const baixados = filtrado.filter(p => p.status_checking === "approved").length;
-    const pendentes = filtrado.filter(p => p.status_checking === "pending").length;
-    return { total, recebidos, aguardando, baixados, pendentes };
+  // ── Filtrar pauta por grupo selecionado ──
+  const poolAll = React.useMemo(() => {
+    if (!pautaData.length) return [];
+    if (grupoDiv === "todos") return pautaData;
+    if (grupoDiv === "boticario") {
+      return pautaData.filter(p => { const ct = (p.conta || "").toLowerCase(); return ct && botiSet.has(ct); });
+    }
+    // Uninter = tudo que NAO e Boticario E tem conta definida
+    return pautaData.filter(p => { const ct = (p.conta || "").toLowerCase(); return ct && !botiSet.has(ct); });
   }, [pautaData, grupoDiv]);
 
-  // B2 fix (01/jul): poolAll filtra por mes selecionado no modal.
-  // O seletor de mes define TANTO o filtro visual QUANTO o mes_referencia para o MERGE.
-  // Inclui PIs sem submittedAt (dados incompletos) para nao perder nenhum.
-  const poolAll = React.useMemo(() => {
-    // Filtrar por mes selecionado
-    var filtered = checkings.filter(c => {
-      if (!c.submittedAt) return true; // PIs sem data entram sempre
-      const d = new Date(c.submittedAt);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === mes;
-    });
-    // Filtrar por grupo selecionado
-    if (grupoDiv === "boticario") {
-      filtered = filtered.filter(c => { var ct = (c.conta || "").toLowerCase(); return ct && botiSet.has(ct); });
-    } else if (grupoDiv === "uninter") {
-      // Uninter = contas conhecidas de Uninter + contas que NAO sao Boticario E tem conta definida
-      filtered = filtered.filter(c => { var ct = (c.conta || "").toLowerCase(); return ct && !botiSet.has(ct); });
-    }
-    return filtered;
-  }, [checkings, mes, grupoDiv]);
+  // ── Stats da pauta cruzada (o que a Marlene pediu) ──
+  const pautaStats = React.useMemo(() => {
+    if (!poolAll.length) return null;
+    const total = poolAll.length;
+    const recebidos = poolAll.filter(p => p.status_formulario === "recebido").length;
+    const aguardando = poolAll.filter(p => p.status_formulario === "aguardando").length;
+    const baixados = poolAll.filter(p => p.status_checking === "approved").length;
+    const pendentes = poolAll.filter(p => p.status_checking === "pending").length;
+    return { total, recebidos, aguardando, baixados, pendentes };
+  }, [poolAll]);
 
-  // ── Por conta: cada conta pode ter MULTIPLOS responsaveis com quantidades ──
+  // ── Por conta: agrupa PIs da pauta por conta (Eudora, Boti SP, etc) ──
   const contasGrupo = React.useMemo(() => {
     const m = {};
-    poolAll.forEach(c => { const k = c.conta || c.cliente || "Sem conta"; (m[k] = m[k] || { conta: k, pis: [], pracas: new Set() }).pis.push(c); m[k].pracas.add(c.praca); });
+    poolAll.forEach(p => {
+      const k = p.conta || "Sem conta";
+      if (!m[k]) m[k] = { conta: k, pis: [], pracas: new Set(), recebidos: 0, aguardando: 0 };
+      m[k].pis.push(p);
+      if (p.praca) m[k].pracas.add(p.praca);
+      if (p.status_formulario === "recebido") m[k].recebidos++;
+      else m[k].aguardando++;
+    });
     return Object.values(m).sort((a, b) => b.pis.length - a.pis.length);
   }, [poolAll]);
+
   // contaSplit: { "BOT SP": [{ name: "Marlene", qty: 76 }, { name: "Brenda", qty: 41 }] }
   const [contaSplit, setContaSplit] = React.useState({});
   const [contaSearch, setContaSearch] = React.useState("");
@@ -682,7 +681,8 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     const init = {};
     contasGrupo.forEach(g => {
       const counts = {};
-      g.pis.forEach(c => { if (c.assigned_to) counts[c.assigned_to] = (counts[c.assigned_to] || 0) + 1; });
+      // Usa responsavel da pauta (pi_responsaveis), nao assigned_to do formulario
+      g.pis.forEach(p => { if (p.responsavel) counts[p.responsavel] = (counts[p.responsavel] || 0) + 1; });
       const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
       init[g.conta] = entries.length ? entries.map(([name, qty]) => ({ name, qty })) : [{ name: "", qty: g.pis.length }];
     });
@@ -694,23 +694,43 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   const contasAtribuidas = contasGrupo.filter(g => (contaSplit[g.conta] || []).some(s => s.name && s.qty > 0)).length;
   const pisAtribuidos = contasGrupo.reduce((s, g) => s + (contaSplit[g.conta] || []).filter(x => x.name).reduce((a, x) => a + x.qty, 0), 0);
 
-
-
+  // Confirmar: chama assignResponsible DIRETO com n_pi e conta da pauta.
+  // Nao depende de submission_id (PIs aguardando nao tem submission_id).
   const confirm = () => {
-    const map = {};
+    const API = window.PainelAPI;
+    let total = 0;
+    let apiErrors = 0;
     contasGrupo.forEach(g => {
       const splits = (contaSplit[g.conta] || []).filter(s => s.name && s.qty > 0);
       if (!splits.length) return;
       let idx = 0;
       splits.forEach(s => {
         for (let i = 0; i < s.qty && idx < g.pis.length; i++, idx++) {
-          map[g.pis[idx].submission_id] = s.name;
+          const pi = g.pis[idx];
+          total++;
+          API?.assignResponsible(pi.n_pi, s.name, mes, g.conta).catch(() => {
+            apiErrors++;
+            if (apiErrors === 1) onToast?.({ type: "warn", message: "Servidor indisponivel. Tente novamente." });
+          });
         }
       });
     });
-    onAssign && onAssign(map);
+    // Update otimista: atualizar checkings locais que JA foram recebidos
+    const assignMap = {};
+    contasGrupo.forEach(g => {
+      const splits = (contaSplit[g.conta] || []).filter(s => s.name && s.qty > 0);
+      if (!splits.length) return;
+      let idx = 0;
+      splits.forEach(s => {
+        for (let i = 0; i < s.qty && idx < g.pis.length; i++, idx++) {
+          const pi = g.pis[idx];
+          if (pi.submission_id) assignMap[pi.submission_id] = s.name;
+        }
+      });
+    });
+    if (Object.keys(assignMap).length > 0) onAssign && onAssign(assignMap);
     onClose();
-    onToast?.({ type: "success", message: `${Object.keys(map).length} PIs de ${contasAtribuidas} contas atribuidos.` });
+    onToast?.({ type: "success", message: `${total} PIs de ${contasAtribuidas} contas atribuidos.` });
   };
 
   const userColor = (name) => window.MOCK.users.find(u => u.name === name)?.color || "#0E7490";
@@ -770,7 +790,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
         <p className="body-sm" style={{ margin: 0 }}>Cada conta pode ser dividida entre multiplas pessoas. Defina a quantidade de PIs para cada responsavel.</p>
           {/* REQ (01/jul 00:18:38 Phillipe): busca para filtrar contas no modal */}
           <input className="input" placeholder="Buscar conta..." value={contaSearch} onChange={e => setContaSearch(e.target.value)} style={{ marginBottom: 8, fontSize: 13 }}/>
-          {contasGrupo.length === 0 ? <Empty title="Sem PIs pendentes neste mes" icon="layers"/> : (() => {
+          {pautaLoading ? <p className="body-xs muted" style={{ margin: 0, textAlign: "center", padding: 20 }}>Carregando pauta do BigQuery...</p> : contasGrupo.length === 0 ? <Empty title="Sem PIs na pauta deste mes" hint="Verifique o mes selecionado ou se a pauta foi importada." icon="layers"/> : (() => {
             const searched = contasGrupo.filter(g => !contaSearch || g.conta.toLowerCase().includes(contaSearch.toLowerCase()));
             const visible = contaSearch ? searched : searched.slice(0, showLimit);
             const hasMore = !contaSearch && searched.length > showLimit;
@@ -785,7 +805,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                     <div className="col" style={{ gap: 2, minWidth: 0, flex: 1 }}>
                       <span style={{ fontSize: 13, fontWeight: 600 }}>{g.conta}</span>
-                      <span className="body-xs muted">{g.pis.length} PIs · {g.pracas.size} pracas {remaining !== 0 && <span style={{ color: remaining > 0 ? "var(--warn)" : "var(--alert)" }}>({remaining > 0 ? `${remaining} sem responsavel` : `${Math.abs(remaining)} a mais`})</span>}</span>
+                      <span className="body-xs muted">{g.pis.length} PIs · {g.recebidos} recebidos{g.aguardando > 0 && <span style={{ color: "var(--warn)" }}> · {g.aguardando} aguardando</span>} {remaining !== 0 && <span style={{ color: remaining > 0 ? "var(--warn)" : "var(--alert)" }}>({remaining > 0 ? `${remaining} sem responsavel` : `${Math.abs(remaining)} a mais`})</span>}</span>
                     </div>
                     <button className="btn btn-quiet sm" onClick={() => addPerson(g.conta)} style={{ flexShrink: 0 }}><Icon name="plus" size={12}/> Pessoa</button>
                   </div>
