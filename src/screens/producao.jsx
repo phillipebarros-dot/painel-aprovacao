@@ -648,19 +648,25 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     return { total, recebidos, aguardando, baixados, pendentes };
   }, [pautaData, grupoDiv]);
 
-  // B2 fix (01/jul): poolAll mostra TODOS os PIs do grupo (estoque real),
-  // sem filtrar por mes de submittedAt. O seletor de mes define mes_referencia
-  // para o MERGE (a qual competencia a atribuicao sera gravada).
+  // B2 fix (01/jul): poolAll filtra por mes selecionado no modal.
+  // O seletor de mes define TANTO o filtro visual QUANTO o mes_referencia para o MERGE.
+  // Inclui PIs sem submittedAt (dados incompletos) para nao perder nenhum.
   const poolAll = React.useMemo(() => {
-    var filtered = checkings;
+    // Filtrar por mes selecionado
+    var filtered = checkings.filter(c => {
+      if (!c.submittedAt) return true; // PIs sem data entram sempre
+      const d = new Date(c.submittedAt);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === mes;
+    });
     // Filtrar por grupo selecionado
     if (grupoDiv === "boticario") {
       filtered = filtered.filter(c => { var ct = (c.conta || "").toLowerCase(); return ct && botiSet.has(ct); });
     } else if (grupoDiv === "uninter") {
-      filtered = filtered.filter(c => { var ct = (c.conta || "").toLowerCase(); return !ct || !botiSet.has(ct); });
+      // Uninter = contas conhecidas de Uninter + contas que NAO sao Boticario E tem conta definida
+      filtered = filtered.filter(c => { var ct = (c.conta || "").toLowerCase(); return ct && !botiSet.has(ct); });
     }
     return filtered;
-  }, [checkings, grupoDiv]);
+  }, [checkings, mes, grupoDiv]);
 
   // ── Por conta: cada conta pode ter MULTIPLOS responsaveis com quantidades ──
   const contasGrupo = React.useMemo(() => {
@@ -671,6 +677,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   // contaSplit: { "BOT SP": [{ name: "Marlene", qty: 76 }, { name: "Brenda", qty: 41 }] }
   const [contaSplit, setContaSplit] = React.useState({});
   const [contaSearch, setContaSearch] = React.useState("");
+  const [showLimit, setShowLimit] = React.useState(30);
   React.useEffect(() => {
     const init = {};
     contasGrupo.forEach(g => {
@@ -725,7 +732,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
           {/* BUG 3 fix: seletor de equipe pra admin nao misturar Boticario com Uninter */}
           <div className="col" style={{ gap: 6, minWidth: 140 }}>
             <label className="eyebrow" style={{ fontSize: 10 }}>Equipe</label>
-            <select className="input" value={grupoDiv} onChange={e => setGrupoDiv(e.target.value)} style={{ width: "100%" }}>
+            <select className="input" value={grupoDiv} onChange={e => { setGrupoDiv(e.target.value); setShowLimit(30); }} style={{ width: "100%" }}>
               <option value="boticario">Boticario</option>
               <option value="uninter">Uninter</option>
               <option value="todos">Todos</option>
@@ -763,9 +770,13 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
         <p className="body-sm" style={{ margin: 0 }}>Cada conta pode ser dividida entre multiplas pessoas. Defina a quantidade de PIs para cada responsavel.</p>
           {/* REQ (01/jul 00:18:38 Phillipe): busca para filtrar contas no modal */}
           <input className="input" placeholder="Buscar conta..." value={contaSearch} onChange={e => setContaSearch(e.target.value)} style={{ marginBottom: 8, fontSize: 13 }}/>
-          {contasGrupo.length === 0 ? <Empty title="Sem PIs pendentes neste mes" icon="layers"/> : (
+          {contasGrupo.length === 0 ? <Empty title="Sem PIs pendentes neste mes" icon="layers"/> : (() => {
+            const searched = contasGrupo.filter(g => !contaSearch || g.conta.toLowerCase().includes(contaSearch.toLowerCase()));
+            const visible = contaSearch ? searched : searched.slice(0, showLimit);
+            const hasMore = !contaSearch && searched.length > showLimit;
+            return (
             <div className="div-conta-list">
-              {contasGrupo.filter(g => !contaSearch || g.conta.toLowerCase().includes(contaSearch.toLowerCase())).map(g => {
+              {visible.map(g => {
                 const splits = contaSplit[g.conta] || [];
                 const totalAssigned = splits.reduce((s, x) => s + (x.qty || 0), 0);
                 const remaining = g.pis.length - totalAssigned;
@@ -791,8 +802,9 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
                   ))}
                 </div>
               );})}
+              {hasMore && <button className="btn btn-quiet" onClick={() => setShowLimit(l => l + 30)} style={{ width: "100%", padding: 10, fontSize: 12, marginTop: 4 }}>Mostrar mais ({searched.length - showLimit} restantes)</button>}
             </div>
-          )}
+          );})()}
       </div>
       <div className="row gap-3" style={{ justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid var(--rule)" }}>
         <span className="body-xs muted">{`${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs`}</span>
