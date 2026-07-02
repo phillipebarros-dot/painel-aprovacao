@@ -397,14 +397,7 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
                   <span className="spacer"/>
                   <span className="pill pill-neutral" style={{ fontSize: 10 }}>{membros.length} membro{membros.length !== 1 ? "s" : ""}</span>
                 </div>
-                {gestoras.length > 0 && (
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-4)", fontWeight: 600, marginBottom: 6 }}>Gestoras</div>
-                    <div className="row gap-2" style={{ flexWrap: "wrap" }}>
-                      {gestoras.map(u => <span key={u.id || u.email} className="row gap-2" style={{ fontSize: 12.5, color: "var(--ink-2)", background: "var(--bg)", padding: "4px 10px", borderRadius: 8 }}><Avatar user={u} size={18}/>{u.nome || u.name}</span>)}
-                    </div>
-                  </div>
-                )}
+                {/* Gestoras omitidas: admin com grupo "todos" aparecia em ambos os cards */}
                 {membros.length > 0 ? (
                   <div className="col" style={{ gap: 0 }}>
                     <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-4)", fontWeight: 600, marginBottom: 6 }}>Membros (analistas)</div>

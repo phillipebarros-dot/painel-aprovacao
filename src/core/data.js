@@ -57,7 +57,9 @@
   function teamMembers(grupo) {
     return (window.MOCK?.users || []).filter(function (u) {
       if (u.role === "viewer") return false;
-      return (u.grupo || "boticario") === grupo;
+      if (u.role === "admin") return false; // admin nao e membro, e gestor
+      // So mostra quem tem grupo EXPLICITAMENTE definido como esse grupo
+      return u.grupo === grupo;
     });
   }
   // REQ EQUIPE: retorna equipe do usuario (null se admin/todos)
@@ -66,10 +68,17 @@
     if (g === "todos") return null;
     return { grupo: g, label: GRUPOS[g]?.label || g, membros: teamMembers(g) };
   }
-  // REQ EQUIPE: retorna gestoras (admins do grupo)
+  // REQ EQUIPE: retorna gestoras (admins com grupo definido desse grupo)
   function teamManagers(grupo) {
     return (window.MOCK?.users || []).filter(function (u) {
-      return u.role === "admin" && ((u.grupo || "todos") === grupo || (u.grupo || "todos") === "todos");
+      if (u.role !== "admin") return false;
+      // Ignorar admins sem grupo definido (nao aparecem nos cards)
+      if (!u.grupo || u.grupo === "nao_definido") return false;
+      // Admin desse grupo especifico
+      if (u.grupo === grupo) return true;
+      // Admin supervisor (grupo "todos") aparece em ambos os cards
+      if (u.grupo === "todos") return true;
+      return false;
     });
   }
 
