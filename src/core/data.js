@@ -326,20 +326,17 @@
           // Buscar por TODAS as chaves possiveis: id, email, nome
           grupoSalvo = _map[u.id] || _map[u.email] || _map[u.name] || _map[u.nome] || null;
         } catch {}
-        // Auto-sync: localStorage tem grupo mas BigQuery nao → re-enviar usando ID e email
-        if (!grupoBackend && grupoSalvo) {
-          console.info("[auto-sync] BigQuery sem grupo para", u.email, "localStorage tem:", grupoSalvo, "-> re-enviando via id:", u.id);
-          // Envia com ID
-          window.PainelAPI?.updateUserGrupo?.(u.id, grupoSalvo).then(function() {
-            console.info("[auto-sync OK via id]", u.email, grupoSalvo);
+        // Auto-sync: localStorage tem grupo mas BigQuery nao → re-enviar UMA VEZ com email
+        if (!grupoBackend && grupoSalvo && !window._grupoSyncDone?.[u.email]) {
+          if (!window._grupoSyncDone) window._grupoSyncDone = {};
+          window._grupoSyncDone[u.email] = true; // Marca ANTES de enviar pra nao loopar
+          console.info("[auto-sync] BigQuery sem grupo para", u.email, "localStorage tem:", grupoSalvo, "-> enviando via email (unico)");
+          // Envia com EMAIL (unico, garantido existir no BigQuery)
+          window.PainelAPI?.updateUserGrupo?.(u.email, grupoSalvo).then(function() {
+            console.info("[auto-sync OK]", u.email, grupoSalvo);
           }).catch(function(e) {
-            console.warn("[auto-sync FALHOU via id]", u.email, e.message || e);
-            // Fallback: tentar com email
-            window.PainelAPI?.updateUserGrupo?.(u.email, grupoSalvo).then(function() {
-              console.info("[auto-sync OK via email]", u.email, grupoSalvo);
-            }).catch(function(e2) {
-              console.error("[auto-sync FALHOU via email tb]", u.email, e2.message || e2);
-            });
+            console.error("[auto-sync FALHOU]", u.email, e.message || e);
+            delete window._grupoSyncDone[u.email]; // Permite retry no proximo ciclo
           });
         }
         var grupoInicial = resolverGrupoInicial(nome, u.role);
