@@ -833,6 +833,7 @@ body:has(.login-split)::before { display: none; }
 }
 
 /* R5 fix (01/jul): 1280x720 at 125% zoom = effective 1024px viewport */
+/* R6 fix (02/jul): 1366x768 at 125% zoom = effective 1093px viewport (Marlene) */
 @media (max-width: 1440px) {
   /* Modal DividirDemanda: wider para nao truncar nomes */
   .modal.content { width: min(720px, 95vw) !important; }
@@ -845,6 +846,36 @@ body:has(.login-split)::before { display: none; }
   }
   /* KPIs grid em 2 colunas se nao couber 4 */
   .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Monitor corporativo: 1366x768 @ 125% zoom = 1093px efetivo */
+@media (max-width: 1200px) {
+  /* Nav-panel: colapsa pra so icones, libera ~160px de conteudo */
+  .app { grid-template-columns: 56px 1fr !important; }
+  .nav-panel { display: none; }
+
+  /* User drawer: menor pra nao cobrir tudo */
+  .user-drawer { width: clamp(360px, 40vw, 440px); }
+
+  /* Page: menos padding lateral */
+  .page { padding: 28px 16px 48px; }
+
+  /* Tabela planilha: mais compacta */
+  .tbl-planilha { font-size: 11px; }
+  .tbl-planilha th, .tbl-planilha td { padding: 4px 5px; }
+  .plan-tabs { gap: 1px; padding: 4px 4px; }
+  .plan-tab { font-size: 10.5px; padding: 4px 8px; }
+
+  /* KPIs: menores */
+  .kpi { padding: 14px 16px; }
+  .kpi-value { font-size: 26px; }
+
+  /* Cards header: menos padding */
+  .card-head { padding: 12px 16px; gap: 8px; }
+  .card-pad { padding: 14px 16px; }
+
+  /* Filtros: mais compactos */
+  .page-head select.input.sm { min-width: 90px; max-width: 140px; font-size: 11.5px !important; }
 }
 /* Narrow: tablet portrait, phones */
 @media (max-width: 768px) {
