@@ -535,7 +535,15 @@ function App() {
     : route === "producao" ? <ScreenProducao checkings={scopedCheckings} currentUser={user} onOpenReview={openReview} onToast={addToast} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onAssign={(map) => {
         const mes = new Date().toISOString().slice(0, 7);
         setCheckings(prev => prev.map(c => map[c.submission_id] ? { ...c, assigned_to: map[c.submission_id] } : c));
-        Object.entries(map).forEach(([id, who]) => window.PainelAPI?.assignResponsible(id, who, mes).catch(() => {}));
+        // BUG 1+5 fix: salvar no localStorage como fallback (persiste mesmo se n8n cair)
+        try {
+          const saved = JSON.parse(localStorage.getItem("painel_assignments") || "{}");
+          Object.assign(saved, map);
+          localStorage.setItem("painel_assignments", JSON.stringify(saved));
+        } catch {}
+        let apiErrors = 0;
+        const entries = Object.entries(map);
+        entries.forEach(([id, who]) => window.PainelAPI?.assignResponsible(id, who, mes).catch(() => { apiErrors++; if (apiErrors === 1) addToast({ type: "warn", message: "Servidor indisponivel. Divisao salva localmente, sera sincronizada quando o servidor voltar." }); }));
       }}/>
     : route === "reports" ? <ScreenReports checkings={scopedCheckings} currentUser={user} onToast={addToast}/>
     : route === "users" ? <ScreenUsers onToast={addToast} viewMode={curView} checkings={scopedCheckings}/>

@@ -77,47 +77,61 @@
   // boticario = whitelist (so contas fixas do Boticario)
   // kauana = complemento (TUDO que NAO e Boticario: UNINTER + qualquer outro)
   // todos = sem filtro (admin)
+  // BUG 6 fix: analyst ve SOMENTE PIs atribuidos a ele (Marlene: "ela so vai ver os dela")
   function visibleCheckings(user, checkings) {
     var grupo = user?.grupo || "todos";
-    if (grupo === "todos") return checkings;
-    var g = GRUPOS[grupo];
-    // UXP: grupo nao reconhecido (ex: "nao_definido") nao ve NADA.
-    // Admin precisa definir o grupo antes do analyst ver PIs.
-    if (!g) return [];
+    var filtered;
+    if (grupo === "todos") {
+      filtered = checkings;
+    } else {
+      var g = GRUPOS[grupo];
+      // UXP: grupo nao reconhecido (ex: "nao_definido") nao ve NADA.
+      // Admin precisa definir o grupo antes do analyst ver PIs.
+      if (!g) return [];
 
-    // Set das contas do Boticario (referencia fixa para ambos os grupos)
-    var botiSet = new Set(CONTAS_BOTICARIO.map(function (s) { return s.toLowerCase(); }));
+      // Set das contas do Boticario (referencia fixa para ambos os grupos)
+      var botiSet = new Set(CONTAS_BOTICARIO.map(function (s) { return s.toLowerCase(); }));
 
-    // grupo "kauana": ve TUDO que NAO e Boticario (complemento)
-    if (g.complementoDe) {
-      var semConta = 0;
-      var result = checkings.filter(function (c) {
-        var conta = (c.conta || "").toLowerCase();
-        if (!conta) {
-          // PI sem conta: para kauana, incluir (pode ser cliente novo)
-          semConta++;
-          return true;
-        }
-        // Se a conta esta na lista do Boticario, NAO e da Kauane
-        return !botiSet.has(conta);
-      });
-      if (semConta > 0) console.warn("[visibleCheckings] " + semConta + " PIs sem campo 'conta' incluidos no grupo kauana. Backend deve preencher.");
-      return result;
+      // grupo "kauana": ve TUDO que NAO e Boticario (complemento)
+      if (g.complementoDe) {
+        var semConta = 0;
+        filtered = checkings.filter(function (c) {
+          var conta = (c.conta || "").toLowerCase();
+          if (!conta) {
+            semConta++;
+            return true;
+          }
+          return !botiSet.has(conta);
+        });
+        if (semConta > 0) console.warn("[visibleCheckings] " + semConta + " PIs sem campo 'conta' incluidos no grupo kauana. Backend deve preencher.");
+      } else {
+        // grupo "boticario": whitelist fixa
+        filtered = checkings.filter(function (c) {
+          var conta = (c.conta || "").toLowerCase();
+          if (!conta) {
+            var fallback = (c.planilha || "").toLowerCase();
+            if (fallback && botiSet.has(fallback)) return true;
+            return true;
+          }
+          return botiSet.has(conta);
+        });
+      }
     }
 
-    // grupo "boticario": whitelist fixa
-    var result2 = checkings.filter(function (c) {
-      var conta = (c.conta || "").toLowerCase();
-      if (!conta) {
-        // Tentar inferir conta de c.planilha
-        var fallback = (c.planilha || "").toLowerCase();
-        if (fallback && botiSet.has(fallback)) return true;
-        // PI sem conta no grupo boticario: incluir com warn
-        return true;
+    // BUG 6 fix: analyst ve SOMENTE PIs atribuidos a ele.
+    // Admin ve tudo do grupo (pra distribuir e supervisionar).
+    if (user?.role === "analyst") {
+      var nm = (user.nome || user.name || "").trim().toLowerCase();
+      var em = (user.email || "").trim().toLowerCase();
+      if (nm || em) {
+        filtered = filtered.filter(function (c) {
+          var a = (c.assigned_to || "").trim().toLowerCase();
+          return a && (a === nm || (em && a === em));
+        });
       }
-      return botiSet.has(conta);
-    });
-    return result2;
+    }
+
+    return filtered;
   }
 
   // Arquitetura real do pipeline (mostrada em Operações). Descreve o fluxo n8n real.
@@ -257,6 +271,25 @@
     ]);
     if (checkingsRes.status === "fulfilled" && checkingsRes.value?.checkings) {
       MOCK.checkings = checkingsRes.value.checkings.map(normalizeChecking);
+      // BUG 1+5 fix: mesclar assignments do localStorage (fallback quando n8n cai)
+      try {
+        var savedAssign = JSON.parse(localStorage.getItem("painel_assignments") || "{}");
+        if (Object.keys(savedAssign).length > 0) {
+          MOCK.checkings = MOCK.checkings.map(function(c) {
+            // So aplica fallback se o checking NAO tem assigned_to do BigQuery
+            if (!c.assigned_to && savedAssign[c.submission_id]) {
+              return Object.assign({}, c, { assigned_to: savedAssign[c.submission_id] });
+            }
+            // Se o BigQuery ja tem assigned_to, limpa o localStorage pra esse PI
+            if (c.assigned_to && savedAssign[c.submission_id]) {
+              delete savedAssign[c.submission_id];
+            }
+            return c;
+          });
+          // Atualiza localStorage removendo os ja sincronizados
+          localStorage.setItem("painel_assignments", JSON.stringify(savedAssign));
+        }
+      } catch {}
     }
     if (usersRes.status === "fulfilled" && usersRes.value?.users) {
       MOCK.users = usersRes.value.users.map(u => {

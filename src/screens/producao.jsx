@@ -592,9 +592,20 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   const H = window.H;
   const monthOpts = React.useMemo(() => { const a = []; const now = new Date(); for (let i = 0; i < 3; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); a.push({ v: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) }); } return a; }, []);
   const [mes, setMes] = React.useState(monthOpts[0].v);
-  // Modo unico: por conta (Marlene/Anne pediu divisao por conta, nao equilibrar)
+  // BUG 3 fix: admin pode escolher qual equipe dividir (evita UNINTER no modal do Boticario)
+  const [grupoDiv, setGrupoDiv] = React.useState("boticario");
+  const botiSet = React.useMemo(() => new Set((window.MOCK?.CONTAS_BOTICARIO || []).map(s => s.toLowerCase())), []);
   const inMonth = (c) => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === mes; };
-  const poolAll = React.useMemo(() => checkings.filter(c => H.norm(c.status) === "pending" && inMonth(c)), [checkings, mes]);
+  const poolAll = React.useMemo(() => {
+    var filtered = checkings.filter(c => H.norm(c.status) === "pending" && inMonth(c));
+    // BUG 3 fix: filtrar por grupo selecionado
+    if (grupoDiv === "boticario") {
+      filtered = filtered.filter(c => { var ct = (c.conta || "").toLowerCase(); return ct && botiSet.has(ct); });
+    } else if (grupoDiv === "uninter") {
+      filtered = filtered.filter(c => { var ct = (c.conta || "").toLowerCase(); return !ct || !botiSet.has(ct); });
+    }
+    return filtered;
+  }, [checkings, mes, grupoDiv]);
 
   // ── Por conta: cada conta pode ter MULTIPLOS responsaveis com quantidades ──
   const contasGrupo = React.useMemo(() => {
@@ -653,6 +664,15 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
           <div className="col" style={{ gap: 6, flex: 1 }}>
             <label className="eyebrow" style={{ fontSize: 10 }}>Mês da demanda</label>
             <select className="input" value={mes} onChange={e => setMes(e.target.value)} style={{ textTransform: "capitalize" }}>{monthOpts.map(m => <option key={m.v} value={m.v}>{m.label}</option>)}</select>
+          </div>
+          {/* BUG 3 fix: seletor de equipe pra admin nao misturar Boticario com Uninter */}
+          <div className="col" style={{ gap: 6, flex: 1 }}>
+            <label className="eyebrow" style={{ fontSize: 10 }}>Equipe</label>
+            <select className="input" value={grupoDiv} onChange={e => setGrupoDiv(e.target.value)}>
+              <option value="boticario">Boticario</option>
+              <option value="uninter">Uninter</option>
+              <option value="todos">Todos</option>
+            </select>
           </div>
         </div>
 
