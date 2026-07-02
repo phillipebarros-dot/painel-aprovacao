@@ -68,8 +68,7 @@
   function teamMembers(grupo) {
     return (window.MOCK?.users || []).filter(function (u) {
       if (u.role === "viewer") return false;
-      if (u.role === "admin") return false; // admin nao e membro, e gestor
-      // So mostra quem tem grupo EXPLICITAMENTE definido como esse grupo
+      // Admins e analysts com grupo definido aparecem na equipe
       return u.grupo === grupo;
     });
   }

@@ -295,6 +295,11 @@ function ScreenUsers({ onToast, viewMode, checkings = [] }) {
     const email = usr?.email || id; // USAR EMAIL, nao hash ID
     setUsers(users.map(u => u.id === id ? { ...u, grupo } : u));
     setDetail(d => d && d.id === id ? { ...d, grupo } : d);
+    // Sincronizar com window.MOCK.users pra producao/divisao refletir imediatamente
+    if (window.MOCK?.users) {
+      const mu = window.MOCK.users.find(u => u.id === id || u.email === email);
+      if (mu) mu.grupo = grupo;
+    }
     // FIX (02/jul): enviar EMAIL pro n8n (hash ID nao existe no BigQuery)
     window.MOCK?.saveGrupo?.(email, grupo)?.then?.(() => {
       onToast?.({ type: "success", message: "Grupo de " + (usr?.nome || email).split(" ")[0] + " salvo no servidor." });
