@@ -812,6 +812,74 @@ body:has(.login-split)::before { display: none; }
 .login-remember .box { width: 17px; height: 17px; border-radius: 5px; border: 1.5px solid #CCC; display: grid; place-items: center; transition: all 160ms var(--ease); background: #fff; }
 .login-remember .box.on { background: #1A1A1A; border-color: #1A1A1A; color: #fff; }
 
+/* ════════ Responsive — Produção (Phillipe 00:04:50: "ajustar vários tamanhos de monitor") ════════ */
+
+/* Large desktop: relax table widths */
+@media (min-width: 1600px) {
+  .page { max-width: 1640px; }
+}
+
+/* Medium screens: tablet landscape, small laptops */
+@media (max-width: 1100px) {
+  .page { padding: 32px 20px 56px; }
+  .page-head { gap: 16px; row-gap: 12px; }
+  .page-head .row { flex-wrap: wrap; gap: 8px; }
+  .tbl-planilha { font-size: 11.5px; }
+  .tbl-planilha colgroup { display: none; }
+  .tbl-planilha th, .tbl-planilha td { padding: 5px 6px; }
+  .plan-tabs { padding: 5px 6px 6px; gap: 2px; }
+  .plan-tab { font-size: 11px; padding: 5px 10px; }
+  .plan-tab-n { font-size: 9.5px; padding: 1px 5px; }
+}
+
+/* Narrow: tablet portrait, phones */
+@media (max-width: 768px) {
+  .page { padding: 20px 12px 48px; }
+  .page-head { flex-direction: column; align-items: stretch; gap: 12px; }
+  .page-head .row { justify-content: flex-start; }
+  .grid-cols-4 { grid-template-columns: 1fr; }
+  .grid-cols-3 { grid-template-columns: 1fr; }
+  .grid-cols-2 { grid-template-columns: 1fr; }
+
+  /* KPIs */
+  .kpi { padding: 12px 14px; }
+  .kpi-value { font-size: 24px; }
+  .kpi-meta { font-size: 11.5px; }
+
+  /* Tabela planilha: scroll horizontal */
+  .tbl-planilha { font-size: 11px; }
+  .card > div:has(.tbl-planilha) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Abas scroll */
+  .plan-tabs { flex-wrap: nowrap; overflow-x: auto; gap: 2px; padding: 4px 4px; }
+  .plan-tab { font-size: 10.5px; padding: 5px 8px; }
+
+  /* Equipe chips */
+  .card-pad div[style*="grid-template-columns: repeat(auto-fill"] { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; gap: 8px !important; }
+
+  /* Selects filtros menores */
+  .page-head select.input.sm { width: auto !important; min-width: 100px; max-width: 160px; font-size: 11px !important; height: 28px !important; }
+
+  /* Modal DividirDemanda */
+  .modal.content { width: 100vw !important; max-width: 100vw !important; border-radius: 12px 12px 0 0; position: fixed; bottom: 0; left: 0; right: 0; max-height: 90vh !important; }
+  .div-conta-row { gap: 6px !important; }
+  .div-conta-row .row.gap-2 { flex-wrap: wrap; }
+  .div-conta-row select.input { min-width: 120px; font-size: 11px !important; }
+  .div-conta-row input[type="number"].input { width: 52px !important; }
+}
+
+/* Extra narrow: phone portrait */
+@media (max-width: 480px) {
+  .page { padding: 14px 8px 40px; }
+  .page-head h1.display-1 { font-size: 20px; }
+  .kpi-value { font-size: 20px; }
+  .plan-tab { font-size: 10px; padding: 4px 6px; }
+  .tbl-planilha th, .tbl-planilha td { padding: 4px 4px; font-size: 10.5px; }
+  .card-head { padding: 10px 12px; gap: 8px; }
+  .card-head .h2 { font-size: 14px; }
+  .card-pad { padding: 12px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

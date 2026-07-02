@@ -127,9 +127,10 @@
       }
     }
 
-    // BUG 6 fix: analyst ve SOMENTE PIs atribuidos a ele.
-    // Admin ve tudo do grupo (pra distribuir e supervisionar).
-    if (user?.role === "analyst") {
+    // BUG 6 fix: QUALQUER usuario que NAO seja admin ve SOMENTE PIs atribuidos a ele.
+    // Admin (Marlene/Anne) ve tudo do grupo pra distribuir e supervisionar.
+    // Regra do Phillipe (01/jul 00:17:45): "Ninguém vai ver. Rose não vai ver."
+    if (user?.role !== "admin") {
       var nm = (user.nome || user.name || "").trim().toLowerCase();
       var em = (user.email || "").trim().toLowerCase();
       if (nm || em) {

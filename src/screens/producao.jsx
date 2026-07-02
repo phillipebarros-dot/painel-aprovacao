@@ -105,8 +105,23 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const colorOf = (name) => (window.MOCK.users.find(u => u.name === name)?.color) || "#0E7490";
 
   // REQ EQUIPE: derive equipe do grupo do usuario logado
+  // BUG 2 fix (01/jul Marlene): admin com grupo="todos" precisa ver membros de TODOS os grupos
   const equipe = React.useMemo(() => {
-    const membros = window.MOCK?.teamMembers?.(currentUser?.grupo || "boticario") || [];
+    const grupo = currentUser?.grupo || "boticario";
+    let membros;
+    if (grupo === "todos" && isManager) {
+      // Admin "todos": agregar membros de todos os grupos conhecidos
+      const seen = new Set();
+      membros = [];
+      ["boticario", "kauana"].forEach(g => {
+        (window.MOCK?.teamMembers?.(g) || []).forEach(u => {
+          const key = u.email || u.nome || u.name;
+          if (!seen.has(key)) { seen.add(key); membros.push(u); }
+        });
+      });
+    } else {
+      membros = window.MOCK?.teamMembers?.(grupo) || [];
+    }
     return membros.map(u => {
       const nm = (u.nome || u.name || "").trim().toLowerCase();
       const em = (u.email || "").trim().toLowerCase();
@@ -125,7 +140,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const team = React.useMemo(() => (window.MOCK?.users || []).filter(u => u.role !== "viewer").map(u => u.nome || u.name), []);
   const contaAgg = React.useMemo(() => {
     const m = {};
-    const src = divMonth === "all" ? checkings : checkings.filter(c => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === divMonth; });
+    // REQ (01/jul 00:22:06 Phillipe): filtros compartilhados entre todos os modos de visualizacao
+    const src = divMonth === "all" ? filteredCheckings : filteredCheckings.filter(c => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === divMonth; });
     src.forEach(c => {
       const k = c.conta || "Sem conta";
       if (!m[k]) m[k] = { conta: k, total: 0, pend: 0, resp: {} };
@@ -144,18 +160,18 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
       return ia - ib;
     });
     return arr;
-  }, [checkings, divMonth]);
+  }, [filteredCheckings, divMonth]);
   // REQ 5 (01/07): mes fechado como seletor principal. 12 meses.
   const divMonths = React.useMemo(() => H.recentMonths(12), []);
   const divTotalPIs = React.useMemo(() => contaAgg.reduce((s, r) => s + r.total, 0), [contaAgg]);
   const activeConta = divConta || (contaAgg[0] && contaAgg[0].conta);
   const divRows = React.useMemo(() => {
-    const src = divMonth === "all" ? checkings : checkings.filter(c => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === divMonth; });
+    const src = divMonth === "all" ? filteredCheckings : filteredCheckings.filter(c => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === divMonth; });
     var rows = src.filter(c => (c.conta || "Sem conta") === activeConta);
     // REQ 1 (01/07): aplicar filtros por coluna
     rows = window.applyColumnFilters(rows, colFDiv.filters);
     return rows;
-  }, [checkings, divMonth, activeConta, colFDiv.filters]);
+  }, [filteredCheckings, divMonth, activeConta, colFDiv.filters]);
   const assignOne = (id, name) => { onAssign && onAssign({ [id]: name }); onToast && onToast({ type: "success", message: `PI atribuído a ${name.split(" ")[0]}` }); };
   const assignConta = (conta, name) => {
     const map = {}; checkings.forEach(c => { if ((c.conta || "Sem conta") === conta) map[c.submission_id] = name; });
@@ -208,12 +224,12 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
         <div className="card card-pad" style={{ marginBottom: "var(--gap)", padding: "10px 14px", background: "var(--info-soft)", border: "1px solid rgba(37,99,235,0.2)" }}>
           <div className="row gap-2" style={{ alignItems: "center" }}><Icon name="lock" size={14} style={{ color: "var(--info)" }}/><span style={{ fontSize: 12.5, color: "var(--ink-2)" }}>Indicadores individuais visíveis apenas para gestores. Uso de gestão, não exposto à equipe, conforme boas práticas de privacidade (LGPD e CLT).</span></div>
         </div>
-        {/* Totais */}
+        {/* Totais — Bug 1 fix (01/jul): separar distribuidos vs total */}
         <div className="grid-cols-4 stagger" style={{ marginBottom: "var(--gap)" }}>
-          <div className="kpi"><div className="kpi-label">Demanda total</div><div className="kpi-value"><CountUp value={prod.totals.demanda}/></div><div className="kpi-meta">distribuída entre <strong>{prod.rows.length}</strong> pessoas</div></div>
+          <div className="kpi"><div className="kpi-label">Distribuídos</div><div className="kpi-value"><CountUp value={filteredCheckings.filter(c => c.assigned_to).length}/></div><div className="kpi-meta">de <strong>{filteredCheckings.length}</strong> total · entre <strong>{prod.rows.length}</strong> pessoas</div></div>
           <div className="kpi"><div className="kpi-label">Baixados · {periodLabel}</div><div className="kpi-value" style={{ color: "var(--accent)" }}><CountUp value={prod.totals.baixados}/></div><div className="kpi-meta"><strong>{prod.totals.approved}</strong> aprovados · <strong>{prod.totals.rejected}</strong> reprovados</div></div>
           <div className="kpi"><div className="kpi-label">Pendentes</div><div className="kpi-value" style={{ color: prod.totals.pendentes ? "var(--warn)" : "var(--ink)" }}><CountUp value={prod.totals.pendentes}/></div><div className="kpi-meta">aguardando baixa</div></div>
-          <div className="kpi"><div className="kpi-label">Conclusão</div><div className="kpi-value"><CountUp value={prod.totals.demanda ? Math.round((prod.totals.baixados / prod.totals.demanda) * 100) : 0}/><span className="unit">%</span></div><div className="kpi-meta">da demanda baixada</div></div>
+          <div className="kpi"><div className="kpi-label">Conclusão</div><div className="kpi-value"><CountUp value={prod.totals.demanda ? Math.round((prod.totals.baixados / prod.totals.demanda) * 100) : 0}/><span className="unit">%</span></div><div className="kpi-meta">da demanda distribuída</div></div>
         </div>
 
         {/* REQ EQUIPE 1.2: bloco equipe do periodo (admin only) */}
@@ -529,7 +545,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
         </div>
 
         {/* Dashboard pessoal do analista */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: "var(--gap)", marginBottom: "var(--gap)" }}>
+        <div className="grid-cols-3 stagger" style={{ marginBottom: "var(--gap)" }}>
           <div className="card">
             <div className="card-head"><div className="col" style={{ gap: 2 }}><div className="eyebrow">Minha carga</div><div className="h2">Onde minha fila está parada</div></div><span className="cell-mono muted">{myAging.total} na fila</span></div>
             <div className="card-pad"><LoadAnalysis data={myAging} onPick={() => myPending[0] && onOpenReview(myPending[0])}/></div>
@@ -595,10 +611,41 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   // BUG 3 fix: admin pode escolher qual equipe dividir (evita UNINTER no modal do Boticario)
   const [grupoDiv, setGrupoDiv] = React.useState("boticario");
   const botiSet = React.useMemo(() => new Set((window.MOCK?.CONTAS_BOTICARIO || []).map(s => s.toLowerCase())), []);
+
+  // ── Carregar dados da pauta cruzada (BigQuery) ──
+  const [pautaData, setPautaData] = React.useState([]);
+  const [pautaLoading, setPautaLoading] = React.useState(false);
+  React.useEffect(() => {
+    const API = window.PainelAPI;
+    if (!API?.getPautaCruzada) return;
+    setPautaLoading(true);
+    API.getPautaCruzada(mes).then(res => {
+      if (res?.success && res?.pauta) setPautaData(res.pauta);
+      else setPautaData([]);
+    }).catch(() => setPautaData([])).finally(() => setPautaLoading(false));
+  }, [mes]);
+
+  // ── Stats da pauta cruzada (o que a Marlene pediu) ──
+  const pautaStats = React.useMemo(() => {
+    if (!pautaData.length) return null;
+    const filtrado = grupoDiv === "todos" ? pautaData :
+      grupoDiv === "boticario" ? pautaData.filter(p => botiSet.has((p.conta || "").toLowerCase())) :
+      pautaData.filter(p => !botiSet.has((p.conta || "").toLowerCase()));
+    const total = filtrado.length;
+    const recebidos = filtrado.filter(p => p.status_formulario === "recebido").length;
+    const aguardando = filtrado.filter(p => p.status_formulario === "aguardando").length;
+    const baixados = filtrado.filter(p => p.status_checking === "approved").length;
+    const pendentes = filtrado.filter(p => p.status_checking === "pending").length;
+    return { total, recebidos, aguardando, baixados, pendentes };
+  }, [pautaData, grupoDiv]);
+
   const inMonth = (c) => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === mes; };
+  // BUG 3 fix (01/jul Marlene): incluir TODOS os PIs do mês, não só pending.
+  // A divisão é sobre QUEM é responsável, não sobre status do checking.
+  // PI aprovado/reprovado também precisa ter responsável atribuído.
   const poolAll = React.useMemo(() => {
-    var filtered = checkings.filter(c => H.norm(c.status) === "pending" && inMonth(c));
-    // BUG 3 fix: filtrar por grupo selecionado
+    var filtered = checkings.filter(c => inMonth(c));
+    // Filtrar por grupo selecionado
     if (grupoDiv === "boticario") {
       filtered = filtered.filter(c => { var ct = (c.conta || "").toLowerCase(); return ct && botiSet.has(ct); });
     } else if (grupoDiv === "uninter") {
@@ -615,6 +662,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   }, [poolAll]);
   // contaSplit: { "BOT SP": [{ name: "Marlene", qty: 76 }, { name: "Brenda", qty: 41 }] }
   const [contaSplit, setContaSplit] = React.useState({});
+  const [contaSearch, setContaSearch] = React.useState("");
   React.useEffect(() => {
     const init = {};
     contasGrupo.forEach(g => {
@@ -665,6 +713,33 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
             <label className="eyebrow" style={{ fontSize: 10 }}>Mês da demanda</label>
             <select className="input" value={mes} onChange={e => setMes(e.target.value)} style={{ textTransform: "capitalize" }}>{monthOpts.map(m => <option key={m.v} value={m.v}>{m.label}</option>)}</select>
           </div>
+
+        {/* ── Stats da pauta cruzada (visão Marlene/Anne) ── */}
+        {pautaLoading && <p className="body-xs muted" style={{ margin: 0 }}>Carregando dados da pauta...</p>}
+        {pautaStats && (
+          <div className="row gap-3" style={{ padding: "8px 12px", background: "var(--surface-2)", borderRadius: 8, flexWrap: "wrap" }}>
+            <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
+              <span style={{ fontSize: 18, fontWeight: 700 }}>{pautaStats.total}</span>
+              <span className="body-xs muted">Total pauta</span>
+            </div>
+            <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--accent)" }}>{pautaStats.recebidos}</span>
+              <span className="body-xs muted">Recebidos</span>
+            </div>
+            <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--warn)" }}>{pautaStats.aguardando}</span>
+              <span className="body-xs muted">Aguardando</span>
+            </div>
+            <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--success)" }}>{pautaStats.baixados}</span>
+              <span className="body-xs muted">Baixados</span>
+            </div>
+            <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--alert)" }}>{pautaStats.pendentes}</span>
+              <span className="body-xs muted">Pendentes</span>
+            </div>
+          </div>
+        )}
           {/* BUG 3 fix: seletor de equipe pra admin nao misturar Boticario com Uninter */}
           <div className="col" style={{ gap: 6, flex: 1 }}>
             <label className="eyebrow" style={{ fontSize: 10 }}>Equipe</label>
@@ -677,9 +752,11 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
         </div>
 
         <p className="body-sm" style={{ margin: 0 }}>Cada conta pode ser dividida entre multiplas pessoas. Defina a quantidade de PIs para cada responsavel.</p>
+          {/* REQ (01/jul 00:18:38 Phillipe): busca para filtrar contas no modal */}
+          <input className="input" placeholder="Buscar conta..." value={contaSearch} onChange={e => setContaSearch(e.target.value)} style={{ marginBottom: 8, fontSize: 13 }}/>
           {contasGrupo.length === 0 ? <Empty title="Sem PIs pendentes neste mes" icon="layers"/> : (
             <div className="div-conta-list">
-              {contasGrupo.map(g => {
+              {contasGrupo.filter(g => !contaSearch || g.conta.toLowerCase().includes(contaSearch.toLowerCase())).map(g => {
                 const splits = contaSplit[g.conta] || [];
                 const totalAssigned = splits.reduce((s, x) => s + (x.qty || 0), 0);
                 const remaining = g.pis.length - totalAssigned;

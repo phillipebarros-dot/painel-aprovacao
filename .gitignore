@@ -40,6 +40,7 @@ fix_security_headers.py
 # REFERENCIA INTERNA — cópia do outro sistema
 # ===================================================
 _ref_sistema_checking/
+integracoes_temp/
 
 # ===================================================
 # SISTEMA OPERACIONAL / IDE
