@@ -379,15 +379,27 @@ function App() {
   const dismissToast = aUseCallback((id) => setToasts(p => p.filter(t => t.id !== id)), []);
 
   // Carrega dados reais do n8n/BigQuery
+  // Backoff: se o servidor cair (502), aumenta o intervalo pra nao spammar
+  const backoffRef = React.useRef({ fails: 0, lastErrorTs: 0 });
   const loadData = aUseCallback(async () => {
     try {
       await window.MOCK.loadReal();
       setCheckings(window.MOCK.checkings.map(c => ({ ...c })));
       setOnlineUsers(window.MOCK.onlineUsers || []);
-    } catch (e) { addToast({ type: "error", message: "Falha ao carregar dados: " + (e.message || "servidor") }); }
+      // Sucesso: resetar backoff
+      backoffRef.current.fails = 0;
+    } catch (e) {
+      backoffRef.current.fails++;
+      // Dedup: so mostra toast se o ultimo erro foi ha mais de 2 min
+      const now = Date.now();
+      if (now - backoffRef.current.lastErrorTs > 120000) {
+        backoffRef.current.lastErrorTs = now;
+        addToast({ type: "error", message: "Servidor indisponivel. Tentando reconectar..." });
+      }
+    }
   }, [addToast]);
 
-  // Restaura sessao + carrega dados; revalida online a cada 30s
+  // Restaura sessao + carrega dados; revalida online com backoff
   aUseEffect(() => {
     const boot = () => {
       if (window.PainelAPI && window.PainelAPI.isLoggedIn()) {
@@ -400,8 +412,16 @@ function App() {
   }, [loadData, addToast]);
   aUseEffect(() => {
     if (!user) return;
-    const id = setInterval(loadData, 30000);
-    return () => clearInterval(id);
+    // Backoff: 30s normal, dobra a cada falha (max 5min)
+    const getInterval = () => {
+      const fails = backoffRef.current.fails;
+      if (fails === 0) return 30000;
+      return Math.min(30000 * Math.pow(2, fails), 300000);
+    };
+    let timer;
+    const schedule = () => { timer = setTimeout(async () => { await loadData(); schedule(); }, getInterval()); };
+    schedule();
+    return () => clearTimeout(timer);
   }, [user, loadData]);
 
   const setDensity = (d) => { setDensityState(d); localStorage.setItem("painel_density", d); document.documentElement.setAttribute("data-density", d); };
