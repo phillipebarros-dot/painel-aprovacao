@@ -178,17 +178,15 @@
     return "nao_definido";
   }
 
-  // REQ EQUIPE: salva grupo do usuario no localStorage (cache local)
-  // + chama API para persistir no BigQuery
+  // REQ EQUIPE: salva grupo do usuario DIRETO no BigQuery via n8n.
+  // FIX (02/jul): Removido localStorage. BigQuery e a unica fonte de verdade.
   function saveGrupo(userId, grupo) {
-    try {
-      var map = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}");
-      map[userId] = grupo;
-      localStorage.setItem("painel_user_grupos", JSON.stringify(map));
-    } catch {}
-    // Persistir no BigQuery via n8n
-    window.PainelAPI?.updateUserGrupo?.(userId, grupo).catch(function(e) {
-      console.warn("[saveGrupo] Falha ao salvar no BigQuery:", e.message || e);
+    // Envia com EMAIL do usuario (mais confiavel que hash ID)
+    return window.PainelAPI?.updateUserGrupo?.(userId, grupo).then(function() {
+      console.info("[saveGrupo OK]", userId, grupo);
+    }).catch(function(e) {
+      console.error("[saveGrupo FALHOU]", userId, grupo, e.message || e);
+      throw e;
     });
   }
 
@@ -282,65 +280,17 @@
     ]);
     if (checkingsRes.status === "fulfilled" && checkingsRes.value?.checkings) {
       MOCK.checkings = checkingsRes.value.checkings.map(normalizeChecking);
-      // BUG 1+5 fix: mesclar assignments do localStorage (fallback quando n8n cai)
-      try {
-        var savedAssign = JSON.parse(localStorage.getItem("painel_assignments") || "{}");
-        if (Object.keys(savedAssign).length > 0) {
-          var needsResync = [];
-          MOCK.checkings = MOCK.checkings.map(function(c) {
-            // So aplica fallback se o checking NAO tem assigned_to do BigQuery
-            if (!c.assigned_to && savedAssign[c.submission_id]) {
-              // FIX v2 (02/jul): re-enviar pro BigQuery (auto-sync)
-              needsResync.push({ submission_id: c.submission_id, n_pi: c.n_pi, who: savedAssign[c.submission_id], conta: c.conta || '' });
-              return Object.assign({}, c, { assigned_to: savedAssign[c.submission_id] });
-            }
-            // Se o BigQuery ja tem assigned_to, limpa o localStorage pra esse PI
-            if (c.assigned_to && savedAssign[c.submission_id]) {
-              delete savedAssign[c.submission_id];
-            }
-            return c;
-          });
-          // Auto-sync: re-enviar assignments orfaos pro BigQuery
-          if (needsResync.length > 0 && window.PainelAPI?.assignResponsible) {
-            var mes = new Date().toISOString().slice(0, 7);
-            needsResync.forEach(function(r) {
-              window.PainelAPI.assignResponsible(r.n_pi, r.who, mes, r.conta).catch(function() {});
-            });
-            console.info("[auto-sync] Re-enviando " + needsResync.length + " assignments orfaos pro BigQuery");
-          }
-          // Atualiza localStorage removendo os ja sincronizados
-          localStorage.setItem("painel_assignments", JSON.stringify(savedAssign));
-        }
-      } catch {}
+      // FIX (02/jul): BigQuery e a UNICA fonte de verdade pra assignments.
+      // Nao usa mais localStorage. Se nao ta no BigQuery, nao existe.
     }
     if (usersRes.status === "fulfilled" && usersRes.value?.users) {
       MOCK.users = usersRes.value.users.map(u => {
         const nome = u.name || u.email || "";
-        // FIX v3 (02/jul): BigQuery e fonte da verdade, mas localStorage nao e descartado.
-        // Se BigQuery tem grupo valido, usa ele (todos os admins veem o mesmo).
-        // Se BigQuery NAO tem, usa localStorage E re-envia pro BigQuery (auto-sync).
+        // FIX (02/jul): BigQuery e a UNICA fonte de verdade pra grupo.
+        // Nao usa mais localStorage. Se nao ta no BigQuery, usa resolverGrupoInicial.
         var grupoBackend = (u.grupo && u.grupo !== "nao_definido") ? u.grupo : null;
-        var grupoSalvo = null;
-        try {
-          var _map = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}");
-          // Buscar por TODAS as chaves possiveis: id, email, nome
-          grupoSalvo = _map[u.id] || _map[u.email] || _map[u.name] || _map[u.nome] || null;
-        } catch {}
-        // Auto-sync: localStorage tem grupo mas BigQuery nao → re-enviar UMA VEZ com email
-        if (!grupoBackend && grupoSalvo && !window._grupoSyncDone?.[u.email]) {
-          if (!window._grupoSyncDone) window._grupoSyncDone = {};
-          window._grupoSyncDone[u.email] = true; // Marca ANTES de enviar pra nao loopar
-          console.info("[auto-sync] BigQuery sem grupo para", u.email, "localStorage tem:", grupoSalvo, "-> enviando via email (unico)");
-          // Envia com EMAIL (unico, garantido existir no BigQuery)
-          window.PainelAPI?.updateUserGrupo?.(u.email, grupoSalvo).then(function() {
-            console.info("[auto-sync OK]", u.email, grupoSalvo);
-          }).catch(function(e) {
-            console.error("[auto-sync FALHOU]", u.email, e.message || e);
-            delete window._grupoSyncDone[u.email]; // Permite retry no proximo ciclo
-          });
-        }
         var grupoInicial = resolverGrupoInicial(nome, u.role);
-        var grupo = grupoBackend || grupoSalvo || grupoInicial;
+        var grupo = grupoBackend || grupoInicial;
         return {
           ...u, nome: nome, name: nome, grupo: grupo,
           color: "#0E7490", last_seen: u.lastSeen || u.created_at || Date.now(),

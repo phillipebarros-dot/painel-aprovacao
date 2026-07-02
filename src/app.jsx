@@ -553,24 +553,36 @@ function App() {
     : route === "approvals" ? <ScreenApprovals currentUser={user} checkings={scopedCheckings} stats={stats} onOpenReview={openReview} onRefresh={loadData} onToast={addToast} onDecide={handleDecide} onStartTriage={startTriage} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onSetResponsavel={(id, who) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, assigned_to: who, approval_user: c.status !== "pending" ? who : c.approval_user } : c)); window.PainelAPI?.assignResponsible(id, who, new Date().toISOString().slice(0, 7)).catch(e => addToast({ type: "error", message: "Falha ao atribuir: " + (e.message || "") })); }}/>
     : route === "alerts" ? <ScreenAlerts checkings={scopedCheckings} currentUser={user} onOpenReview={openReview} onStartTriage={startTriage} onDecide={handleDecide} onToast={addToast} viewMode={curView} preAlerts={alerts}/>
     : route === "producao" ? <ScreenProducao checkings={scopedCheckings} currentUser={user} onOpenReview={openReview} onToast={addToast} viewMode={curView} onSetCheckStatus={(id, sc) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, statusCheck: sc } : c)); window.PainelAPI?.updateCheckingStatus(id, sc, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar status: " + (e.message || "") })); }} onSetComentario={(id, txt) => { setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, comentario: txt } : c)); window.PainelAPI?.addComment(id, txt, user.nome || user.name).catch(e => addToast({ type: "error", message: "Falha ao salvar comentário: " + (e.message || "") })); }} onAssign={(map) => {
+        // FIX (02/jul): SEMPRE salvar no n8n/BigQuery. NUNCA salvar no localStorage.
+        // Se n8n falhar, reverter o estado local e mostrar erro claro.
         const mes = new Date().toISOString().slice(0, 7);
+        // Update otimista local
         setCheckings(prev => prev.map(c => map[c.submission_id] ? { ...c, assigned_to: map[c.submission_id] } : c));
-        // BUG 1+5 fix: salvar no localStorage como fallback (persiste mesmo se n8n cair)
-        try {
-          const saved = JSON.parse(localStorage.getItem("painel_assignments") || "{}");
-          Object.assign(saved, map);
-          localStorage.setItem("painel_assignments", JSON.stringify(saved));
-        } catch {}
-        let apiErrors = 0;
         const entries = Object.entries(map);
-        // B1 fix (01/jul): enviar n_pi (nao submission_id) para o MERGE no BigQuery.
-        // O map usa submission_id como key (para update otimista local), mas a API
-        // e a tabela pi_responsaveis usam n_pi como chave de cruzamento.
+        let okCount = 0, errCount = 0;
+        const total = entries.length;
         entries.forEach(([id, who]) => {
           const ck = checkings.find(c => c.submission_id === id);
           const nPi = ck?.n_pi || id;
           const conta = ck?.conta || '';
-          window.PainelAPI?.assignResponsible(nPi, who, mes, conta).catch(() => { apiErrors++; if (apiErrors === 1) addToast({ type: "warn", message: "Servidor indisponivel. Divisao salva localmente, sera sincronizada quando o servidor voltar." }); });
+          window.PainelAPI?.assignResponsible(nPi, who, mes, conta).then(() => {
+            okCount++;
+            if (okCount + errCount === total) {
+              if (errCount === 0) {
+                addToast({ type: "success", message: okCount + " PI" + (okCount > 1 ? "s" : "") + " salvo" + (okCount > 1 ? "s" : "") + " no servidor." });
+              } else {
+                addToast({ type: "warn", message: okCount + " salvos, " + errCount + " falharam. Recarregue e tente novamente." });
+              }
+            }
+          }).catch((e) => {
+            errCount++;
+            console.error("[assign FALHOU]", nPi, who, e.message || e);
+            // Reverter o assignment local que falhou
+            setCheckings(prev => prev.map(c => c.submission_id === id ? { ...c, assigned_to: ck?.assigned_to || "" } : c));
+            if (okCount + errCount === total) {
+              addToast({ type: "error", message: errCount + " atribuicao" + (errCount > 1 ? "es" : "") + " falharam. Verifique se voce e admin." });
+            }
+          });
         });
       }}/>
     : route === "reports" ? <ScreenReports checkings={scopedCheckings} currentUser={user} onToast={addToast}/>
