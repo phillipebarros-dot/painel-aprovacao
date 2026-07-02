@@ -3,6 +3,17 @@
    tudo comeca vazio e e preenchido pelo n8n/BigQuery apos o login.
    window.PainelAPI e injetado por um <script type="module"> no HTML. */
 (function () {
+  // SEC: F2 — Sanitizar avatar URL contra XSS (javascript:, data: malicioso)
+  function secSanitizeAvatar(url, fallbackInitials) {
+    if (!url || typeof url !== 'string') return fallbackInitials || '';
+    var s = url.trim();
+    if (s.length > 512) return fallbackInitials || '';
+    if (/^https:\/\//i.test(s)) return s;
+    if (/^data:image\//i.test(s)) return s;
+    // Rejeitar javascript:, http://, data: nao-imagem, qualquer outro scheme
+    return fallbackInitials || '';
+  }
+
   // Constantes de dominio (NAO sao dados falsos — sao categorias fixas do negocio)
   const MEIOS = ["TV Aberta", "Rádio", "Impresso", "Mídia Exterior", "Digital"];
 
@@ -294,7 +305,8 @@
         return {
           ...u, nome: nome, name: nome, grupo: grupo,
           color: "#0E7490", last_seen: u.lastSeen || u.created_at || Date.now(),
-          avatar: (u.avatar && String(u.avatar).startsWith("http")) ? u.avatar : (u.googlePic || u.google_pic || nome.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()),
+          // SEC: F2 — sanitizar avatar contra XSS
+          avatar: secSanitizeAvatar(u.avatar || u.googlePic || u.google_pic, nome.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()),
         };
       });
     }
