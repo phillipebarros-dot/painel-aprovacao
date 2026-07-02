@@ -832,6 +832,20 @@ body:has(.login-split)::before { display: none; }
   .plan-tab-n { font-size: 9.5px; padding: 1px 5px; }
 }
 
+/* R5 fix (01/jul): 1280x720 at 125% zoom = effective 1024px viewport */
+@media (max-width: 1440px) {
+  /* Modal DividirDemanda: wider para nao truncar nomes */
+  .modal.content { width: min(720px, 95vw) !important; }
+  .modal.content select.input { min-width: 160px; }
+  /* Coluna responsavel na planilha: nao truncar */
+  .plan-select { min-width: 120px; }
+  /* Equipe grid: menores em telas apertadas */
+  .card-pad div[style*="grid-template-columns: repeat(auto-fill"] {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+  }
+  /* KPIs grid em 2 colunas se nao couber 4 */
+  .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+}
 /* Narrow: tablet portrait, phones */
 @media (max-width: 768px) {
   .page { padding: 20px 12px 48px; }

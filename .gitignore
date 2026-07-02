@@ -35,6 +35,9 @@ pentest_full.py
 pentest_results.json
 sqlmap_request.txt
 fix_security_headers.py
+fix_encoding.py
+fix_*.py
+fix_*.sh
 
 # ===================================================
 # REFERENCIA INTERNA — cópia do outro sistema

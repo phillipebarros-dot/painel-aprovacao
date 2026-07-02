@@ -71,22 +71,23 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
     });
   }, [checkings, filterConta, filterCliente, filterMeio, period, sinceTs, untilTs, customFrom, customTo]);
 
-  const prod = React.useMemo(() => H.teamProductivity(filteredCheckings, period === "custom" ? 0 : sinceTs), [filteredCheckings, sinceTs, period]);
+  // B3 fix (01/jul): passar nomes cadastrados para separar pessoas reais de fantasma
+  const registeredNames = React.useMemo(() => (window.MOCK?.users || []).filter(u => u.role !== "viewer").map(u => u.nome || u.name), []);
+  const prod = React.useMemo(() => H.teamProductivity(filteredCheckings, period === "custom" ? 0 : sinceTs, registeredNames), [filteredCheckings, sinceTs, period, registeredNames]);
   const maxBaixados = Math.max(1, ...prod.rows.map(r => r.baixados));
   const periodLabel = period === "custom" ? (customFrom && customTo ? `${new Date(customFrom).toLocaleDateString("pt-BR")} – ${new Date(customTo).toLocaleDateString("pt-BR")}` : "período personalizado") : { hoje: "hoje", semana: "últimos 7 dias", mes: "últimos 30 dias", tudo: "todo o período" }[period];
 
   // colaborador: minha fila
   const myName = currentUser?.nome || currentUser?.name;
-  // Bug 4.11 fix: normalizar comparacao (trim, lowercase) e casar por nome ou email
+  // B4 fix (01/jul): usar H.sameUser centralizado
   const mine = React.useMemo(() => {
-    const nm = (myName || '').trim().toLowerCase();
-    const em = (currentUser?.email || '').trim().toLowerCase();
     return checkings.filter(c => {
-      const a = (c.assigned_to || '').trim().toLowerCase();
-      return a && (a === nm || (em && a === em));
+      const a = c.assigned_to || '';
+      return a && (H.sameUser(a, myName) || (currentUser?.email && H.sameUser(a, currentUser.email)));
     });
   }, [checkings, myName, currentUser]);
-  const myStats = prod.rows.find(r => r.name === myName);
+  // B4 fix: myStats com sameUser
+  const myStats = prod.rows.find(r => H.sameUser(r.name, myName));
   const myPending = mine.filter(c => H.norm(c.status) === "pending").sort((a, b) => a.submittedAt - b.submittedAt);
   // dashboard pessoal do analista
   const myAging = React.useMemo(() => H.agingBuckets(mine), [mine]);
@@ -122,12 +123,13 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
     } else {
       membros = window.MOCK?.teamMembers?.(grupo) || [];
     }
+    // B4 fix (01/jul): usar H.sameUser centralizado
     return membros.map(u => {
-      const nm = (u.nome || u.name || "").trim().toLowerCase();
-      const em = (u.email || "").trim().toLowerCase();
+      const uName = u.nome || u.name || "";
+      const uEmail = u.email || "";
       const meus = checkings.filter(c => {
-        const a = (c.assigned_to || "").trim().toLowerCase();
-        return a && (a === nm || (em && a === em));
+        const a = c.assigned_to || "";
+        return a && (H.sameUser(a, uName) || (uEmail && H.sameUser(a, uEmail)));
       });
       const baixados = meus.filter(c => c.approvedAt || c.rejectedAt).length;
       return { ...u, carga: meus.length, baixados, pendentes: meus.filter(c => H.norm(c.status) === "pending").length };
@@ -138,6 +140,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
 
   // Divisão por conta (espelha as abas da planilha da Marlene): agrupa PIs por conta
   const team = React.useMemo(() => (window.MOCK?.users || []).filter(u => u.role !== "viewer").map(u => u.nome || u.name), []);
+  // V1 fix (01/jul): contaAgg e divRows agora nao filtram por conta ativa.
+  // A conta aparece como coluna filtravel (ColumnFilter), sem abas no rodape.
   const contaAgg = React.useMemo(() => {
     const m = {};
     // REQ (01/jul 00:22:06 Phillipe): filtros compartilhados entre todos os modos de visualizacao
@@ -149,7 +153,6 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
       if (H.norm(c.status) === "pending") m[k].pend++;
       if (c.assigned_to) m[k].resp[c.assigned_to] = (m[k].resp[c.assigned_to] || 0) + 1;
     });
-    // REQ 6 (01/07): ordenar pelas contas fixas do Boticario (ordem do print da Marlene)
     var fixas = window.MOCK?.CONTAS_BOTICARIO || [];
     var arr = Object.values(m);
     arr.sort(function (a, b) {
@@ -164,14 +167,16 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   // REQ 5 (01/07): mes fechado como seletor principal. 12 meses.
   const divMonths = React.useMemo(() => H.recentMonths(12), []);
   const divTotalPIs = React.useMemo(() => contaAgg.reduce((s, r) => s + r.total, 0), [contaAgg]);
-  const activeConta = divConta || (contaAgg[0] && contaAgg[0].conta);
-  const divRows = React.useMemo(() => {
+  // V1 fix: divRows agora mostra TODOS os PIs (sem filtro por conta ativa),
+  // conta vira coluna filtravel via ColumnFilter.
+  const divRowsPreFilter = React.useMemo(() => {
     const src = divMonth === "all" ? filteredCheckings : filteredCheckings.filter(c => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === divMonth; });
-    var rows = src.filter(c => (c.conta || "Sem conta") === activeConta);
-    // REQ 1 (01/07): aplicar filtros por coluna
-    rows = window.applyColumnFilters(rows, colFDiv.filters);
-    return rows;
-  }, [filteredCheckings, divMonth, activeConta, colFDiv.filters]);
+    return src;
+  }, [filteredCheckings, divMonth]);
+  const divRows = React.useMemo(() => {
+    // REQ 1 (01/07): aplicar filtros por coluna (inclui conta como filtro)
+    return window.applyColumnFilters(divRowsPreFilter, colFDiv.filters);
+  }, [divRowsPreFilter, colFDiv.filters]);
   const assignOne = (id, name) => { onAssign && onAssign({ [id]: name }); onToast && onToast({ type: "success", message: `PI atribuído a ${name.split(" ")[0]}` }); };
   const assignConta = (conta, name) => {
     const map = {}; checkings.forEach(c => { if ((c.conta || "Sem conta") === conta) map[c.submission_id] = name; });
@@ -246,8 +251,13 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
               {equipe.map(m => {
                 const pct = m.carga ? (m.baixados / m.carga) : 0;
                 const acima = equipeAlvo > 0 && m.carga > equipeAlvo * 1.15;
+                // R1 fix (01/jul): clicar no membro filtra divisao por assigned_to
+                const drillDown = () => {
+                  colFDiv.setColumnFilter('assigned_to', [m.nome || m.name]);
+                  if (typeof onSetView === 'function') onSetView('divisao');
+                };
                 return (
-                  <div key={m.email || m.nome} className="card card-pad" style={{ padding: "12px 14px", border: acima ? "1px solid var(--warn)" : undefined }}>
+                  <div key={m.email || m.nome} className="card card-pad card-hover" style={{ padding: "12px 14px", border: acima ? "1px solid var(--warn)" : undefined, cursor: "pointer" }} onClick={drillDown} title={`Ver PIs de ${(m.nome || m.name || '').split(' ')[0]}`}>
                     <div className="row gap-2" style={{ alignItems: "center", marginBottom: 8 }}>
                       <Avatar user={m} size={28}/>
                       <div className="col" style={{ gap: 1, flex: 1, minWidth: 0 }}>
@@ -404,43 +414,48 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                   <option value="all">Todos os meses</option>
                   {divMonths.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </select>
-                <span className="cell-mono muted">{activeConta} {divRows.length} PIs</span>
+                <span className="cell-mono muted">{divRows.length} PIs</span>
               </div>
             </div>
+            {/* A2 fix (01/jul): FilterChipsBar FORA do table (HTML valido) */}
+            <FilterChipsBar filters={colFDiv.filters} onClear={(k) => colFDiv.setColumnFilter(k, [])} onClearAll={colFDiv.clearAll} total={divRowsPreFilter.length} shown={divRows.length} labels={{ conta: "Conta", cliente: "Cliente", veiculo: "Veiculo", meio: "Meio", assigned_to: "Responsavel" }}/>
             <div>
               <table className="tbl tbl-planilha" style={{ tableLayout: "fixed", width: "100%" }}>
                 <colgroup>
-                  <col style={{ width: "8%" }}/>
-                  <col style={{ width: "16%" }}/>
-                  <col style={{ width: "18%" }}/>
-                  <col style={{ width: "6%" }}/>
+                  <col style={{ width: "7%" }}/>
+                  <col style={{ width: "12%" }}/>
                   <col style={{ width: "14%" }}/>
-                  <col style={{ width: "15%" }}/>
-                  <col style={{ width: "18%" }}/>
+                  <col style={{ width: "16%" }}/>
+                  <col style={{ width: "5%" }}/>
+                  <col style={{ width: "12%" }}/>
+                  <col style={{ width: "13%" }}/>
+                  <col style={{ width: "16%" }}/>
                   <col style={{ width: "5%" }}/>
                 </colgroup>
-                {/* REQ 1 (01/07): FilterChipsBar + ColumnFilter nos headers */}
-                <FilterChipsBar filters={colFDiv.filters} onClear={(k) => colFDiv.setColumnFilter(k, [])} onClearAll={colFDiv.clearAll} total={checkings.length} shown={divRows.length} labels={{ cliente: "Cliente", veiculo: "Veiculo", meio: "Meio", assigned_to: "Responsavel" }}/>
+                {/* V1 fix (01/jul): conta como coluna filtravel, sem abas no rodape */}
                 <thead><tr>
                   <th>No PI</th>
-                  <ColumnFilter colKey="cliente" label="Cliente" rows={checkings} selected={colFDiv.filters.cliente || []} onSelect={colFDiv.setColumnFilter}>Cliente</ColumnFilter>
-                  <ColumnFilter colKey="veiculo" label="Veiculo" rows={checkings} selected={colFDiv.filters.veiculo || []} onSelect={colFDiv.setColumnFilter}>Veiculo</ColumnFilter>
-                  <ColumnFilter colKey="meio" label="Meio" rows={checkings} selected={colFDiv.filters.meio || []} onSelect={colFDiv.setColumnFilter}>Meio</ColumnFilter>
+                  <ColumnFilter colKey="conta" label="Conta" rows={divRowsPreFilter} selected={colFDiv.filters.conta || []} onSelect={colFDiv.setColumnFilter}>Conta</ColumnFilter>
+                  <ColumnFilter colKey="cliente" label="Cliente" rows={divRowsPreFilter} selected={colFDiv.filters.cliente || []} onSelect={colFDiv.setColumnFilter}>Cliente</ColumnFilter>
+                  <ColumnFilter colKey="veiculo" label="Veiculo" rows={divRowsPreFilter} selected={colFDiv.filters.veiculo || []} onSelect={colFDiv.setColumnFilter}>Veiculo</ColumnFilter>
+                  <ColumnFilter colKey="meio" label="Meio" rows={divRowsPreFilter} selected={colFDiv.filters.meio || []} onSelect={colFDiv.setColumnFilter}>Meio</ColumnFilter>
                   <th>Status</th>
-                  <ColumnFilter colKey="assigned_to" label="Responsavel" rows={checkings} selected={colFDiv.filters.assigned_to || []} onSelect={colFDiv.setColumnFilter}>Responsavel</ColumnFilter>
+                  <ColumnFilter colKey="assigned_to" label="Responsavel" rows={divRowsPreFilter} selected={colFDiv.filters.assigned_to || []} onSelect={colFDiv.setColumnFilter}>Responsavel</ColumnFilter>
                   <th>Comentario</th><th>Arq.</th>
                 </tr></thead>
                 <tbody>
                   {divRows.length === 0
-                    ? <tr><td colSpan={8}><div style={{ padding: 28 }}><Empty title="Sem PIs nesta conta/mês" hint="Troque a aba ou o mês" icon="layers"/></div></td></tr>
+                    ? <tr><td colSpan={9}><div style={{ padding: 28 }}><Empty title="Sem PIs com esses filtros" hint="Limpe os filtros ou troque o mes" icon="layers"/></div></td></tr>
                     : divRows.slice(0, divPage).map((c, i) => {
                       const SC = window.CHECK_STATUS || {}; const SCL = window.CHECK_STATUS_LIST || [];
                       const per = c.periodo_ini && c.periodo_fim ? `${new Date(c.periodo_ini).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}–${new Date(c.periodo_fim).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}` : "";
                       const tip = [c.campanha, per, c.valor_liquido ? Number(c.valor_liquido || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : null, c.praca].filter(Boolean).join(" · ");
                       return (
                       <tr key={c.submission_id} className={i < 20 ? "row-anim" : ""} style={i < 20 ? { animationDelay: (i * 12) + "ms" } : undefined} title={tip}>
-                        <td className="cell-pi">{c.n_pi}</td>
-                        <td style={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cliente}</td>
+                        {/* R2 fix (01/jul): clicar no PI abre Review */}
+                        <td className="cell-pi" style={{ cursor: "pointer" }} onClick={() => onOpenReview(c)}>{c.n_pi}</td>
+                        <td style={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.conta || "Sem conta"}</td>
+                        <td style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cliente}</td>
                         <td className="cell-secondary" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.veiculo}</td>
                         <td className="cell-secondary">{c.meio}</td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
@@ -471,18 +486,12 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                     );})
                     }
                     {divRows.length > divPage && (
-                      <tr><td colSpan={8} style={{ textAlign: "center", padding: 12 }}>
+                      <tr><td colSpan={9} style={{ textAlign: "center", padding: 12 }}>
                         <button className="btn btn-quiet sm" onClick={() => setDivPage(p => p + 50)}>Mostrar mais {Math.min(50, divRows.length - divPage)} de {divRows.length - divPage} restantes</button>
                       </td></tr>
                     )}
                 </tbody>
               </table>
-            </div>
-            {/* Abas de conta no rodapé — igual às abas do Sheets */}
-            <div className="plan-tabs">
-              {contaAgg.map(row => (
-                <button key={row.conta} className={"plan-tab " + (activeConta === row.conta ? "on" : "")} onClick={() => { setDivConta(row.conta); setDivPage(50); }}>{row.conta} <span className="plan-tab-n">{row.total}</span></button>
-              ))}
             </div>
           </div>
         )}
@@ -639,12 +648,11 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     return { total, recebidos, aguardando, baixados, pendentes };
   }, [pautaData, grupoDiv]);
 
-  const inMonth = (c) => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === mes; };
-  // BUG 3 fix (01/jul Marlene): incluir TODOS os PIs do mês, não só pending.
-  // A divisão é sobre QUEM é responsável, não sobre status do checking.
-  // PI aprovado/reprovado também precisa ter responsável atribuído.
+  // B2 fix (01/jul): poolAll mostra TODOS os PIs do grupo (estoque real),
+  // sem filtrar por mes de submittedAt. O seletor de mes define mes_referencia
+  // para o MERGE (a qual competencia a atribuicao sera gravada).
   const poolAll = React.useMemo(() => {
-    var filtered = checkings.filter(c => inMonth(c));
+    var filtered = checkings;
     // Filtrar por grupo selecionado
     if (grupoDiv === "boticario") {
       filtered = filtered.filter(c => { var ct = (c.conta || "").toLowerCase(); return ct && botiSet.has(ct); });
@@ -652,7 +660,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
       filtered = filtered.filter(c => { var ct = (c.conta || "").toLowerCase(); return !ct || !botiSet.has(ct); });
     }
     return filtered;
-  }, [checkings, mes, grupoDiv]);
+  }, [checkings, grupoDiv]);
 
   // ── Por conta: cada conta pode ter MULTIPLOS responsaveis com quantidades ──
   const contasGrupo = React.useMemo(() => {

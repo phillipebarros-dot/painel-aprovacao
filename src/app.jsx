@@ -543,7 +543,15 @@ function App() {
         } catch {}
         let apiErrors = 0;
         const entries = Object.entries(map);
-        entries.forEach(([id, who]) => window.PainelAPI?.assignResponsible(id, who, mes).catch(() => { apiErrors++; if (apiErrors === 1) addToast({ type: "warn", message: "Servidor indisponivel. Divisao salva localmente, sera sincronizada quando o servidor voltar." }); }));
+        // B1 fix (01/jul): enviar n_pi (nao submission_id) para o MERGE no BigQuery.
+        // O map usa submission_id como key (para update otimista local), mas a API
+        // e a tabela pi_responsaveis usam n_pi como chave de cruzamento.
+        entries.forEach(([id, who]) => {
+          const ck = checkings.find(c => c.submission_id === id);
+          const nPi = ck?.n_pi || id;
+          const conta = ck?.conta || '';
+          window.PainelAPI?.assignResponsible(nPi, who, mes, conta).catch(() => { apiErrors++; if (apiErrors === 1) addToast({ type: "warn", message: "Servidor indisponivel. Divisao salva localmente, sera sincronizada quando o servidor voltar." }); });
+        });
       }}/>
     : route === "reports" ? <ScreenReports checkings={scopedCheckings} currentUser={user} onToast={addToast}/>
     : route === "users" ? <ScreenUsers onToast={addToast} viewMode={curView} checkings={scopedCheckings}/>

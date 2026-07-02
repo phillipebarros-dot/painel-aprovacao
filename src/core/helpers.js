@@ -21,6 +21,10 @@
   const fmtHours = (h) => { const v = Number(h) || 0; return v < 1 ? `${Math.round(v * 60)}min` : `${v.toFixed(1)}h`; };
   const fmtDur = (h) => { const v = Number(h) || 0; if (v < 1) return `${Math.round(v * 60)}min`; if (v < 36) return `${v < 10 ? v.toFixed(1) : Math.round(v)}h`; return `${Math.round(v / 24)} dias`; };
   const norm = (s) => { const v = (s || '').toLowerCase().trim(); return (!v || v === 'null') ? 'pending' : v; };
+  // B3/B4 fix (01/jul): normalizacao centralizada de nomes de usuario
+  const userKey = (s) => (s || '').trim().toLowerCase();
+  // B4 fix: sameUser casa por key exata (nome ou email)
+  const sameUser = (a, b) => { const ka = userKey(a), kb = userKey(b); return !!(ka && kb && ka === kb); };
   // Bug 1.2 fix: chave de data em horario LOCAL (nao UTC) para evitar troca de dia a noite
   const localDateKey = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
@@ -248,30 +252,52 @@
     ];
   }
 
-  // Produtividade por pessoa (divisão de demanda + baixas)
-  function teamProductivity(checkings, sinceTs = 0) {
+  // B3 fix (01/jul): produtividade por pessoa - separar pessoas reais de entradas fantasma
+  // registeredNames: array de nomes cadastrados no sistema (window.MOCK.users)
+  // Retorna { rows (pessoas reais), external (PUBLI etc), unassigned (count), totals }
+  function teamProductivity(checkings, sinceTs, registeredNames) {
+    if (sinceTs === undefined) sinceTs = 0;
     const m = {};
     const ensure = (name) => (m[name] = m[name] || { name, demanda: 0, baixados: 0, approved: 0, rejected: 0, pendentes: 0, slaSum: 0, slaN: 0 });
+    var unassignedCount = 0;
     checkings.forEach(c => {
-      const who = c.assigned_to || c.approval_user || "Sem atribuição";
+      const who = c.assigned_to || c.approval_user;
+      if (!who || !who.trim()) { unassignedCount++; return; }
       const e = ensure(who);
       e.demanda++;
       const s = norm(c.status);
       const decidedAt = c.approvedAt || c.rejectedAt;
       if (s === 'pending') e.pendentes++;
-      else if (decidedAt && decidedAt >= sinceTs) {
+      // B3 fix: excluir sem_checking do calculo de SLA
+      else if (s !== 'sem_checking' && decidedAt && decidedAt >= sinceTs) {
         e.baixados++;
         if (s === 'approved') e.approved++; else e.rejected++;
+        // B3 fix: usar slaAgeH para SLA (respeita dt_fim_veic) apenas para PIs ja decididos
+        // Para calculo de SLA medio, usamos o tempo real de decisao
         const sla = (decidedAt - c.submittedAt) / 3600000; e.slaSum += sla; e.slaN++;
       }
     });
-    const rows = Object.values(m).map(e => ({ ...e, pct: e.demanda ? e.baixados / e.demanda : 0, avgSla: e.slaN ? e.slaSum / e.slaN : 0 }));
+    var allEntries = Object.values(m).map(e => ({ ...e, pct: e.demanda ? e.baixados / e.demanda : 0, avgSla: e.slaN ? e.slaSum / e.slaN : 0 }));
+    // B3 fix: separar pessoas reais de entradas externas (PUBLI, nomes nao cadastrados)
+    var rows, external;
+    if (registeredNames && registeredNames.length) {
+      var regSet = new Set(registeredNames.map(n => userKey(n)));
+      rows = allEntries.filter(e => regSet.has(userKey(e.name)));
+      external = allEntries.filter(e => !regSet.has(userKey(e.name)));
+    } else {
+      rows = allEntries;
+      external = [];
+    }
     rows.sort((a, b) => b.baixados - a.baixados);
-    const totals = rows.reduce((t, e) => ({ demanda: t.demanda + e.demanda, baixados: t.baixados + e.baixados, pendentes: t.pendentes + e.pendentes, approved: t.approved + e.approved, rejected: t.rejected + e.rejected }), { demanda: 0, baixados: 0, pendentes: 0, approved: 0, rejected: 0 });
-    return { rows, totals };
+    external.sort((a, b) => b.demanda - a.demanda);
+    var all = rows.concat(external);
+    const totals = all.reduce((t, e) => ({ demanda: t.demanda + e.demanda, baixados: t.baixados + e.baixados, pendentes: t.pendentes + e.pendentes, approved: t.approved + e.approved, rejected: t.rejected + e.rejected }), { demanda: 0, baixados: 0, pendentes: 0, approved: 0, rejected: 0 });
+    totals.demanda += unassignedCount;
+    totals.pendentes += unassignedCount;
+    return { rows: rows, external: external, unassigned: unassignedCount, totals: totals };
   }
 
-  window.H = { fmtRelTime, fmtTime, fmtDate, fmtDateLong, fmtNum, fmtPct, fmtHours, fmtDur, norm, slaAgeH, computeStats, buildVolumeSeries, buildMonthSeries, recentMonths, topRanking, extractList, supplierRating, agingBuckets, distribution, slaHeatmap, calendarData, funnelData, teamProductivity };
+  window.H = { fmtRelTime, fmtTime, fmtDate, fmtDateLong, fmtNum, fmtPct, fmtHours, fmtDur, norm, userKey, sameUser, slaAgeH, computeStats, buildVolumeSeries, buildMonthSeries, recentMonths, topRanking, extractList, supplierRating, agingBuckets, distribution, slaHeatmap, calendarData, funnelData, teamProductivity };
 
   // Exportação PDF genérica (abre janela de impressão com tabela estilizada)
   // ─── Exportar XLSX (XML Spreadsheet, sem dependencia externa) ───

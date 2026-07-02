@@ -130,13 +130,14 @@
     // BUG 6 fix: QUALQUER usuario que NAO seja admin ve SOMENTE PIs atribuidos a ele.
     // Admin (Marlene/Anne) ve tudo do grupo pra distribuir e supervisionar.
     // Regra do Phillipe (01/jul 00:17:45): "Ninguém vai ver. Rose não vai ver."
+    // B4 fix (01/jul): usar H.sameUser centralizado
     if (user && user.role !== "admin") {
-      var nm = (user.nome || user.name || "").trim().toLowerCase();
-      var em = (user.email || "").trim().toLowerCase();
+      var nm = user.nome || user.name || "";
+      var em = user.email || "";
       if (nm || em) {
         filtered = filtered.filter(function (c) {
-          var a = (c.assigned_to || "").trim().toLowerCase();
-          return a && (a === nm || (em && a === em));
+          var a = c.assigned_to || "";
+          return a && (window.H.sameUser(a, nm) || (em && window.H.sameUser(a, em)));
         });
       }
     }
