@@ -313,6 +313,11 @@
     if (onlineRes.status === "fulfilled") {
       MOCK.onlineUsers = onlineRes.value?.online || onlineRes.value?.users || [];
     }
+    // Se TODAS as chamadas falharam, propagar erro pro backoff funcionar
+    const allFailed = checkingsRes.status === 'rejected' && usersRes.status === 'rejected' && onlineRes.status === 'rejected';
+    if (allFailed) {
+      throw new Error('Servidor indisponivel: todas as chamadas falharam');
+    }
     return MOCK;
   };
 

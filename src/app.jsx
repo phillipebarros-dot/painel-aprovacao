@@ -419,7 +419,11 @@ function App() {
       return Math.min(30000 * Math.pow(2, fails), 300000);
     };
     let timer;
-    const schedule = () => { timer = setTimeout(async () => { await loadData(); schedule(); }, getInterval()); };
+    const schedule = () => {
+      // Para de tentar apos 10 falhas consecutivas (evita spam de 502)
+      if (backoffRef.current.fails >= 10) return;
+      timer = setTimeout(async () => { await loadData(); schedule(); }, getInterval());
+    };
     schedule();
     return () => clearTimeout(timer);
   }, [user, loadData]);
