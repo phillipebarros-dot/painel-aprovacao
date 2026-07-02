@@ -17,6 +17,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const colFDiv = window.useColumnFilters("producao_div");
   // REQ 4 (01/07): divisao automatica
   const [autoPreview, setAutoPreview] = React.useState(null);
+  // REQ Reuniao (02/jul): card de PIs por colaborador ao clicar no membro
+  const [selectedMember, setSelectedMember] = React.useState(null);
   const changePeriod = (v) => { if (React.startTransition) React.startTransition(() => setPeriod(v)); else setPeriod(v); };
 
   // ── Lazy load: carregar board de produção do n8n (BigQuery) ──
@@ -253,8 +255,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                 const acima = equipeAlvo > 0 && m.carga > equipeAlvo * 1.15;
                 // R1 fix (01/jul): clicar no membro filtra divisao por assigned_to
                 const drillDown = () => {
-                  colFDiv.setColumnFilter('assigned_to', [m.nome || m.name]);
-                  if (typeof onSetView === 'function') onSetView('divisao');
+                  setSelectedMember(m);
                 };
                 return (
                   <div key={m.email || m.nome} className="card card-pad card-hover" style={{ padding: "12px 14px", border: acima ? "1px solid var(--warn)" : undefined, cursor: "pointer" }} onClick={drillDown} title={`Ver PIs de ${(m.nome || m.name || '').split(' ')[0]}`}>
@@ -297,6 +298,67 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
             )}
           </div>
         )}
+
+        {/* REQ Reuniao (02/jul): Modal de PIs do membro selecionado */}
+        {selectedMember && (() => {
+          const mName = selectedMember.nome || selectedMember.name || "";
+          const mEmail = selectedMember.email || "";
+          const memberPIs = checkings.filter(c => {
+            const a = c.assigned_to || "";
+            return a && (H.sameUser(a, mName) || (mEmail && H.sameUser(a, mEmail)));
+          });
+          const pending = memberPIs.filter(c => H.norm(c.status) === "pending").length;
+          const done = memberPIs.filter(c => c.approvedAt || c.rejectedAt).length;
+          return (<>
+            <div className="scrim" onClick={() => setSelectedMember(null)}/>
+            <div className="modal content" style={{ width: "min(840px, 94vw)", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
+              <div className="card-pad" style={{ borderBottom: "1px solid var(--rule)", flexShrink: 0 }}>
+                <div className="row gap-3" style={{ alignItems: "center", marginBottom: 8 }}>
+                  <Avatar user={selectedMember} size={36}/>
+                  <div className="col" style={{ gap: 2, flex: 1 }}>
+                    <span className="display-3">{mName}</span>
+                    <span className="muted" style={{ fontSize: 12 }}>{mEmail}</span>
+                  </div>
+                  <button className="btn btn-ghost sm" onClick={() => setSelectedMember(null)} style={{ fontSize: 18, padding: 4 }}>&times;</button>
+                </div>
+                <div className="row gap-4" style={{ fontSize: 13 }}>
+                  <span><b style={{ color: "var(--ink)" }}>{memberPIs.length}</b> PIs total</span>
+                  <span><b style={{ color: "var(--warn)" }}>{pending}</b> pendentes</span>
+                  <span><b style={{ color: "var(--accent)" }}>{done}</b> baixados</span>
+                </div>
+              </div>
+              <div className="card-pad" style={{ overflowY: "auto", flex: 1 }}>
+                {memberPIs.length === 0 ? <Empty title="Sem PIs atribuidos" hint={`${mName.split(" ")[0]} nao tem PIs atribuidos neste periodo.`} icon="layers"/> : (
+                  <table className="tbl" style={{ fontSize: 12.5 }}>
+                    <thead><tr><th>No PI</th><th>Conta</th><th>Cliente</th><th>Veiculo</th><th>Meio</th><th>Vencimento</th><th>Status</th></tr></thead>
+                    <tbody>
+                      {memberPIs.map((c, i) => {
+                        const SC = window.CHECK_STATUS || {};
+                        return (
+                          <tr key={c.submission_id} className={i < 20 ? "row-anim" : ""} style={i < 20 ? { animationDelay: (i * 12) + "ms", cursor: "pointer" } : { cursor: "pointer" }} onClick={() => { setSelectedMember(null); onOpenReview(c); }}>
+                            <td className="cell-pi">{c.n_pi}</td>
+                            <td style={{ fontWeight: 500 }}>{c.conta || "-"}</td>
+                            <td>{c.cliente || "-"}</td>
+                            <td className="cell-secondary">{c.veiculo || "-"}</td>
+                            <td className="cell-secondary">{c.meio || "-"}</td>
+                            <td className="cell-secondary" style={{ whiteSpace: "nowrap" }}>{c.vencimento ? new Date(c.vencimento).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "-"}</td>
+                            <td><span className="plan-status-tag" style={{ "--sc": SC[c.statusCheck] || "var(--ink-3)" }}>{c.statusCheck || H.norm(c.status)}</span></td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              <div className="card-pad" style={{ borderTop: "1px solid var(--rule)", flexShrink: 0 }}>
+                <div className="row gap-3" style={{ justifyContent: "flex-end" }}>
+                  <button className="btn btn-ghost sm" onClick={() => { colFDiv.setColumnFilter('assigned_to', [mName]); setSelectedMember(null); }}>Ver na divisao</button>
+                  <button className="btn btn-accent sm" onClick={() => setSelectedMember(null)}>Fechar</button>
+                </div>
+              </div>
+            </div>
+          </>);
+        })()}
 
         {/* Produtividade por pessoa */}
         <div className="card" style={{ display: pview === "tabela" ? undefined : "none" }}>
@@ -463,12 +525,11 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                         <td className="cell-secondary" style={{ fontSize: 11.5, whiteSpace: "nowrap" }}>{(() => { if (!c.vencimento) return "-"; const d = new Date(c.vencimento); if (isNaN(d.getTime())) return "-"; const now = new Date(); const diff = (d - now) / 86400000; const color = diff < 0 ? "var(--alert)" : diff < 3 ? "var(--warn)" : undefined; return React.createElement("span", { style: { color, fontWeight: diff < 3 ? 600 : 400 } }, d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })); })()}</td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
                           <div className="plan-status" style={{ "--sc": SC[c.statusCheck] || "var(--ink-3)" }}>
-                            {!isManager ? <span className="plan-status-tag">{c.statusCheck || "-"}</span> : (
-                              <select value={c.statusCheck || ""} onChange={e => { onSetCheckStatus && onSetCheckStatus(c.submission_id, e.target.value); onToast?.({ type: "success", message: `Status: ${e.target.value}` }); }}>
-                                {!c.statusCheck && <option value="">-</option>}
-                                {SCL.map(s => <option key={s} value={s}>{s}</option>)}
-                              </select>
-                            )}
+                            {/* REQ Marlene (02/jul): Status editavel pra TODOS (nao so admin) */}
+                            <select value={c.statusCheck || ""} onChange={e => { onSetCheckStatus && onSetCheckStatus(c.submission_id, e.target.value); onToast?.({ type: "success", message: `Status: ${e.target.value}` }); }}>
+                              {!c.statusCheck && <option value="">-</option>}
+                              {SCL.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
                           </div>
                         </td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
@@ -480,9 +541,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                           )}
                         </td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
-                          {!isManager ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.comentario || "-"}</span> : (
-                            <input className="plan-input" defaultValue={c.comentario || ""} placeholder="Comentário…" onBlur={e => { if (e.target.value !== (c.comentario || "")) { onSetComentario && onSetComentario(c.submission_id, e.target.value); onToast?.({ type: "success", message: "Comentário salvo." }); } }} onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}/>
-                          )}
+                          {/* REQ Marlene (02/jul): Comentario editavel pra TODOS (nao so admin) */}
+                          <input className="plan-input" defaultValue={c.comentario || ""} placeholder="Comentário…" onBlur={e => { if (e.target.value !== (c.comentario || "")) { onSetComentario && onSetComentario(c.submission_id, e.target.value); onToast?.({ type: "success", message: "Comentário salvo." }); } }} onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}/>
                         </td>
                         <td className="cell-secondary" style={{ textAlign: "center" }}>{c.total_arquivos || 0}</td>
                       </tr>
