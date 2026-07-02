@@ -73,13 +73,13 @@ function ScreenLogin({ onLogin }) {
 
         <div className="login-left-head">
           <div className="row gap-3">
-            <div className="login-brand-mark"><img src="assets/img/logo-grupoom.png" alt="Grupo OM" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
+            <div className="login-brand-mark"><img src="/assets/img/logo-grupoom.png" alt="Grupo OM" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
             <div className="col" style={{ gap: 1 }}>
               <span style={{ fontSize: 15, fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.01em" }}>Grupo OM</span>
               <span style={{ fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)" }}>painel · checking</span>
             </div>
             <span className="spacer" />
-            <img src="assets/img/gptw-badge.gif" alt="Great Place To Work Certificada" className="login-gptw" title="Great Place To Work · Certificada Jun/2025 - Jun/2026" />
+            <img src="/assets/img/gptw-badge.gif" alt="Great Place To Work Certificada" className="login-gptw" title="Great Place To Work · Certificada Jun/2025 - Jun/2026" />
           </div>
         </div>
 
@@ -112,7 +112,7 @@ function ScreenLogin({ onLogin }) {
             { n: "opus", src: "logo-opus-real" }, { n: "dom", src: "logo-dom-real" }, { n: "senso", src: "logo-senso-real" },
             { n: "house", src: "logo-house" }, { n: "tailor", src: "logo-tailor" }, { n: "brain", src: "logo-brain" }].
             map((c) =>
-            <img key={c.n} src={`assets/img/${c.src}.png`} alt={c.n} className="login-partner" />
+            <img key={c.n} src={`/assets/img/${c.src}.png`} alt={c.n} className="login-partner" />
             )}
           </div>
         </div>
@@ -178,7 +178,7 @@ function ScreenLogin({ onLogin }) {
 
         <div className="login-right-foot">
           <span>© 2026 · Grupo OM</span>
-          <span className="tas-sign" title="Desenvolvido pelo TAS"><span style={{ fontFamily: "var(--font-mono)" }}>painelchecking.grupoom.com.br</span><img src="assets/img/gooseblack.png" alt="" className="tas-goose" /></span>
+          <span className="tas-sign" title="Desenvolvido pelo TAS"><span style={{ fontFamily: "var(--font-mono)" }}>painelchecking.grupoom.com.br</span><img src="/assets/img/gooseblack.png" alt="" className="tas-goose" /></span>
         </div>
       </div>
     </div>);

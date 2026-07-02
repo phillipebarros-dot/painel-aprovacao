@@ -30,7 +30,7 @@ function Sidebar({ route, onNav, user, onLogout, pending, alertCount, alertCrit 
     <>
       {/* Camada 1: rail de ícones */}
       <aside className="rail">
-        <div className="rail-brand" title="Grupo OM"><div className="brand-mark"><img src="assets/img/logo-grupoom.png" alt="Grupo OM"/></div></div>
+        <div className="rail-brand" title="Grupo OM"><div className="brand-mark"><img src="/assets/img/logo-grupoom.png" alt="Grupo OM"/></div></div>
         <div className="rail-nav">
           <div className="rail-label-gap"/>
           {base.map(it => (
@@ -83,7 +83,7 @@ function Sidebar({ route, onNav, user, onLogout, pending, alertCount, alertCrit 
             <div className="user-chip-body"><span className="user-chip-name">{(user.nome || user.name || "").split(" ").slice(0, 2).join(" ")}</span><span className="user-chip-role">{roleLabel}</span></div>
             <Icon name="logout" size={15} className="logout-ico"/>
           </div>
-          <div className="tas-sign nav-tas" title="Desenvolvido pelo TAS"><span>Desenvolvido pelo TAS</span><img src="assets/img/goosewhite.png" alt="" className="tas-goose"/></div>
+          <div className="tas-sign nav-tas" title="Desenvolvido pelo TAS"><span>Desenvolvido pelo TAS</span><img src="/assets/img/goosewhite.png" alt="" className="tas-goose"/></div>
         </div>
       </aside>
     </>
@@ -282,7 +282,7 @@ function TopBar({ route, user, onNav, onlineUsers, notifications, checkings, onO
     <div className="topbar">
       <button className="icon-btn" title={navCollapsed ? "Expandir menu" : "Recolher menu"} onClick={onToggleSidebar} style={{ marginLeft: -4 }}><Icon name="panel_left" size={16}/></button>
       <div className="row gap-2" style={{ alignItems: "center", minWidth: 90 }}>
-        <img src="assets/img/om-title.png" alt="OM" className="topbar-om"/>
+        <img src="/assets/img/om-title.png" alt="OM" className="topbar-om"/>
         <div className="h2" style={{ fontSize: 16, fontWeight: 600 }}>{titles[route] || ""}</div>
       </div>
       <div className="divider-v" style={{ height: 22 }}/>
