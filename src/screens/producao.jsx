@@ -423,12 +423,13 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
               <table className="tbl tbl-planilha" style={{ tableLayout: "fixed", width: "100%" }}>
                 <colgroup>
                   <col style={{ width: "7%" }}/>
-                  <col style={{ width: "12%" }}/>
-                  <col style={{ width: "14%" }}/>
-                  <col style={{ width: "16%" }}/>
-                  <col style={{ width: "5%" }}/>
-                  <col style={{ width: "12%" }}/>
+                  <col style={{ width: "11%" }}/>
                   <col style={{ width: "13%" }}/>
+                  <col style={{ width: "13%" }}/>
+                  <col style={{ width: "5%" }}/>
+                  <col style={{ width: "8%" }}/>
+                  <col style={{ width: "10%" }}/>
+                  <col style={{ width: "12%" }}/>
                   <col style={{ width: "16%" }}/>
                   <col style={{ width: "5%" }}/>
                 </colgroup>
@@ -439,13 +440,14 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                   <ColumnFilter colKey="cliente" label="Cliente" rows={divRowsPreFilter} selected={colFDiv.filters.cliente || []} onSelect={colFDiv.setColumnFilter}>Cliente</ColumnFilter>
                   <ColumnFilter colKey="veiculo" label="Veiculo" rows={divRowsPreFilter} selected={colFDiv.filters.veiculo || []} onSelect={colFDiv.setColumnFilter}>Veiculo</ColumnFilter>
                   <ColumnFilter colKey="meio" label="Meio" rows={divRowsPreFilter} selected={colFDiv.filters.meio || []} onSelect={colFDiv.setColumnFilter}>Meio</ColumnFilter>
+                  <th>Vencimento</th>
                   <th>Status</th>
                   <ColumnFilter colKey="assigned_to" label="Responsavel" rows={divRowsPreFilter} selected={colFDiv.filters.assigned_to || []} onSelect={colFDiv.setColumnFilter}>Responsavel</ColumnFilter>
                   <th>Comentario</th><th>Arq.</th>
                 </tr></thead>
                 <tbody>
                   {divRows.length === 0
-                    ? <tr><td colSpan={9}><div style={{ padding: 28 }}><Empty title="Sem PIs com esses filtros" hint="Limpe os filtros ou troque o mes" icon="layers"/></div></td></tr>
+                    ? <tr><td colSpan={10}><div style={{ padding: 28 }}><Empty title="Sem PIs com esses filtros" hint="Limpe os filtros ou troque o mes" icon="layers"/></div></td></tr>
                     : divRows.slice(0, divPage).map((c, i) => {
                       const SC = window.CHECK_STATUS || {}; const SCL = window.CHECK_STATUS_LIST || [];
                       const per = c.periodo_ini && c.periodo_fim ? `${new Date(c.periodo_ini).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}–${new Date(c.periodo_fim).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}` : "";
@@ -458,6 +460,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                         <td style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cliente}</td>
                         <td className="cell-secondary" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.veiculo}</td>
                         <td className="cell-secondary">{c.meio}</td>
+                        <td className="cell-secondary" style={{ fontSize: 11.5, whiteSpace: "nowrap" }}>{(() => { if (!c.vencimento) return "-"; const d = new Date(c.vencimento); if (isNaN(d.getTime())) return "-"; const now = new Date(); const diff = (d - now) / 86400000; const color = diff < 0 ? "var(--alert)" : diff < 3 ? "var(--warn)" : undefined; return React.createElement("span", { style: { color, fontWeight: diff < 3 ? 600 : 400 } }, d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })); })()}</td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
                           <div className="plan-status" style={{ "--sc": SC[c.statusCheck] || "var(--ink-3)" }}>
                             {!isManager ? <span className="plan-status-tag">{c.statusCheck || "-"}</span> : (
@@ -486,7 +489,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                     );})
                     }
                     {divRows.length > divPage && (
-                      <tr><td colSpan={9} style={{ textAlign: "center", padding: 12 }}>
+                      <tr><td colSpan={10} style={{ textAlign: "center", padding: 12 }}>
                         <button className="btn btn-quiet sm" onClick={() => setDivPage(p => p + 50)}>Mostrar mais {Math.min(50, divRows.length - divPage)} de {divRows.length - divPage} restantes</button>
                       </td></tr>
                     )}
