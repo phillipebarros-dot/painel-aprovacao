@@ -239,6 +239,25 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
           <div className="kpi"><div className="kpi-label">Conclusão</div><div className="kpi-value"><CountUp value={prod.totals.demanda ? Math.round((prod.totals.baixados / prod.totals.demanda) * 100) : 0}/><span className="unit">%</span></div><div className="kpi-meta">da demanda distribuída</div></div>
         </div>
 
+        {/* REQ Marlene (02/jul reuniao): admin precisa ver sua propria demanda de checking */}
+        {mine.length > 0 && (
+          <div className="card card-pad" style={{ marginBottom: "var(--gap)", border: "1px solid var(--accent-soft, rgba(14,116,144,0.15))" }}>
+            <div className="row gap-3" style={{ alignItems: "center" }}>
+              <Avatar user={currentUser} size={32}/>
+              <div className="col" style={{ gap: 2, flex: 1 }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>Minha demanda</span>
+                <span className="muted" style={{ fontSize: 12 }}>PIs atribuidos a mim ({myName})</span>
+              </div>
+              <div className="row gap-4" style={{ fontSize: 13 }}>
+                <span><b style={{ color: "var(--ink)" }}>{mine.length}</b> total</span>
+                <span><b style={{ color: "var(--warn)" }}>{myPending.length}</b> pendentes</span>
+                <span><b style={{ color: "var(--accent)" }}>{myDone.length}</b> baixados</span>
+              </div>
+              <button className="btn btn-accent sm" onClick={() => setSelectedMember({ nome: myName, name: myName, email: currentUser?.email, avatar: currentUser?.avatar, color: currentUser?.color })}>Ver meus PIs</button>
+            </div>
+          </div>
+        )}
+
         {/* REQ EQUIPE 1.2: bloco equipe do periodo (admin only) */}
         {equipe.length > 0 && (
           <div className="card card-pad" style={{ marginBottom: "var(--gap)" }}>
