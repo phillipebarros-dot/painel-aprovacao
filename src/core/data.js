@@ -316,17 +316,30 @@
     if (usersRes.status === "fulfilled" && usersRes.value?.users) {
       MOCK.users = usersRes.value.users.map(u => {
         const nome = u.name || u.email || "";
-        // REQ EQUIPE: resolver grupo do usuario.
-        // FIX v2 (02/jul): BigQuery e fonte da verdade, mas localStorage nao e descartado.
+        // FIX v3 (02/jul): BigQuery e fonte da verdade, mas localStorage nao e descartado.
         // Se BigQuery tem grupo valido, usa ele (todos os admins veem o mesmo).
         // Se BigQuery NAO tem, usa localStorage E re-envia pro BigQuery (auto-sync).
         var grupoBackend = (u.grupo && u.grupo !== "nao_definido") ? u.grupo : null;
         var grupoSalvo = null;
-        try { grupoSalvo = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}")[u.id || u.email]; } catch {}
-        // Auto-sync: localStorage tem grupo mas BigQuery nao → re-enviar
+        try {
+          var _map = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}");
+          // Buscar por TODAS as chaves possiveis: id, email, nome
+          grupoSalvo = _map[u.id] || _map[u.email] || _map[u.name] || _map[u.nome] || null;
+        } catch {}
+        // Auto-sync: localStorage tem grupo mas BigQuery nao → re-enviar usando ID e email
         if (!grupoBackend && grupoSalvo) {
-          window.PainelAPI?.updateUserGrupo?.(u.id || u.email, grupoSalvo).catch(function(e) {
-            console.warn("[auto-sync grupo]", u.email, e.message || e);
+          console.info("[auto-sync] BigQuery sem grupo para", u.email, "localStorage tem:", grupoSalvo, "-> re-enviando via id:", u.id);
+          // Envia com ID
+          window.PainelAPI?.updateUserGrupo?.(u.id, grupoSalvo).then(function() {
+            console.info("[auto-sync OK via id]", u.email, grupoSalvo);
+          }).catch(function(e) {
+            console.warn("[auto-sync FALHOU via id]", u.email, e.message || e);
+            // Fallback: tentar com email
+            window.PainelAPI?.updateUserGrupo?.(u.email, grupoSalvo).then(function() {
+              console.info("[auto-sync OK via email]", u.email, grupoSalvo);
+            }).catch(function(e2) {
+              console.error("[auto-sync FALHOU via email tb]", u.email, e2.message || e2);
+            });
           });
         }
         var grupoInicial = resolverGrupoInicial(nome, u.role);
