@@ -716,13 +716,24 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
         <button className="icon-btn" onClick={onClose}><Icon name="x" size={15}/></button>
       </div>
       <div className="card-pad col gap-4" style={{ overflowY: "auto" }}>
-        <div className="row gap-3">
-          <div className="col" style={{ gap: 6, flex: 1 }}>
+        {/* Seletores: mes + equipe na mesma row, com min-width pra nao truncar */}
+        <div className="row gap-3" style={{ flexWrap: "wrap" }}>
+          <div className="col" style={{ gap: 6, minWidth: 180 }}>
             <label className="eyebrow" style={{ fontSize: 10 }}>Mês da demanda</label>
-            <select className="input" value={mes} onChange={e => setMes(e.target.value)} style={{ textTransform: "capitalize" }}>{monthOpts.map(m => <option key={m.v} value={m.v}>{m.label}</option>)}</select>
+            <select className="input" value={mes} onChange={e => setMes(e.target.value)} style={{ textTransform: "capitalize", width: "100%" }}>{monthOpts.map(m => <option key={m.v} value={m.v}>{m.label}</option>)}</select>
           </div>
+          {/* BUG 3 fix: seletor de equipe pra admin nao misturar Boticario com Uninter */}
+          <div className="col" style={{ gap: 6, minWidth: 140 }}>
+            <label className="eyebrow" style={{ fontSize: 10 }}>Equipe</label>
+            <select className="input" value={grupoDiv} onChange={e => setGrupoDiv(e.target.value)} style={{ width: "100%" }}>
+              <option value="boticario">Boticario</option>
+              <option value="uninter">Uninter</option>
+              <option value="todos">Todos</option>
+            </select>
+          </div>
+        </div>
 
-        {/* ── Stats da pauta cruzada (visão Marlene/Anne) ── */}
+        {/* Stats da pauta cruzada (visão Marlene/Anne) - row separada */}
         {pautaLoading && <p className="body-xs muted" style={{ margin: 0 }}>Carregando dados da pauta...</p>}
         {pautaStats && (
           <div className="row gap-3" style={{ padding: "8px 12px", background: "var(--surface-2)", borderRadius: 8, flexWrap: "wrap" }}>
@@ -748,16 +759,6 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
             </div>
           </div>
         )}
-          {/* BUG 3 fix: seletor de equipe pra admin nao misturar Boticario com Uninter */}
-          <div className="col" style={{ gap: 6, flex: 1 }}>
-            <label className="eyebrow" style={{ fontSize: 10 }}>Equipe</label>
-            <select className="input" value={grupoDiv} onChange={e => setGrupoDiv(e.target.value)}>
-              <option value="boticario">Boticario</option>
-              <option value="uninter">Uninter</option>
-              <option value="todos">Todos</option>
-            </select>
-          </div>
-        </div>
 
         <p className="body-sm" style={{ margin: 0 }}>Cada conta pode ser dividida entre multiplas pessoas. Defina a quantidade de PIs para cada responsavel.</p>
           {/* REQ (01/jul 00:18:38 Phillipe): busca para filtrar contas no modal */}
