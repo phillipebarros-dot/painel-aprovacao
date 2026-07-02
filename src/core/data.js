@@ -306,14 +306,23 @@
       MOCK.users = usersRes.value.users.map(u => {
         const nome = u.name || u.email || "";
         // REQ EQUIPE: resolver grupo do usuario.
-        // Prioridade: 1) localStorage (admin editou), 2) backend, 3) mapa inicial, 4) padrao
-        var grupoSalvo = null;
-        try { grupoSalvo = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}")[u.id || u.email]; } catch {}
-        // UXP: "nao_definido" no backend nao conta como grupo real.
-        // Sem isso, admin com "nao_definido" no BigQuery ficaria sem ver nada.
+        // FIX (02/jul): BigQuery e fonte da verdade. localStorage so serve de fallback
+        // ate o backend responder. Sem isso, admin A define grupo e admin B nao ve.
         var grupoBackend = (u.grupo && u.grupo !== "nao_definido") ? u.grupo : null;
+        var grupoSalvo = null;
+        if (!grupoBackend) {
+          try { grupoSalvo = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}")[u.id || u.email]; } catch {}
+        }
+        // Se backend confirmou grupo, limpa localStorage stale pra esse user
+        if (grupoBackend) {
+          try {
+            var map = JSON.parse(localStorage.getItem("painel_user_grupos") || "{}");
+            var key = u.id || u.email;
+            if (map[key]) { delete map[key]; localStorage.setItem("painel_user_grupos", JSON.stringify(map)); }
+          } catch {}
+        }
         var grupoInicial = resolverGrupoInicial(nome, u.role);
-        var grupo = grupoSalvo || grupoBackend || grupoInicial;
+        var grupo = grupoBackend || grupoSalvo || grupoInicial;
         return {
           ...u, nome: nome, name: nome, grupo: grupo,
           color: "#0E7490", last_seen: u.lastSeen || u.created_at || Date.now(),
