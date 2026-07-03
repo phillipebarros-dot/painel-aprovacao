@@ -306,7 +306,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                       <Avatar user={m} size={28}/>
                       <div className="col" style={{ gap: 1, flex: 1, minWidth: 0 }}>
                         <span style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.nome || m.name}</span>
-                        <span className="cell-mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{m.pautaTotal ? `${m.pautaTotal} atribuídos` : `${m.carga} PIs`}{m.carga > 0 && m.pautaTotal ? ` · ${m.carga} recebidos` : ''}</span>
+                        <span className="cell-mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{m.pautaTotal ? `${m.pautaTotal} atribuidos` : `${m.carga} PIs`}{m.carga > 0 && m.pautaTotal ? ` · ${m.carga} recebidos` : ''}</span>
                       </div>
                       <div className="col" style={{ alignItems: "flex-end", gap: 1 }}>
                         <span className="cell-mono" style={{ fontSize: 16, fontWeight: 700, color: pct >= 0.8 ? "var(--accent)" : pct >= 0.5 ? "var(--warn)" : "var(--ink-3)" }}>{Math.round(pct * 100)}%</span>
@@ -853,9 +853,9 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
 
     setSaving(false);
     if (errors > 0) {
-      onToast?.({ type: "warn", message: `${done - errors} de ${done} PIs salvos. ${errors} falharam — tente novamente.` });
+      onToast?.({ type: "warn", message: `${done - errors} de ${done} PIs salvos. ${errors} falharam - tente novamente.` });
     } else {
-      onToast?.({ type: "success", message: `${done} PIs de ${contasAtribuidas} contas atribuídos com sucesso.` });
+      onToast?.({ type: "success", message: `${done} PIs de ${contasAtribuidas} contas atribuidos com sucesso.` });
       onClose();
     }
   };
