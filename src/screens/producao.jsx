@@ -827,11 +827,12 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     if (!jobs.length) { onToast?.({ type: "info", message: "Nenhum PI para atribuir." }); return; }
 
     setSaving(true);
-    setSaveProgress({ done: 0, total: jobs.length, errors: 0 });
+    setSaveProgress({ done: 0, total: jobs.length, errors: 0, eta: '' });
 
-    // Serializar em batches de 5 para nao sobrecarregar o n8n
-    const BATCH = 5;
+    // Serializar em batches de 20 (599 PIs ÷ 20 = 30 rounds ≈ 30s)
+    const BATCH = 20;
     let done = 0, errors = 0;
+    const t0 = Date.now();
     for (let b = 0; b < jobs.length; b += BATCH) {
       const batch = jobs.slice(b, b + BATCH);
       const results = await Promise.allSettled(
@@ -839,7 +840,10 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
       );
       results.forEach(r => { if (r.status === "rejected") errors++; });
       done += batch.length;
-      setSaveProgress({ done, total: jobs.length, errors });
+      const elapsed = (Date.now() - t0) / 1000;
+      const rate = done / elapsed;
+      const remaining = Math.ceil((jobs.length - done) / rate);
+      setSaveProgress({ done, total: jobs.length, errors, eta: remaining > 0 ? `~${remaining}s restante` : '' });
     }
 
     // Update otimista: atualizar checkings locais
@@ -950,7 +954,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
           );})()}
       </div>
       <div className="row gap-3" style={{ justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid var(--rule)" }}>
-        <span className="body-xs muted">{saving ? `Salvando ${saveProgress.done}/${saveProgress.total}...${saveProgress.errors ? ` (${saveProgress.errors} erros)` : ''}` : `${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs`}</span>
+        <span className="body-xs muted">{saving ? `Salvando ${saveProgress.done}/${saveProgress.total}...${saveProgress.eta ? ' ' + saveProgress.eta : ''}${saveProgress.errors ? ` (${saveProgress.errors} erros)` : ''}` : `${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs`}</span>
         <div className="row gap-3">
           <Button variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
           <Button variant="primary" icon={saving ? "hourglass_empty" : "check"} disabled={!contasAtribuidas || saving} onClick={confirm}>{saving ? `Salvando... ${saveProgress.done}/${saveProgress.total}` : "Confirmar divisão"}</Button>
