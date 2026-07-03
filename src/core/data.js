@@ -101,8 +101,8 @@
   //      - boticario: filtra por contas do grupo. Analyst ve so os atribuidos a ele.
   //      - kauana: filtra por contas do grupo. Todo mundo ve tudo (sem filtro individual).
   //      - todos: admin ve tudo.
-  // Corte temporal: 1 de julho de 2026 00:00 UTC-3
-  var CORTE_VISIBILIDADE = new Date(2026, 6, 1).getTime(); // meses 0-indexed: 6 = julho
+  // Corte temporal: 1 de junho de 2026 00:00 UTC-3
+  var CORTE_VISIBILIDADE = new Date(2026, 5, 1).getTime(); // meses 0-indexed: 5 = junho
 
   function visibleCheckings(user, checkings) {
     var grupo = user?.grupo || "todos";

@@ -12,18 +12,6 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const [filterConta, setFilterConta] = React.useState("all");
   const [filterCliente, setFilterCliente] = React.useState("all");
   const [filterMeio, setFilterMeio] = React.useState("all");
-
-  // ── Filtro por grupo: cada equipe ve APENAS seus clientes ──
-  const grupoContas = React.useMemo(() => {
-    const g = currentUser?.grupo || "boticario";
-    if (g === "todos") return null; // admin sem filtro
-    const lista = g === "kauana" ? (window.MOCK?.CONTAS_KAUANA || []) : (window.MOCK?.CONTAS_BOTICARIO || []);
-    return new Set(lista.map(s => s.toLowerCase()));
-  }, [currentUser]);
-  const grupoCheckings = React.useMemo(() => {
-    if (!grupoContas) return checkings;
-    return checkings.filter(c => grupoContas.has((c.conta || "").toLowerCase()));
-  }, [checkings, grupoContas]);
   const [customTo, setCustomTo] = React.useState("");
   // REQ 1 (01/07): filtros estilo Sheets na divisao
   const colFDiv = window.useColumnFilters("producao_div");
@@ -61,20 +49,20 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
 
   // Opcoes unicas para filtros (filtrado por grupo)
   const contaOptions = React.useMemo(() => {
-    const s = new Set(); grupoCheckings.forEach(c => { if (c.conta) s.add(c.conta); });
+    const s = new Set(); checkings.forEach(c => { if (c.conta) s.add(c.conta); });
     return [...s].sort();
-  }, [grupoCheckings]);
+  }, [checkings]);
   const clienteOptions = React.useMemo(() => {
-    const s = new Set(); grupoCheckings.forEach(c => { if (c.cliente) s.add(c.cliente); });
+    const s = new Set(); checkings.forEach(c => { if (c.cliente) s.add(c.cliente); });
     return [...s].sort();
-  }, [grupoCheckings]);
+  }, [checkings]);
   const meioOptions = React.useMemo(() => {
-    const s = new Set(); grupoCheckings.forEach(c => { if (c.meio) s.add(c.meio); });
+    const s = new Set(); checkings.forEach(c => { if (c.meio) s.add(c.meio); });
     return [...s].sort();
-  }, [grupoCheckings]);
+  }, [checkings]);
 
   const filteredCheckings = React.useMemo(() => {
-    let list = grupoCheckings;
+    let list = checkings;
     if (filterConta !== "all") list = list.filter(c => (c.conta || "") === filterConta);
     if (filterCliente !== "all") list = list.filter(c => (c.cliente || "") === filterCliente);
     if (filterMeio !== "all") list = list.filter(c => (c.meio || "") === filterMeio);
@@ -83,7 +71,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
       const t = c.submittedAt || c.ingestion_time;
       return (!customFrom || t >= sinceTs) && (!customTo || t <= untilTs);
     });
-  }, [grupoCheckings, filterConta, filterCliente, filterMeio, period, sinceTs, untilTs, customFrom, customTo]);
+  }, [checkings, filterConta, filterCliente, filterMeio, period, sinceTs, untilTs, customFrom, customTo]);
 
   // B3 fix (01/jul): passar nomes cadastrados para separar pessoas reais de fantasma
   const registeredNames = React.useMemo(() => (window.MOCK?.users || []).filter(u => u.role !== "viewer").map(u => u.nome || u.name), []);
@@ -95,11 +83,11 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const myName = currentUser?.nome || currentUser?.name;
   // B4 fix (01/jul): usar H.sameUser centralizado
   const mine = React.useMemo(() => {
-    return grupoCheckings.filter(c => {
+    return checkings.filter(c => {
       const a = c.assigned_to || '';
       return a && (H.sameUser(a, myName) || (currentUser?.email && H.sameUser(a, currentUser.email)));
     });
-  }, [grupoCheckings, myName, currentUser]);
+  }, [checkings, myName, currentUser]);
   // B4 fix: myStats com sameUser
   const myStats = prod.rows.find(r => H.sameUser(r.name, myName));
   const myPending = mine.filter(c => H.norm(c.status) === "pending").sort((a, b) => a.submittedAt - b.submittedAt);
@@ -141,7 +129,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
     return membros.map(u => {
       const uName = u.nome || u.name || "";
       const uEmail = u.email || "";
-      const meus = grupoCheckings.filter(c => {
+      const meus = checkings.filter(c => {
         const a = c.assigned_to || "";
         return a && (H.sameUser(a, uName) || (uEmail && H.sameUser(a, uEmail)));
       });
@@ -193,7 +181,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   }, [divRowsPreFilter, colFDiv.filters]);
   const assignOne = (id, name) => { onAssign && onAssign({ [id]: name }); onToast && onToast({ type: "success", message: `PI atribuído a ${name.split(" ")[0]}` }); };
   const assignConta = (conta, name) => {
-    const map = {}; grupoCheckings.forEach(c => { if ((c.conta || "Sem conta") === conta) map[c.submission_id] = name; });
+    const map = {}; checkings.forEach(c => { if ((c.conta || "Sem conta") === conta) map[c.submission_id] = name; });
     onAssign && onAssign(map);
     onToast && onToast({ type: "success", message: `Conta ${conta} atribuída a ${name.split(" ")[0]}` });
   };
@@ -334,7 +322,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
         {selectedMember && (() => {
           const mName = selectedMember.nome || selectedMember.name || "";
           const mEmail = selectedMember.email || "";
-          const memberPIs = grupoCheckings.filter(c => {
+          const memberPIs = checkings.filter(c => {
             const a = c.assigned_to || "";
             return a && (H.sameUser(a, mName) || (mEmail && H.sameUser(a, mEmail)));
           });
@@ -468,7 +456,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                   var membros = window.MOCK?.teamMembers?.(currentUser?.grupo || "boticario") || [];
                   var teamNames = membros.map(u => u.nome || u.name);
                   if (teamNames.length < 2) { onToast?.({ type: "info", message: "Precisa de pelo menos 2 responsaveis cadastrados." }); return; }
-                  var src = divMonth === "all" ? grupoCheckings : grupoCheckings.filter(c => { var d = new Date(c.submittedAt); return (d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")) === divMonth; });
+                  var src = divMonth === "all" ? checkings : checkings.filter(c => { var d = new Date(c.submittedAt); return (d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")) === divMonth; });
                   var unassigned = src.filter(c => !c.assigned_to);
                   if (!unassigned.length) { onToast?.({ type: "info", message: "Todos os PIs deste periodo ja tem responsavel." }); return; }
                   // REQ EQUIPE: distribuicao respeita REGIAO quando possivel.
@@ -590,7 +578,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
           </div>
         )}
 
-        {divOpen && <DividirDemanda checkings={grupoCheckings} team={equipe.map(m => m.nome || m.name)} onClose={() => setDivOpen(false)} onAssign={onAssign} onToast={onToast}/>}
+        {divOpen && <DividirDemanda checkings={checkings} team={equipe.map(m => m.nome || m.name)} onClose={() => setDivOpen(false)} onAssign={onAssign} onToast={onToast}/>}
         {/* REQ 4 (01/07): modal de preview da divisao automatica com distribuicao regional */}
         {autoPreview && (<>
           <div className="scrim" onClick={() => setAutoPreview(null)}/>
