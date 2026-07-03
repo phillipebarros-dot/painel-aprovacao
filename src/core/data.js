@@ -38,6 +38,7 @@
   ];
   const CONTAS_KAUANA = [
     "UNINTER", "MAX ATACADISTA", "FRIMESA", "VOLVO", "SHOPPING MULLER", "SERVOPA",
+    "UNICRED", "FRISIA",
   ];
 
   const GRUPOS = {
