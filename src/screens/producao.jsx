@@ -778,41 +778,53 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
 
   // Confirmar: chama assignResponsible DIRETO com n_pi e conta da pauta.
   // Nao depende de submission_id (PIs aguardando nao tem submission_id).
-  const confirm = () => {
+  const [saving, setSaving] = React.useState(false);
+  const [saveProgress, setSaveProgress] = React.useState({ done: 0, total: 0, errors: 0 });
+
+  const confirm = async () => {
     const API = window.PainelAPI;
-    let total = 0;
-    let apiErrors = 0;
+    // Montar lista de todas as atribuicoes
+    const jobs = [];
     contasGrupo.forEach(g => {
       const splits = (contaSplit[g.conta] || []).filter(s => s.name && s.qty > 0);
       if (!splits.length) return;
       let idx = 0;
       splits.forEach(s => {
         for (let i = 0; i < s.qty && idx < g.pis.length; i++, idx++) {
-          const pi = g.pis[idx];
-          total++;
-          API?.assignResponsible(pi.n_pi, s.name, mes, g.conta).catch(() => {
-            apiErrors++;
-            if (apiErrors === 1) onToast?.({ type: "warn", message: "Servidor indisponivel. Tente novamente." });
-          });
+          jobs.push({ n_pi: g.pis[idx].n_pi, name: s.name, conta: g.conta, submission_id: g.pis[idx].submission_id });
         }
       });
     });
-    // Update otimista: atualizar checkings locais que JA foram recebidos
+    if (!jobs.length) { onToast?.({ type: "info", message: "Nenhum PI para atribuir." }); return; }
+
+    setSaving(true);
+    setSaveProgress({ done: 0, total: jobs.length, errors: 0 });
+
+    // Serializar em batches de 5 para nao sobrecarregar o n8n
+    const BATCH = 5;
+    let done = 0, errors = 0;
+    for (let b = 0; b < jobs.length; b += BATCH) {
+      const batch = jobs.slice(b, b + BATCH);
+      const results = await Promise.allSettled(
+        batch.map(j => API?.assignResponsible(j.n_pi, j.name, mes, j.conta))
+      );
+      results.forEach(r => { if (r.status === "rejected") errors++; });
+      done += batch.length;
+      setSaveProgress({ done, total: jobs.length, errors });
+    }
+
+    // Update otimista: atualizar checkings locais
     const assignMap = {};
-    contasGrupo.forEach(g => {
-      const splits = (contaSplit[g.conta] || []).filter(s => s.name && s.qty > 0);
-      if (!splits.length) return;
-      let idx = 0;
-      splits.forEach(s => {
-        for (let i = 0; i < s.qty && idx < g.pis.length; i++, idx++) {
-          const pi = g.pis[idx];
-          if (pi.submission_id) assignMap[pi.submission_id] = s.name;
-        }
-      });
-    });
+    jobs.forEach(j => { if (j.submission_id) assignMap[j.submission_id] = j.name; });
     if (Object.keys(assignMap).length > 0) onAssign && onAssign(assignMap);
-    onClose();
-    onToast?.({ type: "success", message: `${total} PIs de ${contasAtribuidas} contas atribuidos.` });
+
+    setSaving(false);
+    if (errors > 0) {
+      onToast?.({ type: "warn", message: `${done - errors} de ${done} PIs salvos. ${errors} falharam — tente novamente.` });
+    } else {
+      onToast?.({ type: "success", message: `${done} PIs de ${contasAtribuidas} contas atribuídos com sucesso.` });
+      onClose();
+    }
   };
 
   const userColor = (name) => window.MOCK.users.find(u => u.name === name)?.color || "#0E7490";
@@ -909,10 +921,10 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
           );})()}
       </div>
       <div className="row gap-3" style={{ justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid var(--rule)" }}>
-        <span className="body-xs muted">{`${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs`}</span>
+        <span className="body-xs muted">{saving ? `Salvando ${saveProgress.done}/${saveProgress.total}...${saveProgress.errors ? ` (${saveProgress.errors} erros)` : ''}` : `${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs`}</span>
         <div className="row gap-3">
-          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button variant="primary" icon="check" disabled={!contasAtribuidas} onClick={confirm}>Confirmar divisão</Button>
+          <Button variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button variant="primary" icon={saving ? "hourglass_empty" : "check"} disabled={!contasAtribuidas || saving} onClick={confirm}>{saving ? `Salvando... ${saveProgress.done}/${saveProgress.total}` : "Confirmar divisão"}</Button>
         </div>
       </div>
     </div>
