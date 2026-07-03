@@ -33,6 +33,27 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
       .finally(() => setBoardLoading(false));
   }, []);
 
+  // ── Carregar total de PIs atribuidos por pessoa (pi_responsaveis) ──
+  // A Marlene precisa ver TODOS os PIs da pauta, nao so os recebidos
+  const [responsaveisData, setResponsaveisData] = React.useState([]);
+  React.useEffect(() => {
+    window.PainelAPI?.getResponsaveis('').then(r => {
+      const rows = Array.isArray(r) ? r : r?.rows || [];
+      setResponsaveisData(rows);
+    }).catch(() => {});
+  }, []);
+  // Totais da pauta por pessoa (nome): { "Rose": 85, "Brenda": 92, ... }
+  const pautaTotals = React.useMemo(() => {
+    const map = {};
+    responsaveisData.forEach(r => {
+      const nome = r.responsavel_nome || r.responsavel || "";
+      if (!nome) return;
+      if (!map[nome]) map[nome] = 0;
+      map[nome]++;
+    });
+    return map;
+  }, [responsaveisData]);
+
   const sinceTs = React.useMemo(() => {
     const now = Date.now();
     if (period === "hoje") return new Date().setHours(0, 0, 0, 0);
@@ -134,10 +155,13 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
         return a && (H.sameUser(a, uName) || (uEmail && H.sameUser(a, uEmail)));
       });
       const baixados = meus.filter(c => c.approvedAt || c.rejectedAt).length;
-      return { ...u, carga: meus.length, baixados, pendentes: meus.filter(c => H.norm(c.status) === "pending").length };
+      // Pauta total: PIs atribuidos em pi_responsaveis (inclui aguardando recebimento)
+      const pt = pautaTotals[uName] || 0;
+      return { ...u, carga: meus.length, baixados, pendentes: meus.filter(c => H.norm(c.status) === "pending").length, pautaTotal: pt };
     });
-  }, [checkings, currentUser]);
-  const equipeTotal = equipe.reduce((s, m) => s + m.carga, 0);
+  }, [checkings, currentUser, pautaTotals]);
+  const equipePautaTotal = equipe.reduce((s, m) => s + (m.pautaTotal || 0), 0);
+  const equipeTotal = equipePautaTotal > 0 ? equipePautaTotal : equipe.reduce((s, m) => s + m.carga, 0);
   const equipeAlvo = equipe.length ? equipeTotal / equipe.length : 0;
 
   // Divisão por conta (espelha as abas da planilha da Marlene): agrupa PIs por conta
@@ -271,7 +295,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10, marginBottom: 14 }}>
               {equipe.map(m => {
                 const pct = m.carga ? (m.baixados / m.carga) : 0;
-                const acima = equipeAlvo > 0 && m.carga > equipeAlvo * 1.15;
+                const acima = equipeAlvo > 0 && (m.pautaTotal || m.carga) > equipeAlvo * 1.15;
                 // R1 fix (01/jul): clicar no membro filtra divisao por assigned_to
                 const drillDown = () => {
                   setSelectedMember(m);
@@ -282,12 +306,15 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                       <Avatar user={m} size={28}/>
                       <div className="col" style={{ gap: 1, flex: 1, minWidth: 0 }}>
                         <span style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.nome || m.name}</span>
-                        <span className="cell-mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{m.carga} PIs</span>
+                        <span className="cell-mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{m.pautaTotal ? `${m.pautaTotal} atribuídos` : `${m.carga} PIs`}{m.carga > 0 && m.pautaTotal ? ` · ${m.carga} recebidos` : ''}</span>
                       </div>
-                      <span className="cell-mono" style={{ fontSize: 16, fontWeight: 700, color: pct >= 0.8 ? "var(--accent)" : pct >= 0.5 ? "var(--warn)" : "var(--ink-3)" }}>{Math.round(pct * 100)}%</span>
+                      <div className="col" style={{ alignItems: "flex-end", gap: 1 }}>
+                        <span className="cell-mono" style={{ fontSize: 16, fontWeight: 700, color: pct >= 0.8 ? "var(--accent)" : pct >= 0.5 ? "var(--warn)" : "var(--ink-3)" }}>{Math.round(pct * 100)}%</span>
+                        {m.pautaTotal > 0 && <span className="cell-mono" style={{ fontSize: 10, color: "var(--ink-4)" }}>{m.baixados}/{m.pautaTotal} baixados</span>}
+                      </div>
                     </div>
-                    <div className="rank-track" style={{ height: 5 }}><div className="rank-fill" style={{ width: `${pct * 100}%`, height: "100%", background: acima ? "var(--warn)" : "var(--accent)" }}/></div>
-                    {acima && <div style={{ fontSize: 10.5, color: "var(--warn)", marginTop: 4 }}>acima do equilibrio (+{Math.round(((m.carga / equipeAlvo) - 1) * 100)}%)</div>}
+                    <div className="rank-track" style={{ height: 5 }}><div className="rank-fill" style={{ width: `${(m.pautaTotal ? (m.baixados / m.pautaTotal) : pct) * 100}%`, height: "100%", background: acima ? "var(--warn)" : "var(--accent)" }}/></div>
+                    {acima && <div style={{ fontSize: 10.5, color: "var(--warn)", marginTop: 4 }}>acima do equilibrio (+{Math.round((((m.pautaTotal || m.carga) / equipeAlvo) - 1) * 100)}%)</div>}
                   </div>
                 );
               })}
@@ -298,10 +325,11 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                 <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-4)", fontWeight: 600, marginBottom: 6 }}>Distribuicao da carga</div>
                 <div className="rank-track" style={{ height: 18, display: "flex", borderRadius: 6, overflow: "hidden", position: "relative" }}>
                   {equipe.map((m, i) => {
-                    const w = (m.carga / equipeTotal) * 100;
-                    const acima = equipeAlvo > 0 && m.carga > equipeAlvo * 1.15;
+                    const mTotal = m.pautaTotal || m.carga;
+                    const w = (mTotal / equipeTotal) * 100;
+                    const acima = equipeAlvo > 0 && mTotal > equipeAlvo * 1.15;
                     const colors = ["var(--accent)", "#7E22CE", "#C2410C", "#0E7490", "#15803D", "#B45309"];
-                    return <div key={m.email || i} title={`${m.nome || m.name}: ${m.carga} PIs`} style={{ width: w + "%", height: "100%", background: acima ? "var(--warn)" : colors[i % colors.length], transition: "width 600ms var(--ease-out)" }}/>;
+                    return <div key={m.email || i} title={`${m.nome || m.name}: ${mTotal} PIs${m.pautaTotal ? ` (${m.carga} recebidos)` : ''}`} style={{ width: w + "%", height: "100%", background: acima ? "var(--warn)" : colors[i % colors.length], transition: "width 600ms var(--ease-out)" }}/>;
                   })}
                   {/* Linha alvo (total/N) */}
                   {equipe.length > 1 && <div style={{ position: "absolute", left: (100 / equipe.length) + "%", top: 0, bottom: 0, width: 1.5, background: "var(--ink)", opacity: 0.3 }}/>}
@@ -309,7 +337,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                 <div className="row gap-3" style={{ marginTop: 6, flexWrap: "wrap" }}>
                   {equipe.map((m, i) => {
                     const colors = ["var(--accent)", "#7E22CE", "#C2410C", "#0E7490", "#15803D", "#B45309"];
-                    return <span key={m.email || i} className="row gap-2" style={{ fontSize: 11, color: "var(--ink-3)" }}><span style={{ width: 8, height: 8, borderRadius: 2, background: (equipeAlvo > 0 && m.carga > equipeAlvo * 1.15) ? "var(--warn)" : colors[i % colors.length] }}/>{(m.nome || m.name || "").split(" ")[0]} ({m.carga})</span>;
+                    const mTotal = m.pautaTotal || m.carga;
+                    return <span key={m.email || i} className="row gap-2" style={{ fontSize: 11, color: "var(--ink-3)" }}><span style={{ width: 8, height: 8, borderRadius: 2, background: (equipeAlvo > 0 && mTotal > equipeAlvo * 1.15) ? "var(--warn)" : colors[i % colors.length] }}/>{(m.nome || m.name || "").split(" ")[0]} ({mTotal})</span>;
                   })}
                   <span className="muted" style={{ fontSize: 11 }}>| alvo: {Math.round(equipeAlvo)} cada</span>
                 </div>
