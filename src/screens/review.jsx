@@ -21,8 +21,9 @@ function LightboxEmbed({ file }) {
         if (!API || !API.fetchFileBlob) { setStatus('error'); return; }
         const url = await API.fetchFileBlob(id);
         if (!cancelled && url) {
-          // Revogar blob anterior se existir (troca de arquivo)
-          if (blobRef.current) URL.revokeObjectURL(blobRef.current);
+          // NÃO revogar blob anterior — o _blobCache do api.js é o dono.
+          // Revogar aqui matava URLs que o cache ainda referenciava,
+          // causando ERR_FILE_NOT_FOUND ao reabrir o mesmo arquivo.
           blobRef.current = url;
           setBlobUrl(url);
           setStatus('ready');
@@ -34,8 +35,10 @@ function LightboxEmbed({ file }) {
       }
     })();
 
-    // FIX C: revogar blob ao desmontar via ref (nunca stale)
-    return () => { cancelled = true; if (blobRef.current) { URL.revokeObjectURL(blobRef.current); blobRef.current = null; } };
+    // Cleanup: apenas cancelar fetch em voo. NÃO revogar blob —
+    // ele vive no _blobCache e será reutilizado. O browser limpa
+    // todos os blobs automaticamente no page unload.
+    return () => { cancelled = true; };
   }, [id]);
 
   // Loading
