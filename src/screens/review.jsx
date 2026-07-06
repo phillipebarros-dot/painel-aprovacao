@@ -876,14 +876,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
               ) : (lightbox.isPdf || lightbox.isVideo) && lightbox.id_imagem ? (
                 <LightboxEmbed file={lightbox}/>
               ) : (lightbox.isAudio || /\.(mp3|wav|ogg|aac|m4a|wma)/i.test(lightbox.detalhe || '')) && lightbox.id_imagem ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, padding: 40 }}>
-                  <div style={{ width: 88, height: 88, borderRadius: 20, background: "rgba(139,92,246,0.1)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <Icon name="music" size={42} style={{ color: "#a78bfa" }}/>
-                  </div>
-                  <p style={{ fontSize: 17, fontWeight: 600, margin: 0, color: "#e5e7eb" }}>{lightbox.detalhe || "Audio"}</p>
-                  <audio controls style={{ width: "min(420px, 80vw)" }} src={`https://drive.google.com/uc?id=${lightbox.id_imagem}&export=download`} onError={(e) => { e.target.style.display = 'none'; }}>Seu navegador nao suporta audio.</audio>
-                  <a href={lightbox.viewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "#6b7280", textDecoration: "none" }}>Abrir no Google Drive</a>
-                </div>
+                <LightboxEmbed file={lightbox}/>
               ) : (
                 <div style={{ textAlign: "center", color: "#b0b5be", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: 32 }}>
                   <div style={{ width: 88, height: 88, borderRadius: 20, background: "rgba(255,255,255,0.06)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
