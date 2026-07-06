@@ -1,3 +1,101 @@
+// PdfEmbed: renderiza PDF via <object> com retry automatico.
+// Chrome tem bug conhecido (OOPIF / process isolation) que causa
+// ERR_FILE_NOT_FOUND intermitente com blob: URLs em <iframe>.
+// <object> e mais estavel, e o retry com fresh blob resolve os casos restantes.
+function PdfEmbed({ blobUrl: initialUrl, viewUrl, fileId }) {
+  const [url, setUrl] = React.useState(null);
+  const [retries, setRetries] = React.useState(0);
+  const [failed, setFailed] = React.useState(false);
+  const MAX_RETRIES = 2;
+  const timerRef = React.useRef(null);
+
+  // Delay inicial de 150ms para dar tempo ao Chrome registrar o blob no processo
+  React.useEffect(() => {
+    timerRef.current = setTimeout(() => setUrl(initialUrl), 150);
+    return () => clearTimeout(timerRef.current);
+  }, [initialUrl]);
+
+  // Retry: se o objeto falhar, busca blob fresco e tenta de novo
+  const handleError = React.useCallback(async () => {
+    if (retries >= MAX_RETRIES) { setFailed(true); return; }
+    setUrl(null); // força re-render com loading
+    try {
+      const API = window.PainelAPI;
+      if (API?._blobCache) delete API._blobCache[fileId]; // força re-download
+      const freshUrl = await API?.fetchFileBlob?.(fileId);
+      if (freshUrl) {
+        // Pequeno delay antes de setar o novo URL
+        timerRef.current = setTimeout(() => {
+          setUrl(freshUrl);
+          setRetries(r => r + 1);
+        }, 300);
+      } else {
+        setFailed(true);
+      }
+    } catch { setFailed(true); }
+  }, [retries, fileId]);
+
+  if (failed) {
+    return React.createElement('div', {
+      style: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }
+    },
+      React.createElement('div', {
+        style: { width: 88, height: 88, borderRadius: 20, background: 'rgba(255,255,255,0.06)', display: 'grid', placeItems: 'center', border: '1px solid rgba(255,255,255,0.08)' }
+      }, React.createElement(Icon, { name: 'pdf', size: 42, style: { color: '#9ca3af' } })),
+      React.createElement('p', { style: { fontSize: 15, fontWeight: 500, margin: 0 } }, 'PDF não carregou'),
+      React.createElement('p', { style: { fontSize: 12, color: '#666', margin: 0 } }, 'O Chrome pode bloquear PDFs em blob: URLs. Tente abrir direto.'),
+      React.createElement('div', { className: 'row gap-3' },
+        React.createElement('a', {
+          href: url || initialUrl, download: 'documento.pdf',
+          className: 'btn btn-accent', style: { fontSize: 14, padding: '10px 24px', textDecoration: 'none' }
+        }, 'Baixar PDF'),
+        React.createElement('a', {
+          href: viewUrl, target: '_blank', rel: 'noreferrer',
+          className: 'btn btn-ghost', style: { fontSize: 14, padding: '10px 24px', textDecoration: 'none' }
+        }, 'Abrir no Drive')
+      )
+    );
+  }
+
+  if (!url) {
+    return React.createElement('div', {
+      style: { width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: '#888', fontSize: 13 }
+    },
+      React.createElement('div', { style: { textAlign: 'center' } },
+        React.createElement('div', {
+          className: 'spinner',
+          style: { width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }
+        }),
+        retries > 0 ? `Tentativa ${retries + 1}...` : 'Carregando PDF...'
+      )
+    );
+  }
+
+  // <object> é mais estavel que <iframe> para blob: PDFs no Chrome.
+  // O onError dispara o retry automatico se o Chrome rejeitar o blob.
+  return React.createElement('object', {
+    data: url + '#toolbar=1&navpanes=1',
+    type: 'application/pdf',
+    style: { width: '100%', height: '100%', border: 'none', borderRadius: 4 },
+    onError: handleError,
+  },
+    // Fallback: se <object> nao renderizar (ex: mobile), mostra link
+    React.createElement('div', {
+      style: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 }
+    },
+      React.createElement('p', { style: { fontSize: 13, color: '#999' } }, 'Seu navegador não suporta visualização de PDF embutida.'),
+      React.createElement('a', {
+        href: url, download: 'documento.pdf',
+        className: 'btn btn-accent', style: { fontSize: 14, padding: '10px 20px', textDecoration: 'none' }
+      }, 'Baixar PDF'),
+      React.createElement('a', {
+        href: viewUrl, target: '_blank', rel: 'noreferrer',
+        style: { fontSize: 12, color: '#6b7280', textDecoration: 'none' }
+      }, 'Abrir no Google Drive')
+    )
+  );
+}
+
 // LightboxEmbed: exibe PDF/video/imagem/audio inline via proxy blob do n8n.
 // Estrategia: fetchFileBlob (POST n8n, retorna blob: URL local) -> fallback card.
 // Contorna 401 do Drive e bloqueio de cookies de terceiros.
@@ -87,7 +185,7 @@ function LightboxEmbed({ file }) {
   }
 
   if (file.isPdf) {
-    return <iframe src={blobUrl} style={{ width: "100%", height: "100%", border: "none", borderRadius: 4 }} title="PDF Viewer"/>;
+    return React.createElement(PdfEmbed, { blobUrl, viewUrl, fileId: id });
   }
 
   // Imagem (default)
