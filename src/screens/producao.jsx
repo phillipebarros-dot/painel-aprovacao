@@ -848,37 +848,21 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
 
     let done = 0, errors = 0;
 
-    // ── Tentar BULK primeiro (1 request, ~3-5s para 600 PIs) ──
-    try {
-      setSaveProgress({ done: 0, total: jobs.length, errors: 0, eta: 'Enviando...' });
-      const bulkPayload = jobs.map(j => ({ n_pi: j.n_pi, responsavel: j.responsavel, mes_referencia: j.mes_referencia, conta: j.conta }));
-      await API?.bulkAssignResponsible(bulkPayload);
-      done = jobs.length;
-      setSaveProgress({ done, total: jobs.length, errors: 0, eta: '' });
-    } catch (bulkErr) {
-      // Se INVALID_ACTION → n8n antigo sem endpoint bulk → fallback individual
-      const isMissing = String(bulkErr?.message || '').includes('INVALID_ACTION') || String(bulkErr?.message || '').includes('desconhecida');
-      if (isMissing) {
-        console.warn('[DividirDemanda] bulk endpoint nao existe, fallback individual');
-        // ── Fallback: batches individuais ──
-        const BATCH = 50;
-        const t0 = Date.now();
-        for (let b = 0; b < jobs.length; b += BATCH) {
-          const batch = jobs.slice(b, b + BATCH);
-          const results = await Promise.allSettled(
-            batch.map(j => API?.assignResponsible(j.n_pi, j.responsavel, mes, j.conta))
-          );
-          results.forEach(r => { if (r.status === "rejected") errors++; });
-          done += batch.length;
-          const elapsed = (Date.now() - t0) / 1000;
-          const rate = done / elapsed;
-          const remaining = Math.ceil((jobs.length - done) / rate);
-          setSaveProgress({ done, total: jobs.length, errors, eta: remaining > 0 ? `~${remaining}s restante` : '' });
-        }
-      } else {
-        errors = jobs.length;
-        console.error('[DividirDemanda] bulk assign failed:', bulkErr);
-      }
+    // Usar assign_responsible individual, mas com BATCH=50 em paralelo real
+    // (assign_responsible agora bypassa o MAX_CONCURRENT=4 limiter)
+    const BATCH = 50;
+    const t0 = Date.now();
+    for (let b = 0; b < jobs.length; b += BATCH) {
+      const batch = jobs.slice(b, b + BATCH);
+      const results = await Promise.allSettled(
+        batch.map(j => API?.assignResponsible(j.n_pi, j.responsavel, mes, j.conta))
+      );
+      results.forEach(r => { if (r.status === "rejected") errors++; });
+      done += batch.length;
+      const elapsed = (Date.now() - t0) / 1000;
+      const rate = done / elapsed;
+      const remaining = Math.ceil((jobs.length - done) / rate);
+      setSaveProgress({ done, total: jobs.length, errors, eta: remaining > 0 ? `~${remaining}s restante` : '' });
     }
 
     // Update otimista: atualizar checkings locais
