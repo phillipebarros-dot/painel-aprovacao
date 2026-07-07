@@ -805,14 +805,31 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   const contasAtribuidas = contasGrupo.filter(g => (contaSplit[g.conta] || []).some(s => s.name && s.qty > 0)).length;
   const pisAtribuidos = contasGrupo.reduce((s, g) => s + (contaSplit[g.conta] || []).filter(x => x.name).reduce((a, x) => a + x.qty, 0), 0);
 
-  // Confirmar: chama assignResponsible DIRETO com n_pi e conta da pauta.
-  // Nao depende de submission_id (PIs aguardando nao tem submission_id).
+  // Confirmar: usa bulk_assign_responsible (1 request, MERGE unico).
+  // Fallback: se o n8n nao tiver o endpoint bulk, faz individual em batches.
   const [saving, setSaving] = React.useState(false);
   const [saveProgress, setSaveProgress] = React.useState({ done: 0, total: 0, errors: 0 });
 
   const confirm = async () => {
     const API = window.PainelAPI;
-    // Montar lista de todas as atribuicoes
+
+    // ── Validacao de overflow ──
+    // Se a soma dos PIs atribuidos excede o total disponivel na conta, bloquear
+    const overflows = [];
+    contasGrupo.forEach(g => {
+      const splits = (contaSplit[g.conta] || []).filter(s => s.name && s.qty > 0);
+      if (!splits.length) return;
+      const totalAssigned = splits.reduce((s, x) => s + x.qty, 0);
+      if (totalAssigned > g.pis.length) {
+        overflows.push(`${g.conta}: ${totalAssigned} atribuidos, mas so tem ${g.pis.length} PIs`);
+      }
+    });
+    if (overflows.length > 0) {
+      onToast?.({ type: "warn", message: `Ajuste as quantidades:\n${overflows.join('\n')}` });
+      return;
+    }
+
+    // ── Montar lista de atribuicoes ──
     const jobs = [];
     contasGrupo.forEach(g => {
       const splits = (contaSplit[g.conta] || []).filter(s => s.name && s.qty > 0);
@@ -820,7 +837,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
       let idx = 0;
       splits.forEach(s => {
         for (let i = 0; i < s.qty && idx < g.pis.length; i++, idx++) {
-          jobs.push({ n_pi: g.pis[idx].n_pi, name: s.name, conta: g.conta, submission_id: g.pis[idx].submission_id });
+          jobs.push({ n_pi: g.pis[idx].n_pi, responsavel: s.name, mes_referencia: mes, conta: g.conta, submission_id: g.pis[idx].submission_id });
         }
       });
     });
@@ -829,26 +846,44 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     setSaving(true);
     setSaveProgress({ done: 0, total: jobs.length, errors: 0, eta: '' });
 
-    // Serializar em batches de 20 (599 PIs ÷ 20 = 30 rounds ≈ 30s)
-    const BATCH = 20;
     let done = 0, errors = 0;
-    const t0 = Date.now();
-    for (let b = 0; b < jobs.length; b += BATCH) {
-      const batch = jobs.slice(b, b + BATCH);
-      const results = await Promise.allSettled(
-        batch.map(j => API?.assignResponsible(j.n_pi, j.name, mes, j.conta))
-      );
-      results.forEach(r => { if (r.status === "rejected") errors++; });
-      done += batch.length;
-      const elapsed = (Date.now() - t0) / 1000;
-      const rate = done / elapsed;
-      const remaining = Math.ceil((jobs.length - done) / rate);
-      setSaveProgress({ done, total: jobs.length, errors, eta: remaining > 0 ? `~${remaining}s restante` : '' });
+
+    // ── Tentar BULK primeiro (1 request, ~3-5s para 600 PIs) ──
+    try {
+      setSaveProgress({ done: 0, total: jobs.length, errors: 0, eta: 'Enviando...' });
+      const bulkPayload = jobs.map(j => ({ n_pi: j.n_pi, responsavel: j.responsavel, mes_referencia: j.mes_referencia, conta: j.conta }));
+      await API?.bulkAssignResponsible(bulkPayload);
+      done = jobs.length;
+      setSaveProgress({ done, total: jobs.length, errors: 0, eta: '' });
+    } catch (bulkErr) {
+      // Se INVALID_ACTION → n8n antigo sem endpoint bulk → fallback individual
+      const isMissing = String(bulkErr?.message || '').includes('INVALID_ACTION') || String(bulkErr?.message || '').includes('desconhecida');
+      if (isMissing) {
+        console.warn('[DividirDemanda] bulk endpoint nao existe, fallback individual');
+        // ── Fallback: batches individuais ──
+        const BATCH = 50;
+        const t0 = Date.now();
+        for (let b = 0; b < jobs.length; b += BATCH) {
+          const batch = jobs.slice(b, b + BATCH);
+          const results = await Promise.allSettled(
+            batch.map(j => API?.assignResponsible(j.n_pi, j.responsavel, mes, j.conta))
+          );
+          results.forEach(r => { if (r.status === "rejected") errors++; });
+          done += batch.length;
+          const elapsed = (Date.now() - t0) / 1000;
+          const rate = done / elapsed;
+          const remaining = Math.ceil((jobs.length - done) / rate);
+          setSaveProgress({ done, total: jobs.length, errors, eta: remaining > 0 ? `~${remaining}s restante` : '' });
+        }
+      } else {
+        errors = jobs.length;
+        console.error('[DividirDemanda] bulk assign failed:', bulkErr);
+      }
     }
 
     // Update otimista: atualizar checkings locais
     const assignMap = {};
-    jobs.forEach(j => { if (j.submission_id) assignMap[j.submission_id] = j.name; });
+    jobs.forEach(j => { if (j.submission_id) assignMap[j.submission_id] = j.responsavel; });
     if (Object.keys(assignMap).length > 0) onAssign && onAssign(assignMap);
 
     setSaving(false);
