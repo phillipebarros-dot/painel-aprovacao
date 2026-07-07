@@ -738,6 +738,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
   // Retorna TODOS os PIs planejados, com status de recebimento do formulario
   const [pautaData, setPautaData] = React.useState([]);
   const [pautaLoading, setPautaLoading] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
   React.useEffect(() => {
     const API = window.PainelAPI;
     if (!API?.getPautaCruzada) return;
@@ -747,7 +748,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
       else if (Array.isArray(res)) setPautaData(res);
       else setPautaData([]);
     }).catch(() => setPautaData([])).finally(() => setPautaLoading(false));
-  }, [mes]);
+  }, [mes, refreshKey]);
 
   const poolAll = React.useMemo(() => {
     if (!pautaData.length) return [];
@@ -874,8 +875,9 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     if (errors > 0) {
       onToast?.({ type: "warn", message: `${done - errors} de ${done} PIs salvos. ${errors} falharam - tente novamente.` });
     } else {
-      onToast?.({ type: "success", message: `${done} PIs de ${contasAtribuidas} contas atribuidos com sucesso.` });
-      onClose();
+      onToast?.({ type: "success", message: `${done} PIs de ${contasAtribuidas} contas atribuidos com sucesso. Recarregando...` });
+      // Recarregar dados do BigQuery para confirmar persistencia
+      setRefreshKey(k => k + 1);
     }
   };
 
