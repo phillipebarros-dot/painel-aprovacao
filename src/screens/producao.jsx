@@ -847,31 +847,57 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     setSaving(true);
     setSaveProgress({ done: 0, total: jobs.length, errors: 0, eta: '' });
 
-    try {
-      // ── BULK: 1 request, 1 MERGE com UNNEST no BigQuery ──
-      // O endpoint bulk no n8n faz um único MERGE no BigQuery (3-8s para 5000 PIs).
-      // O loop antigo fazia 593 requests individuais → 593 MERGEs → serialização → 502.
-      const assignments = jobs.map(j => ({
-        n_pi: j.n_pi,
-        responsavel: j.responsavel,
-        mes_referencia: mes,
-        conta: j.conta
-      }));
-      await API.bulkAssignResponsible(assignments);
+    // ── LOTES SEQUENCIAIS de 150: evita timeout do proxy (60s) ──
+    // Cada lote faz 1 MERGE com UNNEST no BigQuery (~3-8s para 150 PIs).
+    // Antes: 1 bulk de 594 podia estourar o timeout → 502.
+    // Antes disso: 594 requests individuais → 594 MERGEs → serialização.
+    const BATCH_SIZE = 150;
+    let done = 0;
+    let batchErrors = 0;
 
-      // Update otimista SÓ DEPOIS de confirmação do servidor.
+    try {
+      for (let b = 0; b < jobs.length; b += BATCH_SIZE) {
+        const batch = jobs.slice(b, b + BATCH_SIZE);
+        const assignments = batch.map(j => ({
+          n_pi: j.n_pi,
+          responsavel: j.responsavel,
+          mes_referencia: mes,
+          conta: j.conta
+        }));
+
+        try {
+          await API.bulkAssignResponsible(assignments);
+          done += batch.length;
+          setSaveProgress({ done, total: jobs.length, errors: batchErrors, eta: '' });
+        } catch (batchErr) {
+          batchErrors++;
+          console.error(`[Divisao] Lote ${Math.floor(b / BATCH_SIZE) + 1} falhou:`, batchErr);
+          // Parar no primeiro erro — os lotes anteriores já salvaram
+          setSaving(false);
+          onToast?.({ type: "error", message: `${done} de ${jobs.length} PIs salvos. Lote ${Math.floor(b / BATCH_SIZE) + 1} falhou: ${batchErr?.message || 'erro'}. Recarregue e reenvie o restante.` });
+          // Aplicar update otimista parcial (só os que salvaram)
+          if (done > 0) {
+            const partialMap = {};
+            jobs.slice(0, done).forEach(j => { if (j.submission_id) partialMap[j.submission_id] = j.responsavel; });
+            if (Object.keys(partialMap).length > 0) onAssign && onAssign(partialMap);
+            setRefreshKey(k => k + 1);
+          }
+          return;
+        }
+      }
+
+      // Todos os lotes OK — update otimista completo
       const assignMap = {};
       jobs.forEach(j => { if (j.submission_id) assignMap[j.submission_id] = j.responsavel; });
       if (Object.keys(assignMap).length > 0) onAssign && onAssign(assignMap);
 
       setSaving(false);
       onToast?.({ type: "success", message: `${jobs.length} PIs de ${contasAtribuidas} contas atribuidos com sucesso. Recarregando...` });
-      // Recarregar dados do BigQuery para confirmar persistencia
       setRefreshKey(k => k + 1);
     } catch (err) {
       setSaving(false);
       console.error('[Divisao] Bulk assign failed:', err);
-      onToast?.({ type: "error", message: `Falha ao salvar: ${err?.message || 'erro desconhecido'}. Nenhum PI foi atribuido — tente novamente.` });
+      onToast?.({ type: "error", message: `Falha ao salvar: ${err?.message || 'erro desconhecido'}. ${done} de ${jobs.length} PIs foram salvos.` });
     }
   };
 
@@ -969,10 +995,10 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
           );})()}
       </div>
       <div className="row gap-3" style={{ justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid var(--rule)" }}>
-        <span className="body-xs muted">{saving ? `Salvando ${saveProgress.total} PIs...` : `${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs`}</span>
+        <span className="body-xs muted">{saving ? `Salvando ${saveProgress.done}/${saveProgress.total} PIs...${saveProgress.errors ? ` (${saveProgress.errors} erros)` : ''}` : `${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs`}</span>
         <div className="row gap-3">
           <Button variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button variant="primary" icon={saving ? "hourglass_empty" : "check"} disabled={!contasAtribuidas || saving} onClick={confirm}>{saving ? `Salvando... ${saveProgress.total} PIs` : "Confirmar divisão"}</Button>
+          <Button variant="primary" icon={saving ? "hourglass_empty" : "check"} disabled={!contasAtribuidas || saving} onClick={confirm}>{saving ? `Salvando... ${saveProgress.done}/${saveProgress.total}` : "Confirmar divisão"}</Button>
         </div>
       </div>
     </div>
