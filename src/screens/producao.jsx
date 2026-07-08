@@ -370,14 +370,16 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                   </div>
                   <button className="btn btn-ghost sm" onClick={() => setSelectedMember(null)} style={{ fontSize: 18, padding: 4 }}>&times;</button>
                 </div>
-                <div className="row gap-4" style={{ fontSize: 13 }}>
-                  <span><b style={{ color: "var(--ink)" }}>{memberPIs.length}</b> PIs total</span>
+                <div className="row gap-4" style={{ fontSize: 13, flexWrap: "wrap" }}>
+                  <span><b style={{ color: "var(--ink)" }}>{pautaTotals[mName] || memberPIs.length}</b> atribuídos</span>
+                  <span><b style={{ color: "var(--accent)" }}>{memberPIs.length}</b> recebidos</span>
                   <span><b style={{ color: "var(--warn)" }}>{pending}</b> pendentes</span>
                   <span><b style={{ color: "var(--accent)" }}>{done}</b> baixados</span>
                 </div>
               </div>
               <div className="card-pad" style={{ overflowY: "auto", flex: 1 }}>
-                {memberPIs.length === 0 ? <Empty title="Sem PIs atribuidos" hint={`${mName.split(" ")[0]} nao tem PIs atribuidos neste periodo.`} icon="layers"/> : (
+                {memberPIs.length === 0 ? <Empty title="Nenhum checking recebido" hint={(pautaTotals[mName] || 0) > 0 ? `${mName.split(" ")[0]} tem ${pautaTotals[mName]} PIs atribuidos, mas nenhum fornecedor enviou ainda.` : `${mName.split(" ")[0]} nao tem PIs atribuidos neste periodo.`} icon="layers"/> : (<>
+                  <p className="body-xs muted" style={{ margin: "0 0 8px" }}>Mostrando os <b>{memberPIs.length}</b> PIs com checking recebido{(pautaTotals[mName] || 0) > memberPIs.length ? <>. Os outros <b>{(pautaTotals[mName] || 0) - memberPIs.length}</b> estão aguardando envio do fornecedor.</> : "."}</p>
                   <table className="tbl" style={{ fontSize: 12.5 }}>
                     <thead><tr><th>No PI</th><th>Conta</th><th>Cliente</th><th>Veiculo</th><th>Meio</th><th>Vencimento</th><th>Status</th></tr></thead>
                     <tbody>
@@ -397,7 +399,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                       })}
                     </tbody>
                   </table>
-                )}
+                </>)}
               </div>
               <div className="card-pad" style={{ borderTop: "1px solid var(--rule)", flexShrink: 0 }}>
                 <div className="row gap-3" style={{ justifyContent: "flex-end" }}>
