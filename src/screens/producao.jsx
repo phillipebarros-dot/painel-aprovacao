@@ -38,7 +38,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const [responsaveisData, setResponsaveisData] = React.useState([]);
   React.useEffect(() => {
     window.PainelAPI?.getResponsaveis('').then(r => {
-      const rows = Array.isArray(r) ? r : r?.rows || [];
+      const rows = Array.isArray(r) ? r : (r?.responsaveis || r?.rows || []);
       setResponsaveisData(rows);
     }).catch(() => {});
   }, []);
@@ -257,7 +257,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
         </div>
         {/* Totais — Bug 1 fix (01/jul): separar distribuidos vs total */}
         <div className="grid-cols-4 stagger" style={{ marginBottom: "var(--gap)" }}>
-          <div className="kpi"><div className="kpi-label">Distribuídos</div><div className="kpi-value"><CountUp value={filteredCheckings.filter(c => c.assigned_to).length}/></div><div className="kpi-meta">de <strong>{filteredCheckings.length}</strong> total · entre <strong>{prod.rows.length}</strong> pessoas</div></div>
+          <div className="kpi"><div className="kpi-label">Distribuídos</div><div className="kpi-value"><CountUp value={equipePautaTotal || filteredCheckings.filter(c => c.assigned_to).length}/></div><div className="kpi-meta">de <strong>{filteredCheckings.length}</strong> total · entre <strong>{prod.rows.length}</strong> pessoas</div></div>
           <div className="kpi"><div className="kpi-label">Baixados · {periodLabel}</div><div className="kpi-value" style={{ color: "var(--accent)" }}><CountUp value={prod.totals.baixados}/></div><div className="kpi-meta"><strong>{prod.totals.approved}</strong> aprovados · <strong>{prod.totals.rejected}</strong> reprovados</div></div>
           <div className="kpi"><div className="kpi-label">Pendentes</div><div className="kpi-value" style={{ color: prod.totals.pendentes ? "var(--warn)" : "var(--ink)" }}><CountUp value={prod.totals.pendentes}/></div><div className="kpi-meta">aguardando baixa</div></div>
           <div className="kpi"><div className="kpi-label">Conclusão</div><div className="kpi-value"><CountUp value={prod.totals.demanda ? Math.round((prod.totals.baixados / prod.totals.demanda) * 100) : 0}/><span className="unit">%</span></div><div className="kpi-meta">da demanda distribuída</div></div>
