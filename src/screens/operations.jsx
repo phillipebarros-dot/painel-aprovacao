@@ -37,7 +37,7 @@ function ScreenOperations({ onToast, checkings, slaCfg, onSaveSla }) {
       <div className="page-head">
         <div className="col" style={{ gap: 6 }}><div className="eyebrow">Operações · admin only</div><h1 className="display-1">Arquitetura e segurança</h1></div>
         <div className="row gap-3">
-          <Segmented value={tab} onChange={setTab} options={[{ value: "flow", label: "Fluxo n8n" }, { value: "security", label: "Segurança" }, { value: "services", label: "Serviços" }, { value: "sla", label: "SLA" }]}/>
+          <Segmented value={tab} onChange={setTab} options={[{ value: "flow", label: "Fluxo n8n" }, { value: "security", label: "Segurança" }, { value: "services", label: "Serviços" }, { value: "sla", label: "SLA" }, { value: "latency", label: "Latência" }]}/>
           <Button variant="ghost" icon="refresh" loading={loading} onClick={refresh}>Atualizar</Button>
         </div>
       </div>
@@ -135,7 +135,114 @@ function ScreenOperations({ onToast, checkings, slaCfg, onSaveSla }) {
           </div>
         </div>
       )}
+
+      {/* ── Fase 0: Aba de Latência por endpoint ── */}
+      {tab === "latency" && <LatencyPanel H={H} onToast={onToast}/>}
     </div>
   );
 }
+
+// ── Fase 0: Painel de latência (componente isolado pra encapsular o setInterval) ──
+function LatencyPanel({ H, onToast }) {
+  const [summary, setSummary] = React.useState(() => window.PainelAPI?.getMetricsSummary?.() || { total: 0, avgAll: 0, errorRateAll: 0, byAction: {} });
+
+  // Auto-refresh a cada 5s
+  React.useEffect(() => {
+    const tick = () => { const s = window.PainelAPI?.getMetricsSummary?.(); if (s) setSummary(s); };
+    tick();
+    const iv = setInterval(tick, 5000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const actions = React.useMemo(() => {
+    const entries = Object.entries(summary.byAction || {});
+    // Ordena por p95 desc (se existir), senao por max desc
+    entries.sort((a, b) => (b[1].p95 || b[1].max || 0) - (a[1].p95 || a[1].max || 0));
+    return entries;
+  }, [summary]);
+
+  const fmtMs = (ms) => {
+    if (ms == null) return "—";
+    if (ms >= 10000) return (ms / 1000).toFixed(1) + "s";
+    if (ms >= 1000) return (ms / 1000).toFixed(2) + "s";
+    return Math.round(ms) + "ms";
+  };
+  const latColor = (ms) => {
+    if (ms == null) return undefined;
+    if (ms > 5000) return "var(--alert)";
+    if (ms > 2000) return "var(--warn)";
+    return undefined;
+  };
+
+  const exportCsv = () => {
+    const raw = window.PainelAPI?.getMetrics?.() || [];
+    if (!raw.length) { onToast?.({ type: "info", message: "Sem metricas pra exportar." }); return; }
+    const head = "action,totalMs,queueMs,netMs,status,error,timestamp\n";
+    const rows = raw.map(e => `"${e.action}",${e.totalMs.toFixed(1)},${e.queueMs.toFixed(1)},${e.netMs.toFixed(1)},${e.status},${e.error},${new Date(e.ts).toISOString()}`).join("\n");
+    const blob = new Blob(["\uFEFF" + head + rows], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `latencia_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
+    onToast?.({ type: "success", message: `${raw.length} registros exportados.` });
+  };
+
+  return (<>
+    {/* KPIs */}
+    <div className="grid-cols-3 stagger" style={{ marginBottom: "var(--gap)" }}>
+      <div className="kpi"><div className="kpi-label">Chamadas na sessão</div><div className="kpi-value"><CountUp value={summary.total}/></div><div className="kpi-meta">{summary.bufferUsed || 0} no buffer (max 300)</div></div>
+      <div className="kpi"><div className="kpi-label">Latência média geral</div><div className="kpi-value" style={{ color: latColor(summary.avgAll) }}>{fmtMs(summary.avgAll)}</div><div className="kpi-meta">rede + parse (end-to-end)</div></div>
+      <div className="kpi"><div className="kpi-label">Taxa de erro</div><div className="kpi-value" style={{ color: summary.errorRateAll > 0.05 ? "var(--alert)" : summary.errorRateAll > 0 ? "var(--warn)" : "var(--ink)" }}>{(summary.errorRateAll * 100).toFixed(1)}%</div><div className="kpi-meta">inclui timeout (408) e rede (0)</div></div>
+    </div>
+
+    {/* Info */}
+    <div className="card card-pad" style={{ marginBottom: "var(--gap)", padding: "10px 14px", background: "var(--info-soft)", border: "1px solid rgba(37,99,235,0.2)" }}>
+      <div className="row gap-2" style={{ alignItems: "center" }}><Icon name="info" size={14} style={{ color: "var(--info)" }}/><span style={{ fontSize: 12.5, color: "var(--ink-2)" }}>Dados coletados nesta sessão do browser. Não persistem, não saem do navegador. Atualiza a cada 5s. A coluna "Fila" mede espera no limitador client-side (MAX_CONCURRENT=4), não o servidor.</span></div>
+    </div>
+
+    {/* Tabela */}
+    <div className="card">
+      <div className="card-head">
+        <div className="col" style={{ gap: 2 }}><div className="eyebrow">Por endpoint</div><div className="h2">Latência real medida no browser</div></div>
+        <div className="row gap-2">
+          <Button variant="ghost" size="sm" icon="layers" onClick={exportCsv}>Exportar CSV</Button>
+          <Button variant="ghost" size="sm" icon="x" onClick={() => { window.PainelAPI?.clearMetrics?.(); setSummary({ total: 0, bufferUsed: 0, avgAll: 0, errorRateAll: 0, byAction: {} }); onToast?.({ type: "success", message: "Métricas zeradas." }); }}>Limpar</Button>
+        </div>
+      </div>
+      {actions.length === 0
+        ? <Empty title="Sem dados ainda" hint="Navegue pelo painel — as metricas aparecem conforme voce usa" icon="target"/>
+        : (
+          <table className="tbl">
+            <thead><tr>
+              <th>Endpoint</th>
+              <th style={{ textAlign: "right" }}>Chamadas</th>
+              <th style={{ textAlign: "right" }}>Avg</th>
+              <th style={{ textAlign: "right" }}>p50</th>
+              <th style={{ textAlign: "right" }}>p95</th>
+              <th style={{ textAlign: "right" }}>Max</th>
+              <th style={{ textAlign: "right" }}>Fila (avg)</th>
+              <th style={{ textAlign: "right" }}>Erros</th>
+              <th style={{ textAlign: "right" }}>Última</th>
+            </tr></thead>
+            <tbody>
+              {actions.map(([action, m], i) => {
+                const worst = m.p95 || m.max;
+                return (
+                  <tr key={action} className={i < 20 ? "row-anim" : ""} style={i < 20 ? { animationDelay: (i * 25) + "ms" } : undefined}>
+                    <td className="cell-mono" style={{ fontSize: 12.5, fontWeight: 500 }}>{action}</td>
+                    <td className="cell-mono" style={{ textAlign: "right" }}>{m.count}</td>
+                    <td className="cell-mono" style={{ textAlign: "right", color: latColor(m.avg) }}>{fmtMs(m.avg)}</td>
+                    <td className="cell-mono" style={{ textAlign: "right", color: latColor(m.p50) }}>{fmtMs(m.p50)}</td>
+                    <td className="cell-mono" style={{ textAlign: "right", color: latColor(m.p95), fontWeight: m.p95 != null ? 600 : 400 }}>{fmtMs(m.p95)}</td>
+                    <td className="cell-mono" style={{ textAlign: "right", color: latColor(m.max) }}>{fmtMs(m.max)}</td>
+                    <td className="cell-mono" style={{ textAlign: "right", color: m.queueAvg > 100 ? "var(--warn)" : undefined }}>{m.queueAvg > 0 ? fmtMs(m.queueAvg) : "—"}</td>
+                    <td className="cell-mono" style={{ textAlign: "right", color: m.errorRate > 0 ? "var(--alert)" : "var(--ink-3)" }}>{m.errorRate > 0 ? (m.errorRate * 100).toFixed(0) + "%" : "0%"}</td>
+                    <td className="cell-time" style={{ textAlign: "right", fontSize: 12 }}>{m.lastCall ? H.fmtRelTime(m.lastCall) : "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+    </div>
+  </>);
+}
+
 window.ScreenOperations = ScreenOperations;
