@@ -117,7 +117,7 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
               <div className="row gap-3" style={{ marginBottom: 4 }}>
                 <span className="cell-mono" style={{ color: "var(--ink-3)", fontSize: 12 }}>{idx + 1} / {total}</span>
                 {c.is_complement === 1 && <Pill status="info">Complemento</Pill>}
-                {c.rejection_count > 0 && <Pill status="rejected">{c.rejection_count + 1}ª versão</Pill>}
+                {c.rejection_count > 0 && <Pill status="rejected">Reprovado {c.rejection_count}×</Pill>}
               </div>
               <h2 className="display-2">{c.cliente}</h2>
               <div className="row gap-6" style={{ marginTop: 10, marginBottom: 20, flexWrap: "wrap" }}>

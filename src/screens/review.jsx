@@ -504,7 +504,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
           <div className="row gap-3">
             <Pill status={checking.status}>{checking.status === "pending" ? "Aguardando decisão" : checking.decision_label ? checking.decision_label : checking.status === "approved" ? "Aprovado" : "Reprovado"}</Pill>
             {checking.is_complement === 1 && <Pill status="info">Complemento</Pill>}
-            {checking.rejection_count > 0 && <Pill status="rejected">{checking.rejection_count + 1}ª versão</Pill>}
+            {checking.rejection_count > 0 && <Pill status="rejected">Reprovado {checking.rejection_count}×</Pill>}
           </div>
           <h1 className="display-1" style={{ marginTop: 4 }}>{checking.cliente}<span style={{ color: "var(--ink-3)", fontWeight: 500 }}> · {checking.veiculo}</span></h1>
           <div className="row gap-6" style={{ marginTop: 8, color: "var(--ink-2)", fontSize: 13, flexWrap: "wrap" }}>

@@ -118,7 +118,7 @@
       if (ageH >= p.slaBreachH) alerts.push({ id: "sla_" + c.submission_id, sev: 'critical', type: 'SLA estourado', c, detail: `${D(ageH)} em fila · limite ${p.slaBreachH}h`, metric: ageH, wait: ageH });
       else if (ageH >= p.slaWarnH) alerts.push({ id: "slaw_" + c.submission_id, sev: 'warning', type: 'SLA em risco', c, detail: `${D(ageH)} em fila · alerta a ${p.slaWarnH}h`, metric: ageH, wait: ageH });
     });
-    pending.forEach(c => { if (c.rejection_count >= p.reincidencia) alerts.push({ id: "rei_" + c.submission_id, sev: 'warning', type: 'Reincidência', c, detail: `${c.rejection_count + 1}ª versão deste checking`, metric: c.rejection_count + 5 }); });
+    pending.forEach(c => { if (c.rejection_count >= p.reincidencia) alerts.push({ id: "rei_" + c.submission_id, sev: 'warning', type: 'Reincidência', c, detail: `${c.rejection_count}ª devolução deste checking`, metric: c.rejection_count + 5 }); });
 
     const byClient = {};
     pending.forEach(c => { (byClient[c.cliente] = byClient[c.cliente] || []).push(c); });

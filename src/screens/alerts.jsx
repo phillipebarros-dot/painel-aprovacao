@@ -54,7 +54,7 @@ function ScreenAlerts({ checkings, currentUser, onOpenReview, onStartTriage, onD
   };
   const leadOf = (a) => {
     if (a.type === "SLA estourado" || a.type === "SLA em risco") { const h = Number(a.wait) || 0; return h >= 36 ? [Math.round(h / 24), "dias na fila"] : [h < 10 ? h.toFixed(1) : Math.round(h), "h na fila"]; }
-    if (a.type === "Reincidência") return [(a.c.rejection_count + 1) + "ª", "versão"];
+    if (a.type === "Reincidência") return [a.c.rejection_count + "×", "reprovado"];
     if (a.type === "Fila acumulada") return [a.group.length, "na fila"];
     if (a.type === "Pico de volume") return [a.metric, "hoje"];
     return ["", ""];
