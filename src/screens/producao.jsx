@@ -769,7 +769,10 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     const aguardando = poolAll.filter(p => p.status_formulario === "aguardando").length;
     const baixados = poolAll.filter(p => p.status_checking === "approved").length;
     const pendentes = poolAll.filter(p => p.status_checking === "pending").length;
-    return { total, recebidos, aguardando, baixados, pendentes };
+    // Atribuição: dimensão independente do recebimento
+    const comResponsavel = poolAll.filter(p => p.responsavel).length;
+    const semResponsavel = total - comResponsavel;
+    return { total, recebidos, aguardando, baixados, pendentes, comResponsavel, semResponsavel };
   }, [poolAll]);
 
   // ── Por conta: agrupa PIs da pauta por conta (Eudora, Boti SP, etc) ──
@@ -938,20 +941,20 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
               <span className="body-xs muted">Total pauta</span>
             </div>
             <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--accent)" }}>{pautaStats.comResponsavel}</span>
+              <span className="body-xs muted">Com responsável</span>
+            </div>
+            <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: pautaStats.semResponsavel > 0 ? "var(--alert)" : "var(--accent)" }}>{pautaStats.semResponsavel}</span>
+              <span className="body-xs muted">Sem responsável</span>
+            </div>
+            <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
               <span style={{ fontSize: 18, fontWeight: 700, color: "var(--accent)" }}>{pautaStats.recebidos}</span>
               <span className="body-xs muted">Recebidos</span>
             </div>
             <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
               <span style={{ fontSize: 18, fontWeight: 700, color: "var(--warn)" }}>{pautaStats.aguardando}</span>
-              <span className="body-xs muted">Aguardando</span>
-            </div>
-            <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--success)" }}>{pautaStats.baixados}</span>
-              <span className="body-xs muted">Baixados</span>
-            </div>
-            <div className="col" style={{ gap: 0, alignItems: "center", flex: 1, minWidth: 60 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--alert)" }}>{pautaStats.pendentes}</span>
-              <span className="body-xs muted">Pendentes</span>
+              <span className="body-xs muted">Aguardando fornecedor</span>
             </div>
           </div>
         )}
@@ -974,7 +977,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                     <div className="col" style={{ gap: 2, minWidth: 0, flex: 1 }}>
                       <span style={{ fontSize: 13, fontWeight: 600 }}>{g.conta}</span>
-                      <span className="body-xs muted">{g.pis.length} PIs · {g.recebidos} recebidos{g.aguardando > 0 && <span style={{ color: "var(--warn)" }}> · {g.aguardando} aguardando</span>} {remaining !== 0 && <span style={{ color: remaining > 0 ? "var(--warn)" : "var(--alert)" }}>({remaining > 0 ? `${remaining} sem responsavel` : `${Math.abs(remaining)} a mais`})</span>}</span>
+                      <span className="body-xs muted">{g.pis.length} PIs · {g.recebidos} recebidos{g.aguardando > 0 && <span style={{ color: "var(--warn)" }}> · {g.aguardando} aguardando fornecedor</span>} {remaining !== 0 && <span style={{ color: remaining > 0 ? "var(--warn)" : "var(--alert)" }}>({remaining > 0 ? `${remaining} sem responsável` : `${Math.abs(remaining)} a mais`})</span>}</span>
                     </div>
                     <button className="btn btn-quiet sm" onClick={() => addPerson(g.conta)} style={{ flexShrink: 0 }}><Icon name="plus" size={12}/> Pessoa</button>
                   </div>
