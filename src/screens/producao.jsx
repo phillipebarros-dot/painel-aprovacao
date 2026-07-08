@@ -847,37 +847,31 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     setSaving(true);
     setSaveProgress({ done: 0, total: jobs.length, errors: 0, eta: '' });
 
-    let done = 0, errors = 0;
+    try {
+      // ── BULK: 1 request, 1 MERGE com UNNEST no BigQuery ──
+      // O endpoint bulk no n8n faz um único MERGE no BigQuery (3-8s para 5000 PIs).
+      // O loop antigo fazia 593 requests individuais → 593 MERGEs → serialização → 502.
+      const assignments = jobs.map(j => ({
+        n_pi: j.n_pi,
+        responsavel: j.responsavel,
+        mes_referencia: mes,
+        conta: j.conta
+      }));
+      await API.bulkAssignResponsible(assignments);
 
-    // Usar assign_responsible individual, mas com BATCH=50 em paralelo real
-    // (assign_responsible agora bypassa o MAX_CONCURRENT=4 limiter)
-    const BATCH = 50;
-    const t0 = Date.now();
-    for (let b = 0; b < jobs.length; b += BATCH) {
-      const batch = jobs.slice(b, b + BATCH);
-      const results = await Promise.allSettled(
-        batch.map(j => API?.assignResponsible(j.n_pi, j.responsavel, mes, j.conta))
-      );
-      results.forEach(r => { if (r.status === "rejected") errors++; });
-      done += batch.length;
-      const elapsed = (Date.now() - t0) / 1000;
-      const rate = done / elapsed;
-      const remaining = Math.ceil((jobs.length - done) / rate);
-      setSaveProgress({ done, total: jobs.length, errors, eta: remaining > 0 ? `~${remaining}s restante` : '' });
-    }
+      // Update otimista SÓ DEPOIS de confirmação do servidor.
+      const assignMap = {};
+      jobs.forEach(j => { if (j.submission_id) assignMap[j.submission_id] = j.responsavel; });
+      if (Object.keys(assignMap).length > 0) onAssign && onAssign(assignMap);
 
-    // Update otimista: atualizar checkings locais
-    const assignMap = {};
-    jobs.forEach(j => { if (j.submission_id) assignMap[j.submission_id] = j.responsavel; });
-    if (Object.keys(assignMap).length > 0) onAssign && onAssign(assignMap);
-
-    setSaving(false);
-    if (errors > 0) {
-      onToast?.({ type: "warn", message: `${done - errors} de ${done} PIs salvos. ${errors} falharam - tente novamente.` });
-    } else {
-      onToast?.({ type: "success", message: `${done} PIs de ${contasAtribuidas} contas atribuidos com sucesso. Recarregando...` });
+      setSaving(false);
+      onToast?.({ type: "success", message: `${jobs.length} PIs de ${contasAtribuidas} contas atribuidos com sucesso. Recarregando...` });
       // Recarregar dados do BigQuery para confirmar persistencia
       setRefreshKey(k => k + 1);
+    } catch (err) {
+      setSaving(false);
+      console.error('[Divisao] Bulk assign failed:', err);
+      onToast?.({ type: "error", message: `Falha ao salvar: ${err?.message || 'erro desconhecido'}. Nenhum PI foi atribuido — tente novamente.` });
     }
   };
 
@@ -975,10 +969,10 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
           );})()}
       </div>
       <div className="row gap-3" style={{ justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid var(--rule)" }}>
-        <span className="body-xs muted">{saving ? `Salvando ${saveProgress.done}/${saveProgress.total}...${saveProgress.eta ? ' ' + saveProgress.eta : ''}${saveProgress.errors ? ` (${saveProgress.errors} erros)` : ''}` : `${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs`}</span>
+        <span className="body-xs muted">{saving ? `Salvando ${saveProgress.total} PIs...` : `${contasAtribuidas}/${contasGrupo.length} contas · ${pisAtribuidos} PIs`}</span>
         <div className="row gap-3">
           <Button variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button variant="primary" icon={saving ? "hourglass_empty" : "check"} disabled={!contasAtribuidas || saving} onClick={confirm}>{saving ? `Salvando... ${saveProgress.done}/${saveProgress.total}` : "Confirmar divisão"}</Button>
+          <Button variant="primary" icon={saving ? "hourglass_empty" : "check"} disabled={!contasAtribuidas || saving} onClick={confirm}>{saving ? `Salvando... ${saveProgress.total} PIs` : "Confirmar divisão"}</Button>
         </div>
       </div>
     </div>
