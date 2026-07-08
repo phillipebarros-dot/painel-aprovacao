@@ -52,7 +52,8 @@
     return (now - (c.submittedAt || now)) / 3600000;
   }
 
-  function computeStats(checkings) {
+  function computeStats(checkings, slaMetaH) {
+    const metaH = slaMetaH > 0 ? slaMetaH : 4;
     const total = checkings.length;
     const pending = checkings.filter(c => norm(c.status) === 'pending').length;
     const approved = checkings.filter(c => norm(c.status) === 'approved').length;
@@ -68,7 +69,7 @@
     if (resolved.length) avgSlaHours = resolved.reduce((s, c) => s + ((c.approvedAt || c.rejectedAt) - c.submittedAt) / 3600000, 0) / resolved.length;
     const todayMs = new Date().setHours(0, 0, 0, 0);
     const recebidosHoje = checkings.filter(c => c.submittedAt >= todayMs).length;
-    const slaMet = resolved.filter(c => ((c.approvedAt || c.rejectedAt) - c.submittedAt) / 3600000 <= 4).length;
+    const slaMet = resolved.filter(c => ((c.approvedAt || c.rejectedAt) - c.submittedAt) / 3600000 <= metaH).length;
     const slaCompliance = resolved.length ? slaMet / resolved.length : 0;
     return { total, pending, approved, rejected, taxaAprovacao, veiculosDistintos, clientesDistintos, novos, complementos, avgSlaHours, recebidosHoje, slaCompliance, resolved: resolved.length };
   }

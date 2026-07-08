@@ -21,11 +21,13 @@ function FlowNode({ node, idx, hover, onHover }) {
   );
 }
 
-function ScreenOperations({ onToast, checkings }) {
+function ScreenOperations({ onToast, checkings, slaCfg, onSaveSla }) {
   const H = window.H;
   const [tab, setTab] = React.useState("flow");
   const [hover, setHover] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
+  const [slaDraft, setSlaDraft] = React.useState(slaCfg || { meta: 4, atencao: 5, risco: 12 });
+  React.useEffect(() => { if (slaCfg) setSlaDraft(slaCfg); }, [slaCfg]);
   const events = window.MOCK.securityEvents;
   const services = window.MOCK.services;
   const refresh = () => { setLoading(true); setTimeout(() => { setLoading(false); onToast?.({ type: "success", message: "Status atualizado." }); }, 900); };
@@ -35,7 +37,7 @@ function ScreenOperations({ onToast, checkings }) {
       <div className="page-head">
         <div className="col" style={{ gap: 6 }}><div className="eyebrow">Operações · admin only</div><h1 className="display-1">Arquitetura e segurança</h1></div>
         <div className="row gap-3">
-          <Segmented value={tab} onChange={setTab} options={[{ value: "flow", label: "Fluxo n8n" }, { value: "security", label: "Segurança" }, { value: "services", label: "Serviços" }]}/>
+          <Segmented value={tab} onChange={setTab} options={[{ value: "flow", label: "Fluxo n8n" }, { value: "security", label: "Segurança" }, { value: "services", label: "Serviços" }, { value: "sla", label: "SLA" }]}/>
           <Button variant="ghost" icon="refresh" loading={loading} onClick={refresh}>Atualizar</Button>
         </div>
       </div>
@@ -102,6 +104,35 @@ function ScreenOperations({ onToast, checkings }) {
               <div style={{ marginTop: 14, height: 4, borderRadius: 99, background: "var(--surface-3)" }}><div className="rank-fill" style={{ width: s.uptime + "%", height: "100%", borderRadius: 99, background: "var(--accent)" }}/></div>
             </div>
           ))}
+        </div>
+      )}
+      {tab === "sla" && (
+        <div className="card" style={{ padding: 24, maxWidth: 620 }}>
+          <div className="col" style={{ gap: 2, marginBottom: 6 }}><div className="eyebrow">Configuração</div><div className="h2">Limites de SLA</div></div>
+          <p className="body-sm" style={{ marginTop: 0, color: "var(--ink-2)" }}>Fonte única. A <strong>meta</strong> alimenta o "% dentro do prazo" do Dashboard; <strong>atenção</strong> e <strong>risco</strong> definem quando um checking pendente vira aviso ou alerta crítico na tela de Alertas.</p>
+          <div className="col" style={{ gap: 16, marginTop: 12 }}>
+            {[
+              ["meta", "Meta de decisão", "Tempo alvo entre receber e decidir. Base do compliance do Dashboard.", 1, 48],
+              ["atencao", "Atenção (aviso)", "Checking pendente acima disso vira aviso nos Alertas.", 1, 48],
+              ["risco", "Risco (crítico)", "Pendente acima disso vira alerta crítico.", 1, 72],
+            ].map(([k, label, hint, min, max]) => (
+              <div key={k} className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+                <div className="col" style={{ gap: 2, flex: 1 }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 600 }}>{label}</span>
+                  <span className="body-xs muted">{hint}</span>
+                </div>
+                <div className="row gap-2" style={{ alignItems: "center", flexShrink: 0 }}>
+                  <input className="input" type="number" min={min} max={max} value={slaDraft[k]} onChange={e => setSlaDraft({ ...slaDraft, [k]: Math.max(min, Math.min(max, Number(e.target.value) || min)) })} style={{ width: 78, textAlign: "center" }}/>
+                  <span className="body-xs muted">horas</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {slaDraft.atencao >= slaDraft.risco && <p className="body-xs" style={{ color: "var(--warn)", marginTop: 12 }}>O limite de atenção deve ser menor que o de risco.</p>}
+          <div className="row gap-2" style={{ justifyContent: "flex-end", marginTop: 20 }}>
+            <Button variant="ghost" onClick={() => setSlaDraft(slaCfg || { meta: 4, atencao: 5, risco: 12 })}>Cancelar</Button>
+            <Button variant="primary" icon="check" disabled={slaDraft.atencao >= slaDraft.risco} onClick={() => onSaveSla?.(slaDraft)}>Salvar SLA</Button>
+          </div>
         </div>
       )}
     </div>

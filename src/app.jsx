@@ -361,6 +361,8 @@ function App() {
   const [searchOpen, setSearchOpen] = aUseState(false);
   const [helpOpen, setHelpOpen] = aUseState(false);
   const [triageQueue, setTriageQueue] = aUseState(null);
+  // SLA central: fonte unica (meta compliance + limites de alerta). Default = comportamento atual.
+  const [slaCfg, setSlaCfg] = aUseState({ meta: 4, atencao: 5, risco: 12 });
   const toastId = aUseRef(0);
   const gKey = aUseRef(false);
 
@@ -368,8 +370,8 @@ function App() {
   // REQ 6 (01/07): segmentacao central. Filtra checkings pelo grupo do usuario ANTES de tudo.
   const scopedCheckings = aUseMemo(() => window.MOCK.visibleCheckings(user, checkings), [user, checkings]);
 
-  const stats = aUseMemo(() => window.H.computeStats(scopedCheckings), [scopedCheckings]);
-  const alerts = aUseMemo(() => window.AI.computeAlerts(scopedCheckings), [scopedCheckings]);
+  const stats = aUseMemo(() => window.H.computeStats(scopedCheckings, slaCfg.meta), [scopedCheckings, slaCfg.meta]);
+  const alerts = aUseMemo(() => window.AI.computeAlerts(scopedCheckings, { ...window.AI.DEFAULT_PROFILE, slaWarnH: slaCfg.atencao, slaBreachH: slaCfg.risco }), [scopedCheckings, slaCfg.atencao, slaCfg.risco]);
   const alertCounts = aUseMemo(() => window.AI.alertCounts(alerts), [alerts]);
   const auditLog = aUseMemo(() => buildAuditLog(scopedCheckings), [scopedCheckings]);
   const notifications = aUseMemo(() => buildNotifs(scopedCheckings), [scopedCheckings]);
@@ -396,6 +398,29 @@ function App() {
         backoffRef.current.lastErrorTs = now;
         addToast({ type: "error", message: "Servidor indisponivel. Tentando reconectar..." });
       }
+    }
+  }, [addToast]);
+
+  // SLA central: carrega config do backend uma vez (degrada pros defaults se falhar/nao existir)
+  const normSla = (r) => {
+    const row = Array.isArray(r) ? r[0] : (r?.config || r?.sla || r || {});
+    const num = (v, d) => { const n = Number(v); return n > 0 ? n : d; };
+    return { meta: num(row.horas_meta, 4), atencao: num(row.horas_atencao, 5), risco: num(row.horas_risco, 12) };
+  };
+  aUseEffect(() => {
+    if (!user) return;
+    let alive = true;
+    window.PainelAPI?.getSlaConfig?.().then(r => { if (alive && r) setSlaCfg(normSla(r)); }).catch(() => {});
+    return () => { alive = false; };
+  }, [user]);
+  const saveSla = aUseCallback(async (cfg) => {
+    const next = { meta: Number(cfg.meta) || 4, atencao: Number(cfg.atencao) || 5, risco: Number(cfg.risco) || 12 };
+    setSlaCfg(next);
+    try {
+      await window.PainelAPI?.saveSlaConfig?.({ horas_meta: next.meta, horas_atencao: next.atencao, horas_risco: next.risco });
+      addToast({ type: "success", message: "SLA atualizado." });
+    } catch (e) {
+      addToast({ type: "error", message: "Falha ao salvar SLA: " + (e.message || "") });
     }
   }, [addToast]);
 
@@ -591,7 +616,7 @@ function App() {
       }}/>
     : route === "reports" ? <ScreenReports checkings={scopedCheckings} currentUser={user} onToast={addToast}/>
     : route === "users" ? <ScreenUsers onToast={addToast} viewMode={curView} checkings={scopedCheckings}/>
-    : route === "operations" ? <ScreenOperations onToast={addToast} checkings={scopedCheckings}/>
+    : route === "operations" ? <ScreenOperations onToast={addToast} checkings={scopedCheckings} slaCfg={slaCfg} onSaveSla={saveSla}/>
     : route === "fornecedores" ? <ScreenFornecedores checkings={scopedCheckings} onOpenReview={openReview} viewMode={curView} onToast={addToast} preSuppliers={preSuppliers}/>
     : route === "automacoes" ? <ScreenAutomacoes onToast={addToast}/>
     : <ScreenDashboard stats={stats} checkings={scopedCheckings} auditLog={auditLog} onOpenReview={openReview} onNavigate={handleNav} loading={false}/>;
