@@ -294,7 +294,8 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
             {/* Chips por membro */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10, marginBottom: 14 }}>
               {equipe.map(m => {
-                const pct = m.carga ? (m.baixados / m.carga) : 0;
+                const base = m.pautaTotal || m.carga;
+                const pct = base ? (m.baixados / base) : 0;
                 const acima = equipeAlvo > 0 && (m.pautaTotal || m.carga) > equipeAlvo * 1.15;
                 // R1 fix (01/jul): clicar no membro filtra divisao por assigned_to
                 const drillDown = () => {
