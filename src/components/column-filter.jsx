@@ -3,12 +3,25 @@
 // Multi-select, busca de texto, contagem por valor, persistencia localStorage.
 (function () {
   // REQ 1.5 (01/07): persistencia de filtros em localStorage por tela
+  // FIX (09/jul): TTL de 24h — filtros expirados sao descartados automaticamente
+  var FILTER_TTL_MS = 24 * 60 * 60 * 1000; // 24 horas
   function loadFilters(screenKey) {
-    try { return JSON.parse(localStorage.getItem("painel_colf_" + screenKey) || "{}"); }
+    try {
+      var raw = JSON.parse(localStorage.getItem("painel_colf_" + screenKey) || "{}");
+      // Formato novo: {filters, savedAt}. Formato legado: objeto direto.
+      if (raw.savedAt) {
+        if ((Date.now() - raw.savedAt) > FILTER_TTL_MS) {
+          localStorage.removeItem("painel_colf_" + screenKey);
+          return {};
+        }
+        return raw.filters || {};
+      }
+      return raw; // legado: sem TTL, sera regravado no novo formato na proxima edicao
+    }
     catch { return {}; }
   }
   function saveFilters(screenKey, filters) {
-    localStorage.setItem("painel_colf_" + screenKey, JSON.stringify(filters));
+    localStorage.setItem("painel_colf_" + screenKey, JSON.stringify({ filters: filters, savedAt: Date.now() }));
   }
 
   // REQ 1.1 (01/07): hook de filtros por coluna, retorna estado e dispatch

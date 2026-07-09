@@ -147,13 +147,16 @@
 
       // Filtro de atribuicao individual: so pra Boticario + analyst
       // Kauana: todo mundo ve tudo do grupo (Thay: "qualquer um pode pegar qualquer coisa")
+      // FIX (09/jul): nao-atribuidos tambem aparecem (marcados _unassigned)
+      // para que nenhum checking caia num buraco negro invisivel.
       if (grupo === "boticario" && user && user.role !== "admin") {
         var nm = user.nome || user.name || "";
         var em = user.email || "";
         if (nm || em) {
           filteredNovos = filteredNovos.filter(function (c) {
             var a = c.assigned_to || "";
-            return a && (window.H.sameUser(a, nm) || (em && window.H.sameUser(a, em)));
+            if (!a) { c._unassigned = true; return true; }
+            return window.H.sameUser(a, nm) || (em && window.H.sameUser(a, em));
           });
         }
       }

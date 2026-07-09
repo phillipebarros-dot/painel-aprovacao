@@ -41,8 +41,8 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
     if (filterClient !== "all") rows = rows.filter(r => r.cliente === filterClient);
     if (filterMeio !== "all") rows = rows.filter(r => r.meio === filterMeio);
     if (filterCampanha !== "all") rows = rows.filter(r => r.campanha === filterCampanha);
-    if (dateFrom) { const d = dateFrom; rows = rows.filter(r => { const s = r.submittedAt || r.created_at || ""; return s >= d; }); }
-    if (dateTo) { const d = dateTo + "T23:59:59"; rows = rows.filter(r => { const s = r.submittedAt || r.created_at || ""; return s <= d; }); }
+    if (dateFrom) { const d = new Date(dateFrom).getTime(); rows = rows.filter(r => (r.submittedAt || 0) >= d); }
+    if (dateTo) { const d = new Date(dateTo + "T23:59:59").getTime(); rows = rows.filter(r => (r.submittedAt || 0) <= d); }
     // REQ 1 (01/07): aplicar filtros por coluna estilo Sheets
     rows = window.applyColumnFilters(rows, colF.filters);
     const dir = sort.dir === "asc" ? 1 : -1;
