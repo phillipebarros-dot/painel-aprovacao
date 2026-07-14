@@ -841,10 +841,13 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
     contasGrupo.forEach(g => {
       const splits = (contaSplit[g.conta] || []).filter(s => s.name && s.qty > 0);
       if (!splits.length) return;
+      // F5-b: dedup PIs únicos por n_pi — defesa em profundidade contra fan-out da query
+      const seen = new Set();
+      const pisUnicos = g.pis.filter(p => { if (seen.has(p.n_pi)) return false; seen.add(p.n_pi); return true; });
       let idx = 0;
       splits.forEach(s => {
-        for (let i = 0; i < s.qty && idx < g.pis.length; i++, idx++) {
-          jobs.push({ n_pi: g.pis[idx].n_pi, responsavel: s.name, mes_referencia: mes, conta: g.conta, submission_id: g.pis[idx].submission_id });
+        for (let i = 0; i < s.qty && idx < pisUnicos.length; i++, idx++) {
+          jobs.push({ n_pi: pisUnicos[idx].n_pi, responsavel: s.name, mes_referencia: mes, conta: g.conta, submission_id: pisUnicos[idx].submission_id });
         }
       });
     });
@@ -899,6 +902,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
 
       setSaving(false);
       onToast?.({ type: "success", message: `${jobs.length} PIs de ${contasAtribuidas} contas atribuidos com sucesso. Recarregando...` });
+      window.MOCK?.invalidateProduction?.();
       setRefreshKey(k => k + 1);
     } catch (err) {
       setSaving(false);
