@@ -16,10 +16,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2,
       "position": [
-        -80912,
-        85520
+        -83040,
+        85168
       ],
-      "id": "50f2a74b-a754-439d-8007-40ecfa0931d0",
+      "id": "ac0a490a-2f3d-41be-a479-f22a47d784f7",
       "name": "Adicionar last_seen_at",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -59,13 +59,13 @@
           }
         }
       },
-      "id": "cb38b403-3a79-41ab-b5a8-b8bd84c2659a",
+      "id": "3e8e8c3a-de8c-42a7-8048-ab6036d6cb26",
       "name": "Responder Notificacoes",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79296,
-        84816
+        -81424,
+        84464
       ]
     },
     {
@@ -81,13 +81,13 @@
           "useLegacySql": false
         }
       },
-      "id": "86da7410-0efd-4650-811e-028318795cf7",
+      "id": "8b273940-a7c5-4164-87b2-5e345b1a2964",
       "name": "Buscar Notificacoes",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2,
       "position": [
-        -79728,
-        84816
+        -81856,
+        84464
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -127,13 +127,13 @@
           }
         }
       },
-      "id": "2f3d0d9b-99a3-4f18-aa5e-47e9e5676c0a",
+      "id": "970abf29-8139-47f8-a9f7-30ab58d1d7b5",
       "name": "Responder Usuarios Online",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79296,
-        84976
+        -81424,
+        84624
       ]
     },
     {
@@ -142,13 +142,13 @@
         "jsonOutput": "={{ { success: true, online: $input.all().map(i => i.json).filter(r => r.email).map(r => ({ id: r.id, name: r.name, email: r.email, role: r.role, avatar: r.avatar || '', online: true, lastSeen: r.lastSeen })), count: $input.all().filter(i => i.json.email).length } }}",
         "options": {}
       },
-      "id": "00583d53-a15f-44c5-9c09-be96dba237ff",
+      "id": "bc7cebfb-c500-4477-821c-c235dfe105f5",
       "name": "Formatar Online",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -79504,
-        84976
+        -81632,
+        84624
       ]
     },
     {
@@ -161,13 +161,13 @@
         "sqlQuery": "SELECT id, name, email, role, avatar,\n  FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', last_seen_at) AS lastSeen\nFROM `checking-grupoom.form_checking.users`\nWHERE status = 'active'\n  AND last_seen_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 2 MINUTE)\nORDER BY last_seen_at DESC",
         "options": {}
       },
-      "id": "d9704b78-1aed-47ca-a30a-0404ef0f8e8e",
+      "id": "03327b48-6360-4ba7-bc7f-2d425320646b",
       "name": "BigQuery - Usuarios Online",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79728,
-        84976
+        -81856,
+        84624
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -209,13 +209,13 @@
           }
         }
       },
-      "id": "a488ca34-54a1-497a-af99-60756418d647",
+      "id": "3d1bfa68-fce4-4d1a-a921-beb612788484",
       "name": "Responder Heartbeat",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79296,
-        85136
+        -81424,
+        84784
       ]
     },
     {
@@ -228,13 +228,13 @@
         "sqlQuery": "UPDATE `checking-grupoom.form_checking.users`\nSET last_seen_at = CURRENT_TIMESTAMP(),\n    avatar = '{{ $json.avatar }}'\nWHERE LOWER(email) = LOWER('{{ $json.email }}')",
         "options": {}
       },
-      "id": "585d9253-08ac-4adc-83fd-a3f3cffd65ad",
+      "id": "6636ba7f-6868-4475-9798-115d6d390a54",
       "name": "BigQuery - Heartbeat Update",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79520,
-        85136
+        -81648,
+        84784
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -277,13 +277,13 @@
         },
         "options": {}
       },
-      "id": "f5037aea-896e-450f-b5a8-3bac0e970683",
+      "id": "6eec00ef-d8c2-4c42-8c5d-1be73e5ddbf3",
       "name": "Preparar Heartbeat",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -79728,
-        85136
+        -81856,
+        84784
       ]
     },
     {
@@ -300,10 +300,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -79728,
-        88144
+        -81856,
+        87792
       ],
-      "id": "a2705987-c8af-4813-b402-cb936d708557",
+      "id": "fba3478d-63a1-4dd5-b513-9466368b249f",
       "name": "HTTP Request",
       "credentials": {
         "googleApi": {
@@ -332,10 +332,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79728,
-        88304
+        -81856,
+        87952
       ],
-      "id": "351cd8d0-66b6-47d2-868b-47f21f71ab63",
+      "id": "2e34e655-c9fe-4d39-bfef-776a4fa00a23",
       "name": "BigQuery - Buscar Filtros",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -378,10 +378,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        -79520,
-        88304
+        -81648,
+        87952
       ],
-      "id": "be1f9967-1b50-4470-a9af-c4c505982b1a",
+      "id": "a8123b74-5aaa-404e-9b96-83a9e0005960",
       "name": "Responder Filtros Slides"
     },
     {
@@ -415,13 +415,13 @@
           }
         }
       },
-      "id": "b22d5ceb-0ed0-40af-8746-f77489eebe7b",
+      "id": "d3975eed-5ae2-4e1a-9709-21de4b7b3ed5",
       "name": "Responder Resubmissao",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79520,
-        85296
+        -81648,
+        84944
       ]
     },
     {
@@ -434,13 +434,13 @@
         "sqlQuery": "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET\n  status = 'pending',\n  approval_user = NULL,\n  approved_at = NULL,\n  rejected_at = NULL\nWHERE submission_id = '{{ $json.body.submission_id || $json.body.id }}'",
         "options": {}
       },
-      "id": "810065ec-bca7-479d-9b93-dc51464497e8",
+      "id": "2def6bee-25cb-43e0-a8ad-c273fdc5a1ee",
       "name": "BigQuery - Resubmeter",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79728,
-        85296
+        -81856,
+        84944
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -478,13 +478,13 @@
           }
         }
       },
-      "id": "b34a4bc2-d545-480d-918e-d63325a8fb48",
+      "id": "ae89b170-150e-4d7e-b1f6-787ea0f932bb",
       "name": "Responder Alertas Seguranca",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79520,
-        85456
+        -81648,
+        85104
       ]
     },
     {
@@ -497,13 +497,13 @@
         "sqlQuery": "SELECT\n  id,\n  user_id,\n  action       AS event_type,\n  entity_id,\n  payload,\n  ip,\n  FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', created_at) AS created_at\nFROM `checking-grupoom.form_checking.audit_logs`\nWHERE entity = 'security'\nORDER BY created_at DESC\nLIMIT 200",
         "options": {}
       },
-      "id": "6895a48e-1d74-4674-84c6-5d21a02a910d",
+      "id": "2eeff766-2cd8-4c62-bcb2-20c8d83e17b1",
       "name": "BigQuery - Buscar Alertas Seguranca",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79728,
-        85456
+        -81856,
+        85104
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -540,13 +540,13 @@
           }
         }
       },
-      "id": "6ad4f263-946f-47c5-a7b4-fe5cd2915592",
+      "id": "76063513-e8d6-437b-a453-af0dbb46c926",
       "name": "Responder Log Seguranca",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79312,
-        85616
+        -81440,
+        85264
       ]
     },
     {
@@ -559,13 +559,13 @@
         "sqlQuery": "INSERT INTO `checking-grupoom.form_checking.audit_logs`\n(id, user_id, action, entity, entity_id, payload, ip, created_at)\nVALUES (\n  '{{ $json._log.id }}',\n  '{{ $json._log.user_id }}',\n  '{{ $json._log.action }}',\n  '{{ $json._log.entity }}',\n  '{{ $json._log.entity_id }}',\n  '{{ $json._log.payload }}',\n  '{{ $json._log.ip }}',\n  CURRENT_TIMESTAMP()\n)",
         "options": {}
       },
-      "id": "c892393c-61ab-4a15-92b7-160dcfd23b85",
+      "id": "d4ccd2d9-8182-408f-adbe-10d77f193fd4",
       "name": "BigQuery - Inserir Log Seguranca",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79520,
-        85616
+        -81648,
+        85264
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -626,13 +626,13 @@
         "includeOtherFields": true,
         "options": {}
       },
-      "id": "ed07844e-6a8d-48bc-ad07-fded428eba31",
+      "id": "5c8d6b3a-b561-42ee-b6ea-9dff980801c8",
       "name": "Preparar Log Seguranca",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -79728,
-        85616
+        -81856,
+        85264
       ],
       "onError": "continueErrorOutput"
     },
@@ -667,13 +667,13 @@
           }
         }
       },
-      "id": "499a9cfe-54ba-48c8-a35b-de01f331b433",
+      "id": "1b9a9803-e4ea-48a3-af61-3ca8f143ffe0",
       "name": "Responder Login SSO",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78464,
-        85840
+        -80592,
+        85488
       ]
     },
     {
@@ -686,13 +686,13 @@
         "sqlQuery": "INSERT INTO `checking-grupoom.form_checking.users`\n(id, name, email, password_hash, role, avatar, status, created_at)\nVALUES\n('{{ $json.ssoUserData.id }}', '{{ $json.ssoUserData.name }}', '{{ $json.ssoUserData.email }}', '{{ $json.ssoUserData.password_hash }}', '{{ $json.ssoUserData.role }}', '{{ $json.ssoUserData.avatar || \"\" }}', '{{ $json.ssoUserData.status }}', CURRENT_TIMESTAMP())",
         "options": {}
       },
-      "id": "f26fa4ae-f001-4c02-a3b9-e13ae0ee27fd",
+      "id": "8375ab5d-7a07-4b7d-b71c-e968b5c26f4d",
       "name": "BigQuery - Registrar SSO",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78864,
-        85456
+        -80816,
+        85344
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -727,26 +727,26 @@
         },
         "options": {}
       },
-      "id": "4dfbbf6c-6474-493c-bb97-a0e0fc7059f3",
+      "id": "48be535e-8677-44b1-9b2b-e5b0a407f9ce",
       "name": "SSO Precisa Registrar",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -78992,
-        85824
+        -81120,
+        85472
       ]
     },
     {
       "parameters": {
         "jsCode": "// SSO Gerar Sessao - PURE JS CRYPTO FALLBACK\n// FIX: Corrigido para primeiro login SSO nao dar erro\n// Quando o usuario nao existe no BigQuery, o input vem vazio\n// Agora trata corretamente o cenario de primeiro acesso\n\n// ===================================\n// PURE JS CRYPTO FALLBACK (No 'require')\n// ===================================\nconst PURE_CRYPTO = {\n  sha256: function(ascii) {\n    function rightRotate(value, amount) { return (value>>>amount) | (value<<(32 - amount)); };\n    var mathPow = Math.pow;\n    var maxWord = mathPow(2, 32);\n    var lengthProperty = 'length';\n    var i, j;\n    var result = '';\n    var words = [];\n    var asciiBitLength = ascii[lengthProperty]*8;\n    var hash = PURE_CRYPTO.sha256.h = PURE_CRYPTO.sha256.h || [];\n    var k = PURE_CRYPTO.sha256.k = PURE_CRYPTO.sha256.k || [];\n    var primeCounter = k[lengthProperty];\n    var isComposite = {};\n    for (var candidate = 2; primeCounter < 64; candidate++) {\n      if (!isComposite[candidate]) {\n        for (i = 0; i < 313; i += candidate) { isComposite[i] = candidate; }\n        hash[primeCounter] = (mathPow(candidate, .5)*maxWord)|0;\n        k[primeCounter++] = (mathPow(candidate, 1/3)*maxWord)|0;\n      }\n    }\n    ascii += '\\x80';\n    while (ascii[lengthProperty]%64 - 56) ascii += '\\x00';\n    for (i = 0; i < ascii[lengthProperty]; i++) {\n      j = ascii.charCodeAt(i);\n      if (j>>8) return; \n      words[i>>2] |= j << ((3 - i)%4)*8;\n    }\n    words[words[lengthProperty]] = ((asciiBitLength/maxWord)|0);\n    words[words[lengthProperty]] = (asciiBitLength)\n    for (j = 0; j < words[lengthProperty];) {\n      var w = words.slice(j, j += 16);\n      var oldHash = hash;\n      hash = hash.slice(0, 8);\n      for (i = 0; i < 64; i++) {\n        var i2 = i + j;\n        var w15 = w[i - 15], w2 = w[i - 2];\n        var a = hash[0], e = hash[4];\n        var temp1 = hash[7]\n          + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) \n          + ((e&hash[5])^((~e)&hash[6]))\n          + k[i]\n          + (w[i] = (i < 16) ? w[i] : (\n              w[i - 16]\n              + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15>>>3)) \n              + w[i - 7]\n              + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2>>>10))\n            )|0\n          );\n        var temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) \n          + ((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));\n        hash = [(temp1 + temp2)|0].concat(hash);\n        hash[4] = (hash[4] + temp1)|0;\n      }\n      for (i = 0; i < 8; i++) { hash[i] = (hash[i] + oldHash[i])|0; }\n    }\n    for (i = 0; i < 8; i++) {\n      for (j = 3; j + 1; j--) {\n        var b = (hash[i]>>(j*8))&255;\n        result += ((b < 16) ? 0 : '') + b.toString(16);\n      }\n    }\n    return result;\n  },\n  \n  hmacSha256: function(key, message) {\n    if (typeof key === 'string') {\n        key = unescape(encodeURIComponent(key));\n    }\n    if (typeof message === 'string') {\n        message = unescape(encodeURIComponent(message));\n    }\n    var blockSize = 64;\n    var keyBytes = [];\n    for (var i = 0; i < key.length; i++) {\n        keyBytes.push(key.charCodeAt(i));\n    }\n    if (keyBytes.length > blockSize) {\n        var keyHashHex = PURE_CRYPTO.sha256(key);\n        keyBytes = [];\n        for (var i = 0; i < keyHashHex.length; i += 2) {\n            keyBytes.push(parseInt(keyHashHex.substr(i, 2), 16));\n        }\n    }\n    while (keyBytes.length < blockSize) {\n        keyBytes.push(0);\n    }\n    var oKeyPad = [], iKeyPad = [];\n    for (var i = 0; i < blockSize; i++) {\n        oKeyPad.push(keyBytes[i] ^ 0x5c);\n        iKeyPad.push(keyBytes[i] ^ 0x36);\n    }\n    var iKeyPadStr = String.fromCharCode.apply(null, iKeyPad);\n    var oKeyPadStr = String.fromCharCode.apply(null, oKeyPad);\n    var innerHashHex = PURE_CRYPTO.sha256(iKeyPadStr + message);\n    var innerHashStr = '';\n    for (var i = 0; i < innerHashHex.length; i += 2) {\n        innerHashStr += String.fromCharCode(parseInt(innerHashHex.substr(i, 2), 16));\n    }\n    var outerHashHex = PURE_CRYPTO.sha256(oKeyPadStr + innerHashStr);\n    return Buffer.from(outerHashHex, 'hex').toString('base64url');\n  },\n  \n  hashPassword: function(pwd, salt) {\n      let h = PURE_CRYPTO.sha256(salt + pwd);\n      for (let i = 0; i < 1000; i++) {\n          h = PURE_CRYPTO.sha256(h + salt + i);\n      }\n      return h;\n  },\n  \n  randomStr: function(len) {\n      const crypto = require('crypto');\n      return crypto.randomBytes(len).toString('hex').slice(0, len);\n  }\n};\n// ===================================\n\nfunction signJWT(claims, secret) {\n  if (!secret) throw new Error('CONFIGURACAO: N8N_JWT_SECRET nao definida');\n  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');\n  const now = Math.floor(Date.now() / 1000);\n  const payload = Buffer.from(JSON.stringify({\n    ...claims, iat: now, exp: now + 14400\n  })).toString('base64url');\n  const signature = PURE_CRYPTO.hmacSha256(secret, header + '.' + payload);\n  return header + '.' + payload + '.' + signature;\n}\n\nlet JWT_SECRET;\ntry { JWT_SECRET = $env.N8N_JWT_SECRET; } catch(e) { JWT_SECRET = null; }\n\n// Dados do BigQuery (pode ser {} se usuario nao encontrado)\nconst ssoUser = $input.all()[0].json;\n\n// Dados do Google Token (fallback para usuario novo)\nlet googleToken = {};\ntry {\n  googleToken = $('Validar Google Token').first().json || {};\n} catch(e) {\n  // Se nao conseguir acessar, tenta via item passthroughData\n}\n\n// ============================================================\n// SECURITY FIX F15: Validar audience, domain e email_verified\n// Sem isso, qualquer Google id_token de qualquer app/dominio seria aceito\n// ============================================================\nconst EXPECTED_AUD = '737388414069-3f9dnrla5807dd99d2s7apr38vjufpvv.apps.googleusercontent.com';\nconst ALLOWED_DOMAINS = ['grupoom.com.br', 'opusmultipla.com.br'];\n\nif (!googleToken.email) {\n  throw new Error('SSO_INVALID: Token sem email');\n}\nif (!googleToken.aud || googleToken.aud !== EXPECTED_AUD) {\n  throw new Error('SSO_INVALID: Token nao pertence a esta aplicacao (aud ausente ou incorreto)');\n}\nif (googleToken.email_verified === false || googleToken.email_verified === 'false') {\n  throw new Error('SSO_INVALID: Email nao verificado pelo Google');\n}\nconst _emailDomain = (googleToken.email || '').split('@')[1] || '';\nif (!ALLOWED_DOMAINS.includes(_emailDomain)) {\n  throw new Error('SSO_FORBIDDEN: Dominio ' + _emailDomain + ' nao autorizado');\n}\n\n// Checar se o usuario ja existe no BQ\nconst existingUser = ssoUser && ssoUser.email ? ssoUser : null;\nconst needsInsert = !existingUser;\n\n// Resolver dados do usuario (existente ou Google token)\nconst userEmail = existingUser?.email || googleToken?.email;\nconst userName  = (() => { let n = existingUser?.name || googleToken?.name || googleToken?.given_name || ''; n = n.replace(/[\\\\'\\\";]/g, '').replace(/[\\x00-\\x1F]/g, '').trim(); return n.slice(0, 120); })();\nconst userId    = existingUser?.id    || PURE_CRYPTO.randomStr(32);\nconst userRole  = existingUser?.role  || 'viewer';\n// SEC: C4 - avatar so aceita https:// e max 512\nconst userAvatar = (() => { const a = existingUser?.avatar || googleToken?.picture || ''; return (new RegExp('^https://').test(a) && a.length <= 512) ? a : ''; })();\n\nif (!userEmail) {\n  throw new Error('SSO_INVALID_TOKEN: email ausente');\n}\n\nconst token = signJWT(\n  {\n    sub: userId,\n    email: userEmail,\n    role: userRole,\n    name: userName,\n    jti: PURE_CRYPTO.randomStr(32)\n  },\n  JWT_SECRET\n);\n\nconst sessionId = PURE_CRYPTO.randomStr(64);\n\nreturn [{ json: {\n  success: true, token, sessionId,\n  needsInsert,\n  ssoUserData: {\n    id: userId,\n    name: userName,\n    email: userEmail,\n    password_hash: 'SSO_GOOGLE:' + userEmail,\n    role: userRole,\n    avatar: userAvatar,\n    status: 'active'\n  },\n  user: {\n    id: userId,\n    name: userName,\n    email: userEmail,\n    avatar: userAvatar,\n    role: userRole\n  }\n} }];\n"
       },
-      "id": "9c493421-6969-44c4-8f10-b40e46a4cb16",
+      "id": "0d1174fc-7b3e-46cb-b4df-48a10320ccfe",
       "name": "SSO Gerar Sessao",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -79280,
-        85840
+        -81408,
+        85488
       ],
       "onError": "continueErrorOutput"
     },
@@ -760,13 +760,13 @@
         "sqlQuery": "SELECT id, name, email, role, avatar, status\nFROM `checking-grupoom.form_checking.users`\nWHERE LOWER(email) = LOWER('{{ $json.email }}')\n  AND status = 'active'\nLIMIT 1",
         "options": {}
       },
-      "id": "ed4383e8-2b30-454e-9038-9d9bb32f1ccd",
+      "id": "423a7c14-cfc5-43c5-beaf-ea2f1aca241a",
       "name": "BigQuery - Buscar Usuario SSO",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79520,
-        85840
+        -81648,
+        85488
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -781,13 +781,13 @@
         "url": "=https://oauth2.googleapis.com/tokeninfo?id_token={{ $json.body.id_token }}",
         "options": {}
       },
-      "id": "1742e10b-e165-4fb2-a07b-2fa2ac8ba737",
+      "id": "36576321-cdbc-4b0c-892a-168b05b937dc",
       "name": "Validar Google Token",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -79728,
-        85840
+        -81856,
+        85488
       ],
       "onError": "continueErrorOutput"
     },
@@ -825,10 +825,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        -79520,
-        88160
+        -81648,
+        87808
       ],
-      "id": "3d06a0ca-d37c-4964-b84a-717d6cc5ae90",
+      "id": "a555251d-c90d-4c06-9444-a41d3dae241f",
       "name": "Responder Slides"
     },
     {
@@ -841,13 +841,13 @@
         "sqlQuery": "SELECT\n  COUNTIF(status = 'pending')  AS total_pending,\n  COUNTIF(status = 'approved') AS total_approved,\n  COUNTIF(status = 'rejected') AS total_rejected,\n  COUNT(*)                      AS total_geral,\n  COUNTIF(status = 'pending' AND is_complement = 0) AS novos_pendentes,\n  COUNTIF(status = 'pending' AND is_complement = 1) AS complementos_pendentes\nFROM (\n  SELECT *\n  FROM `checking-grupoom.form_checking.checking_logs`\n  WHERE NOT STARTS_WITH(submission_id, 'rej_')\n    AND ingestion_time BETWEEN\n        TIMESTAMP('{{ $json.body.date_from || \"2026-01-01\" }}')\n        AND TIMESTAMP('{{ $json.body.date_to || \"2026-12-31\" }}')\n  QUALIFY ROW_NUMBER() OVER (\n    PARTITION BY COALESCE(NULLIF(TRIM(n_pi), ''), submission_id),\n               COALESCE(is_complement, 0)\n    ORDER BY ingestion_time DESC, submission_id DESC\n  ) = 1\n)",
         "options": {}
       },
-      "id": "1fcb329d-fc8a-45da-ad5e-cb4c0e5996c6",
+      "id": "ddda57b0-d2ac-4bca-ae62-265cde435e9d",
       "name": "BigQuery - Estatisticas",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79728,
-        86304
+        -81856,
+        85952
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -887,13 +887,13 @@
           }
         }
       },
-      "id": "a927ecf6-d022-4bb2-a015-badca762a697",
+      "id": "3a1624e3-7c12-448b-b662-db124d505c5a",
       "name": "Responder Estatisticas",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79520,
-        86304
+        -81648,
+        85952
       ]
     },
     {
@@ -906,13 +906,13 @@
         "sqlQuery": "SELECT\n  c.submission_id, c.n_pi, c.cliente, c.veiculo, c.nome_contato, c.email_contato, c.meio,\n  c.total_arquivos, c.is_complement, c.webViewLink, c.status, c.rejection_count,\n  c.rejection_reason, c.approval_user, c.observacoes,\n  p.CAMPANHA AS campanha, p.PRACA AS praca,\n  p.VALOR AS valor_liquido, p.PRODUTO AS produto, p.PLANILHA AS planilha,\n  p.VENCIMENTO AS vencimento, p.SIT_CHECKI AS liberado_publi,\n  p.PERIODO AS periodo_veic,\n  r.responsavel AS assigned_to,\n  COALESCE(r.conta,\n    CASE\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (65612,65613,65614,65767,65768,65769,67747) THEN 'Eudora'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (58587,59075) THEN 'BOTI SUL'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (58589,59074) THEN 'BOTI SP'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (63642,63643) THEN 'BOTI SP INT'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (58590,62313) THEN 'BOTI NE'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (58591,59073) THEN 'BOTI SE'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (68294,68293) THEN 'BOTI RS'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (68037) THEN 'AERO'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (68416) THEN 'BOTI SC'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (68417) THEN 'BOTI SC FRANQUEADOS'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (54354) THEN 'UNINTER'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (69103) THEN 'MAX ATACADISTA'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (50754) THEN 'FRIMESA'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (10747,59148) THEN 'VOLVO'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (4931) THEN 'SHOPPING MULLER'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (62498) THEN 'SERVOPA'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (66384,65253,66385) THEN 'UNICRED'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (63871) THEN 'FRISIA'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (59081) THEN 'BOTI BRASIL'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (64809) THEN 'VULT'\n      ELSE COALESCE(c.cliente, 'Outros')\n    END\n  ) AS conta,\n  r.responsavel_nome,\n  NULLIF(c.approved_at, TIMESTAMP('1970-01-01')) AS approved_at,\n  NULLIF(c.rejected_at, TIMESTAMP('1970-01-01')) AS rejected_at,\n  c.ingestion_time AS created_at\nFROM `checking-grupoom.form_checking.checking_logs` c\nLEFT JOIN `checking-grupoom.form_checking.pis_clientes` p\n  ON c.n_pi = CAST(p.PEDIDO AS STRING)\nLEFT JOIN `checking-grupoom.form_checking.pi_responsaveis` r\n  ON c.n_pi = r.n_pi\nWHERE NOT STARTS_WITH(c.submission_id, 'rej_')\n  AND (c.status IS NULL OR c.status = 'pending' OR c.status = '')\nQUALIFY ROW_NUMBER() OVER (\n  PARTITION BY COALESCE(NULLIF(TRIM(c.n_pi), ''), c.submission_id),\n               COALESCE(c.is_complement, 0)\n  ORDER BY c.ingestion_time DESC, c.submission_id DESC\n) = 1\nORDER BY SAFE_CAST(SPLIT(c.submission_id, '_')[OFFSET(0)] AS INT64) DESC NULLS LAST",
         "options": {}
       },
-      "id": "3db2ef8f-0611-4542-973d-17cf5235bc6b",
+      "id": "8528f220-c65f-487c-b7d3-2cae64cf205a",
       "name": "BigQuery - Pendentes",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79728,
-        86464
+        -81856,
+        86112
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -927,13 +927,13 @@
         "jsonOutput": "={{ { checkings: $input.all().map(i => i.json) } }}",
         "options": {}
       },
-      "id": "0334b970-8bd3-4b3e-8e0e-683aa953876b",
+      "id": "b701a2cf-cd45-4625-b46a-5cc4f663ac80",
       "name": "Formatar Pendentes",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -79520,
-        86464
+        -81648,
+        86112
       ]
     },
     {
@@ -967,13 +967,13 @@
           }
         }
       },
-      "id": "50798b83-55de-4078-879a-09420e58cb1f",
+      "id": "95ecd3fb-79b5-47ed-a12e-214b182fff96",
       "name": "Responder Pendentes",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79328,
-        86464
+        -81456,
+        86112
       ]
     },
     {
@@ -986,13 +986,13 @@
         "sqlQuery": "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET\n  status        = 'approved',\n  approval_user = '{{ $json.body.approval_user }}',\n  approved_at   = CURRENT_TIMESTAMP()\nWHERE submission_id = '{{ $json.body.id }}'\n  AND (status = 'pending' OR status IS NULL OR status = '')",
         "options": {}
       },
-      "id": "a05b63e4-e05b-44c9-86a8-70f1a39ff9c7",
+      "id": "ad76ac63-c620-4ad0-8705-df810213126a",
       "name": "BigQuery - Aprovar",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79536,
-        86608
+        -81664,
+        86256
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -1007,13 +1007,13 @@
       "parameters": {
         "jsCode": "// ============================================================\n// EMITIR NOTIFICACAO DE APROVACAO\n// Gera INSERT SQL para tabela notifications (persistente)\n// ============================================================\ntry {\n  const webhookData = $('Validar Dados').first().json.body || {};\n  const auth = $('Validar Dados').first().json._auth || {};\n  const piId = String(webhookData.id || 'N/A').replace(/'/g, '').slice(0,64);\n  const userName = String(auth.name || auth.email || 'Sistema').replace(/'/g, '').slice(0,64);\n  const notifId = 'notif_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);\n  const sql = `INSERT INTO \\`checking-grupoom.form_checking.notifications\\` (id, type, title, message, created_at, readBy) VALUES ('${notifId}', 'approval', 'Checking Aprovado', 'PI ${piId} foi aprovado por ${userName}', CURRENT_TIMESTAMP(), '[]')`;\n  const items = $input.all();\n  items[0].json._notifSQL = sql;\n  return items;\n} catch(e) {\n  return $input.all();\n}\n"
       },
-      "id": "acc17b41-99fd-4b5c-89fb-2b7c1adafb46",
+      "id": "8cc9336d-ee49-41ff-a1de-b9eb9858dfb7",
       "name": "Emitir Notificacao Aprovacao",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -79184,
-        86608
+        -81312,
+        86256
       ],
       "onError": "continueRegularOutput"
     },
@@ -1027,13 +1027,13 @@
         "sqlQuery": "INSERT INTO `checking-grupoom.form_checking.audit_logs`\n(id, user_id, action, entity, entity_id, payload, ip, created_at)\nVALUES (\n  GENERATE_UUID(),\n  '{{ $('Validar Dados').first().json._auth?.userId || 'system' }}',\n  'approve',\n  'checking',\n  '{{ $('Validar Dados').first().json.body.id }}',\n  '{{ Buffer.from(JSON.stringify({ approval_user: $('Validar Dados').first().json.body.approval_user, submission_id: $('Validar Dados').first().json.body.id })).toString('base64') }}',\n  '{{ (() => { const _r = ($('Validar Dados').first().json.headers || {})[\"x-real-ip\"] || ($('Validar Dados').first().json.headers || {})[\"x-forwarded-for\"] || \"unknown\"; const _c = _r.includes(\",\") ? _r.split(\",\")[0].trim() : _r; return /^(\\d{1,3}\\.){3}\\d{1,3}$/.test(_c) || /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/.test(_c) ? _c : \"unknown\"; })() }}',\n  CURRENT_TIMESTAMP()\n)",
         "options": {}
       },
-      "id": "5b2cb5d7-08f1-43ff-ade2-f083a05a1e24",
+      "id": "5c744bfc-4d32-4090-a4c6-bae165c7ced7",
       "name": "BigQuery - Auditoria Aprovacao",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79376,
-        86608
+        -81504,
+        86256
       ],
       "alwaysOutputData": true,
       "executeOnce": true,
@@ -1076,13 +1076,13 @@
           }
         }
       },
-      "id": "dbbeb82f-6935-4733-a4de-d6c7d7367f44",
+      "id": "1b2a333a-fc57-40f6-9c0e-9eb744e02c12",
       "name": "Responder Aprovacao",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78992,
-        86608
+        -81120,
+        86256
       ]
     },
     {
@@ -1095,13 +1095,13 @@
         "sqlQuery": "SELECT\n  submission_id, n_pi, cliente, veiculo, nome_contato, email_contato,\n  meio, webViewLink, rejection_count, observacoes, status\nFROM `checking-grupoom.form_checking.checking_logs`\nWHERE submission_id = '{{ $json.body.id }}'",
         "options": {}
       },
-      "id": "13b1ebd0-57eb-475d-99db-d364f3d7c4d3",
+      "id": "ffbfd125-7dde-4a1a-b7a4-324c5ca086e4",
       "name": "BigQuery - Dados do Checking",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79664,
-        86720
+        -81792,
+        86368
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -1119,13 +1119,13 @@
         "filter": {},
         "options": {}
       },
-      "id": "a729ba0a-ada6-4c7a-911c-5db36e653aec",
+      "id": "dcddf1b6-14a1-4412-bc07-d3d01914ead4",
       "name": "Drive - Buscar Pasta Historico",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -79152,
-        87024
+        -81280,
+        86672
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -1151,13 +1151,13 @@
         "includeOtherFields": true,
         "options": {}
       },
-      "id": "a37fa43e-494b-484f-89d5-3a55f2d815fc",
+      "id": "b94794c4-4c62-440f-8b71-0f8e304fbc6f",
       "name": "Preparar Query Drive",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -79440,
-        86768
+        -81568,
+        86416
       ],
       "onError": "continueRegularOutput"
     },
@@ -1185,13 +1185,13 @@
         },
         "options": {}
       },
-      "id": "aa1601b8-3bd9-47ee-8c7f-8b68a6dc3842",
+      "id": "644e2756-1a4b-4617-90e3-5e359038a392",
       "name": "Historico Existe",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -79008,
-        86944
+        -81136,
+        86592
       ]
     },
     {
@@ -1210,13 +1210,13 @@
         },
         "options": {}
       },
-      "id": "b781024f-68aa-491f-8615-2612b3f00736",
+      "id": "8dad9bf7-fcf7-4873-884c-6e53f08f7425",
       "name": "Drive - Criar Pasta Historico",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -78704,
-        87040
+        -80832,
+        86688
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -1239,26 +1239,26 @@
         },
         "options": {}
       },
-      "id": "b9d07cea-3bec-4e9b-8500-887453008812",
+      "id": "e53f5f16-5bd3-4f59-94f4-de2fc2fc15a8",
       "name": "Salvar ID Historico",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -78416,
-        87024
+        -80544,
+        86672
       ]
     },
     {
       "parameters": {
         "jsCode": "// SEC: C1 - Ler do fluxo sanitizado, nunca do Webhook cru\nconst webhookData = $('Validar Dados').first().json.body;\nconst checkingData = $items('BigQuery - Dados do Checking')[0].json;\nconst rejectionReason = webhookData.rejection_reason || webhookData.reason || '';\n\nconst observacaoTexto = `HISTORICO DE REPROVACAO\\n` +\n  `========================\\n\\n` +\n  `PI: ${checkingData.n_pi}\\n` +\n  `Cliente: ${checkingData.cliente}\\n` +\n  `Fornecedor: ${checkingData.nome_contato}\\n` +\n  `Data: ${new Date().toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'})}\\n\\n` +\n  `MOTIVO DA REPROVACAO:\\n` +\n  `${rejectionReason}\\n`;\n\nreturn [{\n  json: { historicoFolderId: $json.historicoFolderId, hasObservacao: true },\n  binary: {\n    data: {\n      data: Buffer.from(observacaoTexto, 'utf-8').toString('base64'),\n      mimeType: 'text/plain',\n      fileName: `observacao_${Date.now()}.txt`\n    }\n  }\n}];"
       },
-      "id": "f481d1ea-a88b-494d-8a99-695c9075d851",
+      "id": "0da4f538-52e8-4c72-b7b1-680dc1fb7561",
       "name": "Criar Arquivo Observacao",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -78192,
-        86992
+        -80320,
+        86640
       ],
       "onError": "continueRegularOutput"
     },
@@ -1272,13 +1272,13 @@
         "folderId": "={{ $json.historicoFolderId }}",
         "options": {}
       },
-      "id": "11aa0cf8-1c51-4141-b099-ab2659e96d21",
+      "id": "8100cae5-22a4-4fd5-8eb3-4bdbb3c928d7",
       "name": "Drive - Enviar Observacao",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -78000,
-        86992
+        -80128,
+        86640
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -1312,13 +1312,13 @@
         },
         "options": {}
       },
-      "id": "79a524b4-79cf-4a3a-915f-42d78f81b597",
+      "id": "a1f25d67-2131-4ac7-948c-a90a87372523",
       "name": "PDF Existe",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -77792,
-        86992
+        -79920,
+        86640
       ]
     },
     {
@@ -1331,13 +1331,13 @@
         "folderId": "={{ $items('Salvar ID Historico')[0].json.historicoFolderId }}",
         "options": {}
       },
-      "id": "ed42c310-3207-4d21-8a8b-1fbf8b41975d",
+      "id": "b220a151-1a2a-4a72-9214-54e759113f77",
       "name": "Drive - Enviar PDF",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -77600,
-        86896
+        -79728,
+        86544
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -1360,13 +1360,13 @@
         },
         "options": {}
       },
-      "id": "aee83c4e-824f-445b-ad82-08b0c8c9c9f7",
+      "id": "435e5d48-da78-4c42-96da-0fdb6aa1631a",
       "name": "Salvar Link PDF",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -77392,
-        86896
+        -79520,
+        86544
       ]
     },
     {
@@ -1382,13 +1382,13 @@
         },
         "options": {}
       },
-      "id": "a5dd13b0-b168-40eb-9e9b-59716525f3d8",
+      "id": "e1358f49-da71-4abd-9121-f010f449e176",
       "name": "Sem PDF",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -77488,
-        87040
+        -79616,
+        86688
       ]
     },
     {
@@ -1401,13 +1401,13 @@
         "sqlQuery": "UPDATE `checking-grupoom.form_checking.checking_logs`\nSET\n  status           = 'rejected',\n  approval_user    = '{{ $('Validar Dados').first().json.body.approval_user }}',\n  rejection_reason = '{{ $('Validar Dados').first().json.body.reason || '' }}',\n  rejection_count  = COALESCE(rejection_count, 0) + 1,\n  rejected_at      = CURRENT_TIMESTAMP(),\n  pdf_link         = '{{ $json.pdfLink || '' }}'\nWHERE submission_id = '{{ $('Validar Dados').first().json.body.id }}'\n  AND (status = 'pending' OR status IS NULL OR status = '')",
         "options": {}
       },
-      "id": "26f954ee-b23f-4703-9121-1cfc7a784e51",
+      "id": "edf7aa74-04a8-4a48-bf63-aa39b3e716d8",
       "name": "BigQuery - Registrar Reprovacao",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77184,
-        86960
+        -79312,
+        86512
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -1428,13 +1428,13 @@
           "appendAttribution": false
         }
       },
-      "id": "becfee61-25bb-4820-a45a-bf7b67516f3a",
+      "id": "683ae2b8-5bd1-4208-ada2-02f85346406b",
       "name": "Email - Notificacao Reprovacao",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        -76608,
-        86864
+        -78736,
+        86512
       ],
       "webhookId": "82b1f498-374b-4307-8d8f-2c12956254d6",
       "credentials": {
@@ -1470,13 +1470,13 @@
         },
         "options": {}
       },
-      "id": "1d379808-5bc8-4ead-993e-14cacda7073d",
+      "id": "b6cecaef-5fa1-4373-9a17-d2d3a1ae6428",
       "name": "Email Valido?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -76800,
-        86960
+        -78928,
+        86608
       ],
       "onError": "continueRegularOutput"
     },
@@ -1484,13 +1484,13 @@
       "parameters": {
         "jsCode": "// SEC: C1+E1 - Ler do fluxo sanitizado + escapar HTML contra XSS\nfunction escHtml(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\\\"/g,'&quot;').replace(/'/g,'&#39;'); }\nconst checkingData = $items('BigQuery - Dados do Checking')[0].json;\nconst webhookData = $('Validar Dados').first().json.body;\n\nconst emailDestino = (checkingData.email_contato || '').trim();\nconst emailRegex = /^[^\\\\s@]+@[^\\\\s@]+\\\\.[^\\\\s@]+$/;\nif (!emailDestino || !emailRegex.test(emailDestino)) {\n  return [{ json: { emailHtml: null, emailInvalido: true, emailDestino: '', motivo: 'email_contato ausente ou invalido no registro' } }];\n}\n\nconst reason = escHtml(webhookData.rejection_reason || webhookData.reason || '');\nconst nomeContato = escHtml(checkingData.nome_contato || 'Fornecedor');\nconst nPi = escHtml(checkingData.n_pi);\nconst cliente = escHtml(checkingData.cliente);\nconst veiculo = escHtml(checkingData.veiculo);\nlet pdfLink = '';\ntry { pdfLink = $items('Salvar Link PDF')[0].json.pdfLink || ''; } catch (e) { pdfLink = ''; }\npdfLink = /^https:\\/\\//.test(pdfLink) ? escHtml(pdfLink) : '';\nconst rejectionCount = Number(checkingData.rejection_count || 0) + 1;\n\nlet html = `<!DOCTYPE html>\n<html><head><meta charset=\\\"UTF-8\\\"><title>Checking Reprovado</title>\n<style>\n  body{font-family:'Roboto',Arial,sans-serif;line-height:1.6;color:#333;margin:0;padding:20px 0;background-color:#f4f4f4}\n  .container{max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1)}\n  .header{height:6px;background:linear-gradient(90deg,#ff0000,#ff7f00,#ffff00,#00ff00,#0000ff,#4b0082,#9400d3)}\n  .content{padding:40px}\n  h1{font-size:24px;font-weight:800;margin:0 0 5px;text-transform:uppercase;color:#000}\n  .subtitle{font-size:14px;color:#666;margin-bottom:30px}\n  .card{background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:25px;margin:30px 0}\n  .card-label{font-size:11px;text-transform:uppercase;color:#6c757d;font-weight:600;margin-bottom:5px}\n  .card-value{font-size:16px;font-weight:600;color:#000;margin-bottom:20px}\n  .card-value.highlight{color:#c0392b;font-size:20px}\n  .alert{background-color:#fff5f5;border-left:4px solid #dc3545;padding:15px;font-size:13px;color:#a51f28;margin-top:20px}\n  .reason-box{background:#f8fafc;border:1px solid #e9ecef;border-radius:4px;padding:16px;white-space:pre-wrap;font-size:14px;color:#333;margin-top:8px}\n  .pdf-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:12px;margin-top:20px;font-size:13px}\n  .footer{background:#111;color:#fff;padding:30px 40px;font-size:12px;position:relative}\n  .footer-bar{height:6px;background:linear-gradient(90deg,#ff0000,#ff7f00,#ffff00,#00ff00,#0000ff,#4b0082,#9400d3);position:absolute;bottom:0;left:0;right:0}\n  .footer h3{font-size:14px;margin:0 0 10px;color:#fff;font-weight:700}\n  .footer p{margin:2px 0;color:#aaa;font-size:12px}\n  .footer a{color:#007bff;text-decoration:none}\n</style>\n</head><body>\n<div class=\\\"container\\\">\n  <div class=\\\"header\\\"></div>\n  <div class=\\\"content\\\">\n    <h1>CHECKING REPROVADO</h1>\n    <div class=\\\"subtitle\\\">Central de Checking - Grupo OM &nbsp;&middot;&nbsp; Tentativa ${rejectionCount}</div>\n\n    <p>Prezado(a) <strong>${nomeContato}</strong>,</p>\n    <p>Seu checking foi analisado pela nossa equipe e <strong>n\\u00e3o foi aprovado</strong> nesta verifica\\u00e7\\u00e3o. Por favor, revise o motivo abaixo e reenvie os arquivos corrigidos.</p>\n\n    <div class=\\\"card\\\">\n      <div class=\\\"card-label\\\">N\\u00daMERO DA PI</div>\n      <div class=\\\"card-value highlight\\\">${nPi}</div>\n      <div style=\\\"display:flex;justify-content:space-between\\\">\n        <div style=\\\"width:48%\\\">\n          <div class=\\\"card-label\\\">CLIENTE</div>\n          <div class=\\\"card-value\\\">${cliente}</div>\n        </div>\n        <div style=\\\"width:48%\\\">\n          <div class=\\\"card-label\\\">VE\\u00cdCULO</div>\n          <div class=\\\"card-value\\\">${veiculo}</div>\n        </div>\n      </div>\n      <div class=\\\"card-label\\\">MOTIVO DA REPROVA\\u00c7\\u00c3O</div>\n      <div class=\\\"reason-box\\\">${reason}</div>\n    </div>\n\n    ${pdfLink ? `<div class=\\\"pdf-box\\\"><strong>Documento Anexado:</strong> <a href=\\\"${pdfLink}\\\" style=\\\"color:#2563eb\\\">Ver Documento</a></div>` : ''}\n\n    <div class=\\\"alert\\\"><strong>Importante:</strong> Este \\u00e9 um e-mail autom\\u00e1tico. Para d\\u00favidas, entre em contato com nossa equipe.</div>\n  </div>\n  <div class=\\\"footer\\\">\n    <h3>Grupo OM</h3>\n    <p>OpusMultipla Comunica\\u00e7\\u00e3o Integrada</p>\n    <p>Rua Comendador Ara\\u00fajo, 117 - Centro</p>\n    <p><a href=\\\"mailto:checking@grupoom.com.br\\\">checking@grupoom.com.br</a></p>\n    <div class=\\\"footer-bar\\\"></div>\n  </div>\n</div>\n</body></html>`;\n\nreturn [{ json: { emailHtml: html, emailInvalido: false, emailDestino } }];"
       },
-      "id": "b5289823-bc1d-4ee5-b515-a5c5bfa93eaa",
+      "id": "6ff09471-4016-4379-984b-422882d55f15",
       "name": "Montar HTML Email",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -76992,
-        86960
+        -79120,
+        86608
       ],
       "onError": "continueRegularOutput"
     },
@@ -1525,13 +1525,13 @@
           }
         }
       },
-      "id": "c270055b-6bf4-4f3a-b958-bebb2b81b6d4",
+      "id": "f6587523-8f39-47e0-bb7b-59deacbab96e",
       "name": "Responder Reprovacao",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -76416,
-        86976
+        -78544,
+        86624
       ]
     },
     {
@@ -1565,13 +1565,13 @@
           }
         }
       },
-      "id": "9ec834ec-5a98-4189-b9a2-6f8b0f2d5de2",
+      "id": "2d3a961e-e8b5-4f2d-9931-4fbc45dc6fea",
       "name": "Responder Login",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78528,
-        86160
+        -80656,
+        85808
       ]
     },
     {
@@ -1580,13 +1580,13 @@
         "jsonOutput": "={{ { status: 'online', timestamp: $now.toISO(), uptime: null, services: { bigquery: 'connected', n8n: 'running', memory: null }, version: '2.0.1' } }}",
         "options": {}
       },
-      "id": "835706b1-4b29-4e30-9b5a-3f2f9ddfd603",
+      "id": "b7bdd323-d8fe-4887-ac27-25e8919d08c6",
       "name": "Verificar Saude",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -79728,
-        86000
+        -81856,
+        85648
       ]
     },
     {
@@ -1620,13 +1620,13 @@
           }
         }
       },
-      "id": "78636567-b515-46ac-9e23-cfa244d7a7dc",
+      "id": "3f800d7e-ef27-4058-8420-0c549f6b1551",
       "name": "Responder Saude",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79520,
-        86000
+        -81648,
+        85648
       ]
     },
     {
@@ -1639,13 +1639,13 @@
         "sqlQuery": "SELECT\n  c.submission_id, c.n_pi, c.cliente, c.veiculo, c.nome_contato, c.email_contato, c.meio,\n  c.total_arquivos, c.is_complement, c.webViewLink, c.status, c.rejection_count,\n  c.rejection_reason, c.approval_user, c.observacoes,\n  p.CAMPANHA AS campanha, p.PRACA AS praca,\n  p.VALOR AS valor_liquido, p.PRODUTO AS produto, p.PLANILHA AS planilha,\n  p.VENCIMENTO AS vencimento, p.SIT_CHECKI AS liberado_publi,\n  p.PERIODO AS periodo_veic,\n  r.responsavel AS assigned_to,\n  COALESCE(r.conta,\n    CASE\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (65612,65613,65614,65767,65768,65769,67747) THEN 'Eudora'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (58587,59075) THEN 'BOTI SUL'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (58589,59074) THEN 'BOTI SP'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (63642,63643) THEN 'BOTI SP INT'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (58590,62313) THEN 'BOTI NE'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (58591,59073) THEN 'BOTI SE'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (68294,68293) THEN 'BOTI RS'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (68037) THEN 'AERO'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (68416) THEN 'BOTI SC'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (68417) THEN 'BOTI SC FRANQUEADOS'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (54354) THEN 'UNINTER'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (69103) THEN 'MAX ATACADISTA'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (50754) THEN 'FRIMESA'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (10747,59148) THEN 'VOLVO'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (4931) THEN 'SHOPPING MULLER'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (62498) THEN 'SERVOPA'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (66384,65253,66385) THEN 'UNICRED'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (63871) THEN 'FRISIA'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (59081) THEN 'BOTI BRASIL'\n      WHEN SAFE_CAST(p.cod_client AS INT64) IN (64809) THEN 'VULT'\n      ELSE COALESCE(c.cliente, 'Outros')\n    END\n  ) AS conta,\n  r.responsavel_nome,\n  NULLIF(c.approved_at, TIMESTAMP('1970-01-01')) AS approved_at,\n  NULLIF(c.rejected_at, TIMESTAMP('1970-01-01')) AS rejected_at,\n  c.ingestion_time as created_at\nFROM `checking-grupoom.form_checking.checking_logs` c\nLEFT JOIN `checking-grupoom.form_checking.pis_clientes` p\n  ON c.n_pi = CAST(p.PEDIDO AS STRING)\nLEFT JOIN `checking-grupoom.form_checking.pi_responsaveis` r\n  ON c.n_pi = r.n_pi\nWHERE NOT STARTS_WITH(c.submission_id, 'rej_')\n  AND NOT STARTS_WITH(c.submission_id, 'err_')\n  AND (c.status IS NULL OR c.status != 'ERROR')\nQUALIFY ROW_NUMBER() OVER (\n  PARTITION BY COALESCE(NULLIF(TRIM(c.n_pi), ''), c.submission_id),\n               COALESCE(c.is_complement, 0)\n  ORDER BY c.ingestion_time DESC, c.submission_id DESC\n) = 1\nORDER BY c.ingestion_time DESC",
         "options": {}
       },
-      "id": "f27baa09-1ec5-4cc9-886b-12c8cb8e7839",
+      "id": "e56e0994-88c6-4185-839c-f0e385ff836a",
       "name": "BigQuery - Todos Checkings",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79520,
-        86944
+        -81648,
+        86592
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -1685,13 +1685,13 @@
           }
         }
       },
-      "id": "c86a336f-a76a-4bfb-bf25-b62cf507ee20",
+      "id": "967b5732-3ef5-4bd5-96dd-e1348d1f40db",
       "name": "Responder Todos Checkings",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79312,
-        86944
+        -81440,
+        86592
       ]
     },
     {
@@ -1701,16 +1701,16 @@
           "value": "checking-grupoom",
           "mode": "list"
         },
-        "sqlQuery": "SELECT\n  c.submission_id, c.n_pi, c.cliente, c.veiculo, c.nome_contato, c.email_contato, c.meio,\n  c.total_arquivos, c.is_complement, c.webViewLink, c.status, c.rejection_count,\n  c.rejection_reason, c.approval_user, c.observacoes,\n  p.CAMPANHA AS campanha, p.PRACA AS praca,\n  p.VALOR AS valor_liquido, p.PRODUTO AS produto, p.PLANILHA AS planilha,\n  p.VENCIMENTO AS vencimento, p.SIT_CHECKI AS liberado_publi,\n  p.PERIODO AS periodo_veic,\n  r.responsavel AS assigned_to, COALESCE(r.conta, CAST(p.PLANILHA AS STRING), c.cliente) AS conta,\n  r.responsavel_nome,\n  NULLIF(c.approved_at, TIMESTAMP('1970-01-01')) AS approved_at,\n  NULLIF(c.rejected_at, TIMESTAMP('1970-01-01')) AS rejected_at\nFROM `checking-grupoom.form_checking.checking_logs` c\nLEFT JOIN `checking-grupoom.form_checking.pis_clientes` p\n  ON c.n_pi = CAST(p.PEDIDO AS STRING)\nLEFT JOIN `checking-grupoom.form_checking.pi_responsaveis` r\n  ON c.n_pi = r.n_pi\nWHERE\n  NOT STARTS_WITH(c.submission_id, 'rej_')\n  AND (CAST('{{ $json.body.status || \\\"\\\" }}' AS STRING) = '' OR c.status = '{{ $json.body.status || \\\"\\\" }}')\n  AND (CAST('{{ $json.body.cliente || \\\"\\\" }}' AS STRING) = '' OR UPPER(c.cliente) LIKE UPPER('%{{ $json.body.cliente || \\\"\\\" }}%'))\n  AND (CAST('{{ $json.body.n_pi || \\\"\\\" }}' AS STRING) = '' OR c.n_pi = '{{ $json.body.n_pi || \\\"\\\" }}')\nQUALIFY ROW_NUMBER() OVER (\n  PARTITION BY COALESCE(NULLIF(TRIM(c.n_pi), ''), c.submission_id),\n               COALESCE(c.is_complement, 0)\n  ORDER BY c.ingestion_time DESC, c.submission_id DESC\n) = 1\nORDER BY c.ingestion_time DESC",
+        "sqlQuery": "SELECT\n  c.submission_id, c.n_pi, c.cliente, c.veiculo, c.nome_contato, c.email_contato, c.meio,\n  c.total_arquivos, c.is_complement, c.webViewLink, c.status, c.rejection_count,\n  c.rejection_reason, c.approval_user, c.observacoes,\n  p.CAMPANHA AS campanha, p.PRACA AS praca,\n  p.VALOR AS valor_liquido, p.PRODUTO AS produto, p.PLANILHA AS planilha,\n  p.VENCIMENTO AS vencimento, p.SIT_CHECKI AS liberado_publi,\n  p.PERIODO AS periodo_veic,\n  r.responsavel AS assigned_to, COALESCE(r.conta, CAST(p.PLANILHA AS STRING), c.cliente) AS conta,\n  r.responsavel_nome,\n  NULLIF(c.approved_at, TIMESTAMP('1970-01-01')) AS approved_at,\n  NULLIF(c.rejected_at, TIMESTAMP('1970-01-01')) AS rejected_at\nFROM `checking-grupoom.form_checking.checking_logs` c\nLEFT JOIN `checking-grupoom.form_checking.pis_clientes` p\n  ON c.n_pi = CAST(p.PEDIDO AS STRING)\nLEFT JOIN `checking-grupoom.form_checking.pi_responsaveis` r\n  ON c.n_pi = r.n_pi\nWHERE\n  NOT STARTS_WITH(c.submission_id, 'rej_')\n  AND (CAST('{{ $json.body.status || \"\" }}' AS STRING) = '' OR c.status = '{{ $json.body.status || \"\" }}')\n  AND (CAST('{{ $json.body.cliente || \"\" }}' AS STRING) = '' OR UPPER(c.cliente) LIKE UPPER('%{{ $json.body.cliente || \"\" }}%'))\n  AND (CAST('{{ $json.body.n_pi || \"\" }}' AS STRING) = '' OR c.n_pi = '{{ $json.body.n_pi || \"\" }}')\nQUALIFY ROW_NUMBER() OVER (\n  PARTITION BY COALESCE(NULLIF(TRIM(c.n_pi), ''), c.submission_id),\n               COALESCE(c.is_complement, 0)\n  ORDER BY c.ingestion_time DESC, c.submission_id DESC\n) = 1\nORDER BY c.ingestion_time DESC",
         "options": {}
       },
-      "id": "41ce6755-1104-4042-b138-c60ded732145",
+      "id": "d6376666-57f1-4204-a2f0-9d2c5d82e76a",
       "name": "BigQuery - Checkings Filtrado",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79728,
-        87120
+        -81856,
+        86768
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -1750,13 +1750,13 @@
           }
         }
       },
-      "id": "004f5892-90fb-4895-aaa4-b66be1f91591",
+      "id": "d1d3c316-5e9a-4cf1-a552-0c9a220690d9",
       "name": "Responder Checkings Filtrado",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79536,
-        87120
+        -81664,
+        86768
       ]
     },
     {
@@ -1769,13 +1769,13 @@
         "sqlQuery": "INSERT INTO `checking-grupoom.form_checking.users`\n(id, name, email, password_hash, role, avatar, status, created_at)\nVALUES\n('{{ $items(\"Criptografar Senha\")[0].json.body.id }}', '{{ $items(\"Criptografar Senha\")[0].json.body.name }}', '{{ $items(\"Criptografar Senha\")[0].json.body.email }}', '{{ $items(\"Criptografar Senha\")[0].json.body.password_hash }}', '{{ $items(\"Criptografar Senha\")[0].json.body.role }}', '{{ $items(\"Criptografar Senha\")[0].json.body.avatar || \"\" }}', '{{ $items(\"Criptografar Senha\")[0].json.body.status }}', CURRENT_TIMESTAMP())",
         "options": {}
       },
-      "id": "d4aebe86-bccd-459f-afc3-88b56b00b981",
+      "id": "2a2911b1-e08d-4839-916d-6dc8081efd09",
       "name": "BigQuery - Registrar Usuario",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79056,
-        87248
+        -81184,
+        86896
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -1795,13 +1795,13 @@
         "sqlQuery": "INSERT INTO `checking-grupoom.form_checking.audit_logs`\n(id, user_id, action, entity, entity_id, payload, ip, created_at)\nVALUES (\n  GENERATE_UUID(),\n  '{{ $items(\"Criptografar Senha\")[0].json.body.id }}',\n  'register_user',\n  'user',\n  '{{ $items(\"Criptografar Senha\")[0].json.body.id }}',\n  '{{ JSON.stringify({ name: $items(\"Criptografar Senha\")[0].json.body.name, email: $items(\"Criptografar Senha\")[0].json.body.email, role: $items(\"Criptografar Senha\")[0].json.body.role }) }}',\n  '',\n  CURRENT_TIMESTAMP()\n)",
         "options": {}
       },
-      "id": "00265bfd-58c4-4c7b-be5e-a1bd6e622ada",
+      "id": "df58754d-268a-4b3b-b186-19d620d35cb7",
       "name": "BigQuery - Auditoria Registro",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78816,
-        87248
+        -80944,
+        86896
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -1842,13 +1842,13 @@
           }
         }
       },
-      "id": "512795f5-736f-4fe4-b0af-1a0ff6653bd5",
+      "id": "57030005-b613-42c4-98ee-6cba7dcdbe2c",
       "name": "Responder Registro",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78624,
-        87248
+        -80752,
+        86896
       ]
     },
     {
@@ -1857,13 +1857,13 @@
         "jsonOutput": "={{ (() => { const msg = $json.error?.message || ''; const code = msg.startsWith('AUTH_') ? 401 : msg.startsWith('TOKEN') ? 401 : msg.startsWith('INVALID_CREDENTIALS') ? 401 : msg.startsWith('RATE_LIMIT') ? 429 : msg.startsWith('FORBIDDEN') ? 403 : msg.startsWith('MISSING') ? 400 : msg.startsWith('INVALID_') ? 400 : 500; const safeMsg = code === 401 ? 'Credenciais invalidas' : code === 403 ? 'Sem permissao' : code === 429 ? 'Muitas tentativas. Aguarde.' : code === 400 ? 'Requisicao invalida' : 'Erro interno'; return { success: false, error: safeMsg, statusCode: code }; })() }}",
         "options": {}
       },
-      "id": "7d8b1c68-7a72-4d13-aa6f-6a7470f0ee07",
+      "id": "6232be4a-6e49-4b8b-8c34-9001f59b703a",
       "name": "Tratador de Erros Global",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -78448,
-        86480
+        -80576,
+        86128
       ]
     },
     {
@@ -1894,26 +1894,26 @@
           }
         }
       },
-      "id": "4ae57444-432b-4d26-b1c5-f6cd05297b0a",
+      "id": "37b5949e-0f77-4ba6-bcf3-7c72b92eedef",
       "name": "Responder Erro",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78160,
-        86480
+        -80288,
+        86128
       ]
     },
     {
       "parameters": {
         "jsCode": "// SEC: S1+A5 - Rate limiting com IP validado + chave por email\n// IP validado contra regex IPv4/IPv6, fallback 'unknown'\n// Chave composta: email + IP (impede bypass por IP spoofing)\n// ============================================================\nconst headers = $input.first().json.headers || {};\nlet rawIp = headers['x-real-ip'] || headers['x-forwarded-for'] || 'unknown';\n// SEC: S1 - Validar IP contra regex estrita\nif (rawIp.includes(',')) rawIp = rawIp.split(',')[0].trim();\nconst IPV4 = /^(\\d{1,3}\\.){3}\\d{1,3}$/;\nconst IPV6 = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;\nconst ip = (IPV4.test(rawIp) || IPV6.test(rawIp)) ? rawIp : 'unknown';\nconst now = Date.now();\nconst WINDOW = 30 * 60 * 1000;\nconst MAX_ATTEMPTS = 3;\n\nconst { email, password } = $input.first().json.body;\n// SEC: A5 - Chavear por email ALEM de IP\nconst store = globalThis._loginRateLimit = globalThis._loginRateLimit || {};\nconst ipKey = 'ip:' + ip;\nconst emailKey = email ? 'email:' + email.toLowerCase().trim() : null;\n\nfunction checkLimit(key) {\n  if (!key) return;\n  if (!store[key] || (now - store[key].firstAttempt) > WINDOW) {\n    store[key] = { count: 0, firstAttempt: now };\n  }\n  store[key].count++;\n  if (store[key].count > MAX_ATTEMPTS) {\n    throw new Error('RATE_LIMIT: Muitas tentativas de login. Aguarde 30 minutos');\n  }\n}\ncheckLimit(ipKey);\ncheckLimit(emailKey);\n\nconst entry = store[ipKey];\nreturn [{ json: { email, passwordInput: password, ip, _pendingRateEntry: {\n  ip_address: ip,\n  attempted_at: new Date(now).toISOString(),\n  lockout_until: entry && entry.lockedUntil ? new Date(entry.lockedUntil).toISOString() : null,\n  attempt_count: entry ? entry.count : 1\n} } }];"
       },
-      "id": "484c142c-33da-465a-87c5-34b4dfdb4e4b",
+      "id": "4ac55d41-6abd-4fa5-93bb-aec0404e6efb",
       "name": "Processar Login",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -79728,
-        86144
+        -81856,
+        85792
       ],
       "onError": "continueErrorOutput"
     },
@@ -1927,13 +1927,13 @@
         "sqlQuery": "SELECT id, name, email, password_hash, role, avatar\nFROM `checking-grupoom.form_checking.users`\nWHERE LOWER(email) = LOWER('{{ $json.email }}')\n  AND status = 'active'\nLIMIT 1",
         "options": {}
       },
-      "id": "934e9bf2-df75-4fef-bc47-71dc6c3b53c7",
+      "id": "88722314-9060-4f35-a540-71bb4a91600c",
       "name": "BigQuery - Buscar Usuario",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2,
       "position": [
-        -79536,
-        86128
+        -81664,
+        85776
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -1946,13 +1946,13 @@
       "parameters": {
         "jsCode": "// Verificar Senha â€” scrypt nativo + legacy SHA256 com auto-rehash\nconst crypto = require('crypto');\n\nconst PURE_CRYPTO = {\n  sha256: function(ascii) {\n    function rightRotate(value, amount) { return (value>>>amount) | (value<<(32 - amount)); };\n    var mathPow = Math.pow;\n    var maxWord = mathPow(2, 32);\n    var lengthProperty = 'length';\n    var i, j;\n    var result = '';\n    var words = [];\n    var asciiBitLength = ascii[lengthProperty]*8;\n    var hash = PURE_CRYPTO.sha256.h = PURE_CRYPTO.sha256.h || [];\n    var k = PURE_CRYPTO.sha256.k = PURE_CRYPTO.sha256.k || [];\n    var primeCounter = k[lengthProperty];\n    var isComposite = {};\n    for (var candidate = 2; primeCounter < 64; candidate++) {\n      if (!isComposite[candidate]) {\n        for (i = 0; i < 313; i += candidate) { isComposite[i] = candidate; }\n        hash[primeCounter] = (mathPow(candidate, .5)*maxWord)|0;\n        k[primeCounter++] = (mathPow(candidate, 1/3)*maxWord)|0;\n      }\n    }\n    ascii += '\\x80';\n    while (ascii[lengthProperty]%64 - 56) ascii += '\\x00';\n    for (i = 0; i < ascii[lengthProperty]; i++) {\n      j = ascii.charCodeAt(i);\n      if (j>>8) return; \n      words[i>>2] |= j << ((3 - i)%4)*8;\n    }\n    words[words[lengthProperty]] = ((asciiBitLength/maxWord)|0);\n    words[words[lengthProperty]] = (asciiBitLength)\n    for (j = 0; j < words[lengthProperty];) {\n      var w = words.slice(j, j += 16);\n      var oldHash = hash;\n      hash = hash.slice(0, 8);\n      for (i = 0; i < 64; i++) {\n        var i2 = i + j;\n        var w15 = w[i - 15], w2 = w[i - 2];\n        var a = hash[0], e = hash[4];\n        var temp1 = hash[7]\n          + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) \n          + ((e&hash[5])^((~e)&hash[6]))\n          + k[i]\n          + (w[i] = (i < 16) ? w[i] : (\n              w[i - 16]\n              + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15>>>3)) \n              + w[i - 7]\n              + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2>>>10))\n            )|0\n          );\n        var temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) \n          + ((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));\n        hash = [(temp1 + temp2)|0].concat(hash);\n        hash[4] = (hash[4] + temp1)|0;\n      }\n      for (i = 0; i < 8; i++) { hash[i] = (hash[i] + oldHash[i])|0; }\n    }\n    for (i = 0; i < 8; i++) {\n      for (j = 3; j + 1; j--) {\n        var b = (hash[i]>>(j*8))&255;\n        result += ((b < 16) ? 0 : '') + b.toString(16);\n      }\n    }\n    return result;\n  },\n  \n  hmacSha256: function(key, message) {\n    if (typeof key === 'string') {\n        key = unescape(encodeURIComponent(key));\n    }\n    if (typeof message === 'string') {\n        message = unescape(encodeURIComponent(message));\n    }\n    var blockSize = 64;\n    var keyBytes = [];\n    for (var i = 0; i < key.length; i++) {\n        keyBytes.push(key.charCodeAt(i));\n    }\n    if (keyBytes.length > blockSize) {\n        var keyHashHex = PURE_CRYPTO.sha256(key);\n        keyBytes = [];\n        for (var i = 0; i < keyHashHex.length; i += 2) {\n            keyBytes.push(parseInt(keyHashHex.substr(i, 2), 16));\n        }\n    }\n    while (keyBytes.length < blockSize) {\n        keyBytes.push(0);\n    }\n    var oKeyPad = [], iKeyPad = [];\n    for (var i = 0; i < blockSize; i++) {\n        oKeyPad.push(keyBytes[i] ^ 0x5c);\n        iKeyPad.push(keyBytes[i] ^ 0x36);\n    }\n    var iKeyPadStr = String.fromCharCode.apply(null, iKeyPad);\n    var oKeyPadStr = String.fromCharCode.apply(null, oKeyPad);\n    var innerHashHex = PURE_CRYPTO.sha256(iKeyPadStr + message);\n    var innerHashStr = '';\n    for (var i = 0; i < innerHashHex.length; i += 2) {\n        innerHashStr += String.fromCharCode(parseInt(innerHashHex.substr(i, 2), 16));\n    }\n    var outerHashHex = PURE_CRYPTO.sha256(oKeyPadStr + innerHashStr);\n    return Buffer.from(outerHashHex, 'hex').toString('base64url');\n  },\n  \n  hashPassword: function(pwd, salt) {\n      // Legacy fallback simple SHA256 repeatedly\n      let h = PURE_CRYPTO.sha256(salt + pwd);\n      for (let i = 0; i < 1000; i++) {\n          h = PURE_CRYPTO.sha256(h + salt + i);\n      }\n      return h;\n  },\n  \n  randomStr: function(len) {\n      const crypto = require('crypto');\n      return crypto.randomBytes(len).toString('hex').slice(0, len);\n  }\n};\n// ===================================\n\nfunction signJWT(claims, secret) {\n  if (!secret) throw new Error('CONFIGURACAO: N8N_JWT_SECRET nao definida');\n  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');\n  const now = Math.floor(Date.now() / 1000);\n  const payload = Buffer.from(JSON.stringify({\n    ...claims, iat: now, exp: now + 14400\n  })).toString('base64url');\n  const signature = crypto.createHmac('sha256', secret).update(header + '.' + payload).digest('base64url');\n  return header + '.' + payload + '.' + signature;\n}\n\nfunction verifyJWT(token, secret) {\n  if (!secret) throw new Error('CONFIGURACAO: N8N_JWT_SECRET nao definida');\n  if (!token || typeof token !== 'string') throw new Error('AUTH_MISSING');\n  const clean = token.startsWith('Bearer ') ? token.slice(7) : token;\n  const parts = clean.split('.');\n  if (parts.length !== 3) throw new Error('AUTH_INVALID');\n  const [header, payload, signature] = parts;\n  const expected = crypto.createHmac('sha256', secret).update(header + '.' + payload).digest('base64url');\n  // SEC: A3 - timing-safe comparison\n  try {\n    const sigBuf = Buffer.from(signature);\n    const expBuf = Buffer.from(expected);\n    if (sigBuf.length !== expBuf.length || !require('crypto').timingSafeEqual(sigBuf, expBuf)) throw new Error('AUTH_INVALID');\n  } catch(e) { if (e.message === 'AUTH_INVALID') throw e; throw new Error('AUTH_INVALID'); }\n  const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString());\n  if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {\n    throw new Error('AUTH_EXPIRED');\n  }\n  return decoded;\n}\n\n\n\nconst users = $input.all().map(i => i.json);\nconst inputPassword = $items('Processar Login')[0].json.passwordInput;\n\nif (users.length === 0) throw new Error('INVALID_CREDENTIALS');\nconst user = users[0];\n\nif (!user.password_hash) throw new Error('INVALID_CREDENTIALS');\nif (user.password_hash.startsWith('SSO_GOOGLE:')) throw new Error('INVALID_CREDENTIALS');\n\nlet isValid = false;\nlet needsRehash = false;\n\nif (user.password_hash.startsWith('scrypt:')) {\n  // â”€â”€ Scrypt nativo (formato: scrypt:salt:hash) â”€â”€\n  const parts = user.password_hash.split(':');\n  const salt = parts[1];\n  const storedHash = parts[2];\n  const computed = crypto.scryptSync(inputPassword, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');\n  isValid = crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(storedHash, 'hex'));\n} else if (user.password_hash.includes(':')) {\n  // â”€â”€ Legacy SHA256 iterado (formato: salt:hash) â€” verifica e marca para rehash â”€â”€\n  const [salt, storedHash] = user.password_hash.split(':');\n  const computed = PURE_CRYPTO.hashPassword(inputPassword, salt);\n  if (computed === storedHash) {\n    isValid = true;\n    needsRehash = true; // Trocar para scrypt no próximo login\n  }\n} else {\n  throw new Error('INVALID_CREDENTIALS');\n}\n\nif (!isValid) throw new Error('INVALID_CREDENTIALS');\n\n// â”€â”€ Auto-rehash: gerar novo hash scrypt se veio de legacy â”€â”€\nlet newHash = null;\nif (needsRehash) {\n  const newSalt = crypto.randomBytes(32).toString('hex');\n  const newDerived = crypto.scryptSync(inputPassword, newSalt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');\n  newHash = 'scrypt:' + newSalt + ':' + newDerived;\n}\n\nlet JWT_SECRET;\ntry { JWT_SECRET = $env.N8N_JWT_SECRET; } catch(e) { JWT_SECRET = null; }\nif (!JWT_SECRET) throw new Error('CONFIGURACAO: N8N_JWT_SECRET nao definida no ambiente');\n\nconst token = signJWT(\n  { sub: user.id, email: user.email, role: user.role, name: user.name, jti: crypto.randomBytes(16).toString('hex') },\n  JWT_SECRET\n);\n\ntry {\n  const ip = $items('Processar Login')[0].json.ip || 'unknown';\n  if (globalThis._loginRateLimit) {\n    delete globalThis._loginRateLimit['ip:' + ip];\n    if (user.email) delete globalThis._loginRateLimit['email:' + user.email.toLowerCase().trim()];\n  }\n} catch(e) {}\n\n// â”€â”€ Flag para rate limit persistence â”€â”€\nif (globalThis._pendingRateEntry) {\n  // Nao precisa persistir â€” login deu certo\n}\n\nreturn [{ json: {\n  success: true, token,\n  user: { id: user.id, name: user.name, email: user.email, avatar: user.avatar || null, role: user.role },\n  needsRehash, newHash, userId: user.id\n} }];"
       },
-      "id": "20ff7a33-cdbd-4db9-8ce1-a0457b98e6a3",
+      "id": "8d8627c3-7bda-4d9e-904c-1afbc126fef6",
       "name": "Verificar Senha",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -79216,
-        86112
+        -81344,
+        85760
       ],
       "onError": "continueErrorOutput"
     },
@@ -1966,13 +1966,13 @@
         "sqlQuery": "SELECT id, name, email, role, avatar, status, created_at, COALESCE(grupo, 'nao_definido') AS grupo\nFROM `checking-grupoom.form_checking.users`\nORDER BY created_at DESC",
         "options": {}
       },
-      "id": "505658be-4782-4014-9082-8ea8ce5f3749",
+      "id": "c7cdbf9a-9470-45c6-b34a-de97c779ab43",
       "name": "BigQuery - Listar Usuarios",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2,
       "position": [
-        -79728,
-        87472
+        -81856,
+        87120
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -2012,13 +2012,13 @@
           }
         }
       },
-      "id": "9041e6d2-e17e-4199-a39f-562b64a113c6",
+      "id": "9daab99b-3587-4bb5-a80a-45bcdb5e4aa0",
       "name": "Responder Usuarios",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79536,
-        87472
+        -81664,
+        87120
       ]
     },
     {
@@ -2031,13 +2031,13 @@
         "sqlQuery": "UPDATE `checking-grupoom.form_checking.users`\nSET role = '{{ $json.body.newRole }}'\nWHERE id = '{{ $json.body.userId }}'",
         "options": {}
       },
-      "id": "73f1337e-23d3-4916-913f-4506b3878b89",
+      "id": "2c9d0091-e4a0-4024-b5bc-c503fcb69907",
       "name": "BigQuery - Atualizar Cargo",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2,
       "position": [
-        -79728,
-        87648
+        -81856,
+        87296
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -2078,13 +2078,13 @@
           }
         }
       },
-      "id": "417b550f-87ab-4806-9b50-2b23ce16e4a3",
+      "id": "f096ee98-8d3b-4368-b50d-ad38c3e14153",
       "name": "Responder Cargo",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79520,
-        87648
+        -81648,
+        87296
       ]
     },
     {
@@ -2097,13 +2097,13 @@
         "sqlQuery": "UPDATE `checking-grupoom.form_checking.users`\nSET status = '{{ $json.body.status }}'\nWHERE id = '{{ $json.body.userId }}'",
         "options": {}
       },
-      "id": "2b7dec1a-0531-4dcb-80cc-1982dfc42a50",
+      "id": "0c18e7f9-59fc-42fe-ac70-344b3a21d97a",
       "name": "BigQuery - Atualizar Status",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2,
       "position": [
-        -79728,
-        87808
+        -81856,
+        87456
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -2144,13 +2144,13 @@
           }
         }
       },
-      "id": "1fcfb79a-fe33-424f-910a-a005baf5dd2c",
+      "id": "a41aaad2-0007-4c0e-9ec5-bb70eb322881",
       "name": "Responder Status",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79520,
-        87808
+        -81648,
+        87456
       ]
     },
     {
@@ -2163,13 +2163,13 @@
         "sqlQuery": "SELECT COUNT(*) AS total FROM `checking-grupoom.form_checking.users` WHERE LOWER(email) = LOWER('{{ $json.body.email }}')",
         "options": {}
       },
-      "id": "6ada7980-71e7-4eca-9346-812d6ccd238f",
+      "id": "0039cca3-756d-4c2d-899c-3c14bcef29c7",
       "name": "BigQuery - Verificar Email",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79728,
-        87296
+        -81856,
+        86944
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -2202,13 +2202,13 @@
         },
         "options": {}
       },
-      "id": "f3b2094d-09a3-478b-bac8-f95eb91d0e6c",
+      "id": "9975ce9b-5098-46d0-a1fc-a2b4fbd6c138",
       "name": "Check Email Livre",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -79520,
-        87296
+        -81648,
+        86944
       ]
     },
     {
@@ -2243,26 +2243,26 @@
           }
         }
       },
-      "id": "2f4aa66f-69cd-44d1-8a95-50e9d880e7d8",
+      "id": "8c560520-1a88-48e2-8b41-1567239f327d",
       "name": "Responder Email Duplicado",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79264,
-        87408
+        -81392,
+        87056
       ]
     },
     {
       "parameters": {
         "jsCode": "// Criptografar Senha â€” scrypt nativo (OWASP compliant)\nconst crypto = require('crypto');\n\nconst items = $input.all();\nfor (const item of items) {\n  const pw = item.json.password;\n  if (!pw) throw new Error('VALIDATION: senha vazia');\n  \n  const salt = crypto.randomBytes(32).toString('hex');\n  const hash = crypto.scryptSync(pw, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');\n  item.json.password_hash = 'scrypt:' + salt + ':' + hash;\n}\nreturn items;\n"
       },
-      "id": "2b2bab3e-655d-4645-a4dc-e5124509f3db",
+      "id": "ba26c886-1b88-4724-8824-5d1fdc9da5e0",
       "name": "Criptografar Senha",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -79280,
-        87248
+        -81408,
+        86896
       ]
     },
     {
@@ -2278,13 +2278,13 @@
           "useLegacySql": false
         }
       },
-      "id": "3165c4d2-f469-463f-b0fd-f3ceaf5723a8",
+      "id": "479f0fdb-4194-4c06-a212-2fa1729eb153",
       "name": "BigQuery - Buscar Imagens",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79728,
-        87984
+        -81856,
+        87632
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -2298,13 +2298,13 @@
       "parameters": {
         "jsCode": "const rows = $input.all().map(i => i.json);\n\nif (rows.length === 0 || (rows.length === 1 && rows[0].id_imagem === 'sem_arquivo')) {\n  return [{ json: { success: true, files: [], total: 0 } }];\n}\n\nconst byEndereco = {};\nconst allFiles = [];\n\nfor (const row of rows) {\n  if (!row.id_imagem) continue;\n  const id = row.id_imagem;\n  const detalhe = (row.detalhe || 'comprovante').toLowerCase();\n  const endereco = row.endereco || '';\n  const idPasta = row.id_pasta || '';\n  const mime = (row.mime_type || '').toLowerCase();\n\n  let isVideo, isPdf, isImage, isGoogleNative = false;\n  if (mime) {\n    // F1-b: Fonte da verdade = mimeType real do Drive\n    isVideo = mime.startsWith('video/');\n    isPdf = mime === 'application/pdf';\n    isGoogleNative = mime.startsWith('application/vnd.google-apps');\n    if (isGoogleNative) isPdf = true; // Slides/Docs nativos serao exportados como PDF pelo proxy\n    isImage = !isVideo && !isPdf && mime.startsWith('image/');\n  } else {\n    // Fallback legado por keyword (linhas sem backfill de mime_type)\n    isVideo = detalhe.includes('video') || detalhe.includes('gravacao');\n    isPdf = detalhe.includes('relatorio') || detalhe.includes('pdf') || detalhe.includes('apresentacao') || detalhe.includes('zip');\n    isImage = !isVideo && !isPdf;\n  }\n  const file = {\n    id_imagem: id, id_pasta: idPasta, detalhe: row.detalhe || 'comprovante', endereco,\n    mime_type: row.mime_type || '', isImage, isVideo, isPdf, isGoogleNative,\n    thumbnailUrl: `https://drive.google.com/thumbnail?id=${id}&sz=w400`,\n    previewUrl: `https://drive.google.com/file/d/${id}/preview`,\n    viewUrl: `https://drive.google.com/file/d/${id}/view`\n    // downloadUrl REMOVIDO: download so via proxy (F1-c)\n  };\n  allFiles.push(file);\n  const key = endereco || '_sem_endereco';\n  if (!byEndereco[key]) byEndereco[key] = [];\n  byEndereco[key].push(file);\n}\n\nreturn [{ json: { success: true, files: allFiles, files_by_endereco: byEndereco, total: allFiles.length } }];"
       },
-      "id": "eb533ad9-ea4d-4a73-9907-ea8dff135be4",
+      "id": "b8a80a6b-2e1f-4dc9-99eb-5b324e3a88f1",
       "name": "Formatar Arquivos",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -79520,
-        87984
+        -81648,
+        87632
       ]
     },
     {
@@ -2338,13 +2338,13 @@
           }
         }
       },
-      "id": "23d5d701-3a21-427c-b055-3dcf408ccb83",
+      "id": "445c67ea-2f2b-4c39-83e9-5d06aeb5f3b0",
       "name": "Responder Arquivos",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -79312,
-        87984
+        -81440,
+        87632
       ]
     },
     {
@@ -2385,13 +2385,13 @@
         },
         "options": {}
       },
-      "id": "3b4780af-bcba-41ef-8e7b-e5f8ed7cf0e1",
+      "id": "93761963-4cbb-4a5a-b546-0b9b1f503ddc",
       "name": "Resumo Final",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -80320,
-        88240
+        -82448,
+        87888
       ]
     },
     {
@@ -2417,13 +2417,13 @@
           "ignoreUnknownValues": true
         }
       },
-      "id": "17cedf3e-e0c7-48b3-b8af-457b37837014",
+      "id": "8a911f6d-c9a6-4c38-9afd-cebffe9b90b2",
       "name": "BigQuery - Inserir Admin",
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2,
       "position": [
-        -80544,
-        88240
+        -82672,
+        87888
       ],
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -2446,24 +2446,24 @@
         },
         "options": {}
       },
-      "id": "3b015ec1-99a3-40b7-a1d9-41685d3ab6f2",
+      "id": "4f493ca4-1ecb-48e1-aaa1-95baac7c06fa",
       "name": "Dados do Admin (Hash Pre-Calculado)",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -80784,
-        88240
+        -82912,
+        87888
       ]
     },
     {
       "parameters": {},
-      "id": "a3d0c4e0-a6af-4ab3-819a-687ef6435ca9",
+      "id": "5e792a49-5ce0-4692-88e3-4da2ac4c3230",
       "name": "Executar Manualmente",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -80992,
-        88240
+        -83120,
+        87888
       ]
     },
     {
@@ -2481,10 +2481,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -80672,
-        87056
+        -82800,
+        86704
       ],
-      "id": "93d1ca49-6586-4888-bb1a-71a3212a4d20",
+      "id": "4d1f49f6-0628-42e6-b306-7891578eeb6a",
       "name": "BigQuery - Hydrate Cache",
       "alwaysOutputData": true,
       "credentials": {
@@ -2502,10 +2502,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -80496,
-        87056
+        -82624,
+        86704
       ],
-      "id": "54ed1ff0-96ed-4283-ad9d-61a0f4d41715",
+      "id": "3799304d-335e-4faa-bace-5cc981cf6bc1",
       "name": "Hydrate Cache",
       "onError": "continueRegularOutput"
     },
@@ -2516,10 +2516,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -79280,
-        87584
+        -81408,
+        87232
       ],
-      "id": "2e8757d7-63aa-4753-9b4e-23174602d790",
+      "id": "daccf861-75c1-4ef2-b649-ab0da70f500b",
       "name": "Sync Revoked Sessions",
       "onError": "continueRegularOutput"
     },
@@ -2538,10 +2538,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79088,
-        87584
+        -81216,
+        87232
       ],
-      "id": "a18e8a75-5d5a-43e0-bfcc-04020d734241",
+      "id": "bb9d1478-ddf6-43d7-b4de-b6369b4f4242",
       "name": "BigQuery - Persist Revoked",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -2566,10 +2566,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78816,
-        86224
+        -80944,
+        85872
       ],
-      "id": "6b21b9a1-f000-47d6-a4e6-3fd5173e04f6",
+      "id": "4c46d7f9-54be-4032-b843-b8091ec567e8",
       "name": "BigQuery - Rate Limit Persist",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -2613,10 +2613,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78928,
-        87584
+        -81056,
+        87232
       ],
-      "id": "9272907b-6451-4151-938e-484a1105efb1",
+      "id": "c443f44b-2c6f-441b-9dcd-a135ffbeaa08",
       "name": "Responder Logout"
     },
     {
@@ -2647,10 +2647,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -79040,
-        86144
+        -81168,
+        85792
       ],
-      "id": "379f648e-8a5c-4821-a5db-86fae79ae4e1",
+      "id": "348f05f2-7154-42dc-bd4d-780b15d31f96",
       "name": "Precisa Rehash"
     },
     {
@@ -2670,10 +2670,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2,
       "position": [
-        -78816,
-        86000
+        -80944,
+        85648
       ],
-      "id": "5941f8a0-9ad4-4ad5-9d5b-186089abd557",
+      "id": "21a2c4fd-8eeb-4e77-841d-ed7ea311ce27",
       "name": "BigQuery - Rehash Senha",
       "alwaysOutputData": true,
       "credentials": {
@@ -3777,26 +3777,26 @@
         },
         "options": {}
       },
-      "id": "39c3711c-ce83-4af1-aece-e215e031b9b8",
+      "id": "61ff1637-424c-4fb6-b8b5-4d1d4c74bc92",
       "name": "Roteador de Acoes",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
       "position": [
-        -79952,
-        86752
+        -82080,
+        86400
       ]
     },
     {
       "parameters": {
         "jsCode": "// ============================================================\n// VALIDAR DADOS - Schema de validacao + RBAC + VIEWER BLOCK\n// ============================================================\nconst item = $input.first().json;\nconst { action, body } = item;\nconst authenticatedUser = item._auth || null;\n\n// ============================================================\n// FIX C: Guard anti-rej_\n// ============================================================\nconst actionsThatUseId = ['approve', 'reject', 'resubmit_checking'];\nif (actionsThatUseId.includes(action)) {\n  const targetId = body.id || body.submission_id || '';\n  if (String(targetId).startsWith('rej_')) {\n    throw new Error('INVALID_ID: Operação não permitida em registros de log de rejeição (rej_)');\n  }\n}\n\n// ============================================================\n// RBAC: Acoes bloqueadas para viewers (setor Midia)\n// Viewers podem apenas visualizar â€” NUNCA aprovar/rejeitar\n// ============================================================\nconst VIEWER_BLOCKED_ACTIONS = ['approve', 'reject', 'resubmit_checking', 'register_user', 'update_user_role', 'update_user_status', 'update_checking_status', 'save_sla_config', 'distribute_demands', 'toggle_automation', 'assign_responsible', 'bulk_assign_responsible', 'set_supplier_rating', 'log_security_event', 'update_user_grupo', 'add_comment', 'upload_supplement', 'copilot_analyze'];\nif (VIEWER_BLOCKED_ACTIONS.includes(action) && authenticatedUser && authenticatedUser.role === 'viewer') {\n  throw new Error('FORBIDDEN: Viewers do setor Midia nao possuem permissao para esta acao');\n}\n\nconst schemas = {\n  login_sso:          { required: ['id_token'] },\n  approve:            { required: ['id'] },\n  reject:             { required: ['id', 'reason'] },\n  logout:             { required: [] },\n  resubmit_checking:  { required: ['submission_id'] },\n  login:              { required: ['email', 'password'] },\n  register_user:      { required: ['name', 'email', 'password'], adminOnly: true },\n  update_user_role:   { required: ['userId', 'newRole'], adminOnly: true },\n  update_user_status: { required: ['userId', 'status'], adminOnly: true },\n  get_users:          { required: [], adminOnly: true },\n  log_security_event: { required: ['event_type', 'severity'], adminOnly: true },\n  get_security_alerts: { required: [], adminOnly: true },\n  heartbeat:          { required: [] },\n  get_online_users:   { required: [] },\n  get_notifications:  { required: [] },\n  proxy_file:         { required: [] },\n  update_checking_status: { required: ['id', 'status'] },\n  save_sla_config:    { required: [], adminOnly: true },\n  toggle_automation:  { required: ['automation_id'], adminOnly: true },\n  distribute_demands: { required: [], adminOnly: true },\n  upload_supplement:  { required: ['submission_id'] },\n  'get_automations':  { required: [], adminOnly: true },\n  'get_sla_config':  { required: [], adminOnly: true },\n  'copilot_analyze':  { required: [] },\n  'get_board_sheets':  { required: [] },\n  'get_history':  { required: [] },\n  'add_comment':  { required: [] },\n  'get_responsibles':  { required: [] },\n  'get_checking_files':  { required: [] },\n  'get_files':           { required: ['submission_id'] },\n  'generate_slides':     { required: [] },\n  'get_slide_options':   { required: [] },\n  'get_production_board': { required: [] },\n  'assign_responsible':  { required: [], adminOnly: true },\n  'bulk_assign_responsible':  { required: ['assignments'], adminOnly: true },\n  'get_responsaveis':    { required: [] },\n  'set_supplier_rating': { required: [], adminOnly: true },\n  'get_checkings':  { required: [] },\n  'get_board':  { required: [] },\n  'get_suppliers':  { required: [] },\n  'get_alerts':  { required: [] },\n  'get_all_checkings':  { required: [] },\n  'get_pending':  { required: [] },\n  'get_stats':  { required: [] },\n  'get_client_comments':  { required: ['submission_id'] },\n  'mark_client_comment_read':  { required: ['submission_id'] },\n  'update_user_grupo':  { required: ['userId', 'grupo'], adminOnly: true }\n};\n\nconst schema = schemas[action];\nif (schema) {\n  const missing = (schema.required || []).filter(f => !body[f]);\n  if (missing.length > 0) throw new Error('MISSING_FIELDS: ' + missing.join(', '));\n  if (schema.adminOnly && (!authenticatedUser || authenticatedUser.role !== 'admin')) {\n    throw new Error('FORBIDDEN: Acesso restrito a administradores');\n  }\n}\n\n// ============================================================\n// SECURITY: Bloquear actions desconhecidas\n// ============================================================\nif (!schema && action !== 'health_check') {\n  throw new Error('INVALID_ACTION: Acao desconhecida: ' + String(action).substring(0, 30));\n}\n\n\nif (action === 'update_user_role') {\n  const allowedRoles = ['admin', 'analyst', 'viewer'];\n  if (!allowedRoles.includes(body.newRole)) throw new Error('INVALID_ROLE: Role must be admin, analyst or viewer');\n}\n\nif (action === 'update_user_status') {\n  const allowedStatus = ['active', 'inactive'];\n  if (!allowedStatus.includes(body.status)) throw new Error('INVALID_STATUS: Status must be active or inactive');\n}\n\nif (action === 'register_user' && body.email) {\n  const allowedDomains = ['@grupoom.com.br', '@opusmultipla.com.br'];\n  const emailLower = body.email.toLowerCase();\n  if (!allowedDomains.some(d => emailLower.endsWith(d))) {\n    throw new Error('FORBIDDEN: Email deve ser do dominio corporativo');\n  }\n}\n\n// Logout já foi processado no auth node, responder diretamente\nif (action === 'logout' && $input.first().json._logoutSuccess) {\n  // O roteador não tem branch para logout, então retornamos aqui\n}\n\nreturn $input.all();"
       },
-      "id": "8183325b-5d39-4679-a2b5-560d7f42f8b2",
+      "id": "2c5a86c3-1740-48ba-86dc-3fb93f011f6f",
       "name": "Validar Dados",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -80176,
-        86960
+        -82304,
+        86608
       ],
       "onError": "continueErrorOutput"
     },
@@ -3804,13 +3804,13 @@
       "parameters": {
         "jsCode": "// Autenticar Requisicao - CRYPTO NATIVO (Fix 12)\nconst crypto = require('crypto');\nconst items = $input.all();\nconst item = items[0].json;\n\nconst route = item.body?.action || item.query?.action || item.params?.action || '';\nconst publicRoutes = ['login', 'login_sso', 'health_check'];\n\n// ── Token Revocation Store (in-memory + auto-cleanup) ──\nif (!globalThis._revokedTokens) globalThis._revokedTokens = new Map();\nfunction revokeToken(jti, exp, email) {\n  globalThis._revokedTokens.set(jti, exp || Math.floor(Date.now()/1000)+28800);\n  if (!globalThis._pendingRevocations) globalThis._pendingRevocations = [];\n  globalThis._pendingRevocations.push({\n    jti,\n    expires_at: new Date((exp || Math.floor(Date.now()/1000)+28800) * 1000).toISOString(),\n    user_email: email || 'unknown'\n  });\n}\nfunction isTokenRevoked(jti) { return globalThis._revokedTokens.has(jti); }\nif (!globalThis._revokedCleanupCounter) globalThis._revokedCleanupCounter = 0;\nglobalThis._revokedCleanupCounter++;\nif (globalThis._revokedCleanupCounter >= 100) {\n  globalThis._revokedCleanupCounter = 0;\n  const now = Math.floor(Date.now()/1000);\n  for (const [j, e] of globalThis._revokedTokens) { if (e < now) globalThis._revokedTokens.delete(j); }\n}\n\nif (publicRoutes.includes(route)) return items;\n\n// ── HMAC nativo (substitui PURE_CRYPTO) ──\nfunction hmacSha256Native(key, message) {\n  return crypto.createHmac('sha256', key).update(message).digest('base64url');\n}\n\nfunction verifyJWT(token, secret) {\n  if (!secret) throw new Error('CONFIGURACAO: N8N_JWT_SECRET nao definida');\n  if (!token || typeof token !== 'string') throw new Error('AUTH_MISSING');\n  const clean = token.startsWith('Bearer ') ? token.slice(7) : token;\n  const parts = clean.split('.');\n  if (parts.length !== 3) throw new Error('AUTH_INVALID');\n  const [header, payload, signature] = parts;\n  const expected = hmacSha256Native(secret, header + '.' + payload);\n  // SEC: A3 - timing-safe comparison\n  try {\n    const sigBuf = Buffer.from(signature);\n    const expBuf = Buffer.from(expected);\n    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) throw new Error('AUTH_INVALID');\n  } catch(e) { if (e.message === 'AUTH_INVALID') throw e; throw new Error('AUTH_INVALID'); }\n  const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString());\n  if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {\n    throw new Error('AUTH_EXPIRED');\n  }\n  return decoded;\n}\n\nlet JWT_SECRET;\ntry { JWT_SECRET = $env.N8N_JWT_SECRET; } catch(e) { JWT_SECRET = null; }\n\nconst authHeader = item.headers?.authorization || item.headers?.Authorization || '';\nif (!authHeader) throw new Error('AUTH_MISSING');\n\ntry {\n  const decoded = verifyJWT(authHeader, JWT_SECRET);\n\n  // ── Verificar se token foi revogado (logout) ──\n  if (decoded.jti && isTokenRevoked(decoded.jti)) {\n    throw new Error('AUTH_REVOKED');\n  }\n\n  items[0].json._auth = { userId: decoded.sub, email: decoded.email, role: decoded.role, name: decoded.name, jti: decoded.jti };\n\n  // ── NEVER TRUST THE FRONTEND ──\n  const identityActions = ['approve', 'reject'];\n  if (identityActions.includes(route)) {\n    if (!items[0].json.body) items[0].json.body = {};\n    items[0].json.body.approval_user = decoded.name || decoded.email;\n  }\n\n  // ── Logout: revogar o token ──\n  if (route === 'logout') {\n    if (decoded.jti) revokeToken(decoded.jti, decoded.exp, decoded.email);\n    items[0].json._pendingRevocations = globalThis._pendingRevocations.splice(0);\n    items[0].json._logoutSuccess = true;\n  }\n\n  return items;\n} catch (err) {\n  const msg = err.message;\n  if (msg === 'AUTH_EXPIRED' || msg === 'AUTH_REVOKED') throw new Error(msg);\n  throw new Error('AUTH_INVALID');\n}\n"
       },
-      "id": "1cc8d137-2476-4b51-a23d-aec2a10272b2",
+      "id": "ce0f795e-839d-42af-af19-bd9290d1ae81",
       "name": "Autenticar Requisicao",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -80352,
-        87056
+        -82480,
+        86704
       ],
       "onError": "continueErrorOutput"
     },
@@ -3818,13 +3818,13 @@
       "parameters": {
         "jsCode": "// SEC: SANITIZAR INPUT - v3 Hardened (02/jul/2026)\n// Validacao com allowlist estrita. Backslash escape corrigido.\n// ============================================================\n\nconst SKIP_FIELDS = ['id_token', 'token', 'password', 'password_hash'];\n\nconst TEXT_FIELDS = ['reason', 'rejection_reason', 'name', 'observacoes', 'comentario', 'responsavel_nome', 'conta'];\n\nconst FIELD_TYPES = {\n  id:              'id_safe',\n  submission_id:   'id_safe',\n  userId:          'user_id',\n  email:           'email',\n  name:            'string_safe',\n  role:            'enum:admin,analyst,viewer',\n  status:          'enum:active,inactive,pending,approved,rejected,sem_checking',\n  newRole:         'enum:admin,analyst,viewer',\n  grupo:           'enum:boticario,kauana,todos,nao_definido',\n  approval_user:   'string_safe',\n  reason:          'string_safe',\n  n_pi:            'id_safe',\n  cliente:         'string_safe',\n  veiculo:         'string_safe',\n  file_id:         'id_safe',\n  action:          'alpha_underscore',\n  event_type:      'alpha_underscore',\n  severity:        'alpha_underscore',\n  data_inicio:     'date',\n  data_fim:        'date',\n  mes_referencia:  'month',\n  responsavel:     'string_safe',\n  horas_atencao:   'integer',\n  horas_risco:     'integer',\n  rating:          'integer',\n  avatar:          'url_safe',\n  automation_id:   'id_safe',\n  enabled:         'boolean'\n};\n\nconst validators = {\n  id_safe: (v) => /^[A-Za-z0-9_\\-\\.]{1,128}$/.test(v),\n  email: (v) => /^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$/.test(v) && v.length <= 254,\n  user_id: (v) => (/^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$/.test(v) || /^[A-Za-z0-9_\\-\\.]{1,128}$/.test(v)) && v.length <= 254,\n  string_safe: (v) => typeof v === 'string' && v.length <= 2000,\n  alpha_underscore: (v) => /^[a-zA-Z_]+$/.test(v) && v.length <= 50,\n  date: (v) => /^\\d{4}-\\d{2}-\\d{2}$/.test(v),\n  integer: (v) => Number.isInteger(Number(v)),\n  month: (v) => /^\\d{4}-\\d{2}$/.test(v),\n  url_safe: (v) => (v === '' || /^https:\\/\\//.test(v)) && v.length <= 512,\n  boolean: (v) => v === true || v === false || v === 'true' || v === 'false'\n};\n\nfunction validateEnum(value, allowed) {\n  return allowed.split(',').includes(value);\n}\n\n// SEC: sanitizeSafe - escapa backslash ANTES de aspas (ordem critica)\nfunction sanitizeSafe(val) {\n  if (typeof val !== 'string') return val;\n  return val\n    .replace(/\\\\/g, '\\\\\\\\')\n    .replace(/'/g, \"\\\\'\")\n    .replace(/[\\x00-\\x1f]/g, '')\n    .replace(/--/g, '')\n    .replace(/\\/\\*/g, '')\n    .replace(/\\*\\//g, '');\n}\n\n// SEC: sanitizeStrict - strip SQL keywords + escape\nfunction sanitizeStrict(val) {\n  if (typeof val !== 'string') return val;\n  return val\n    .replace(/\\\\/g, '\\\\\\\\')\n    .replace(/'/g, \"\\\\'\")\n    .replace(/[\\x00-\\x1f]/g, '')\n    .replace(/--/g, '')\n    .replace(/\\/\\*/g, '')\n    .replace(/\\*\\//g, '')\n    .replace(/;/g, '')\n    .replace(/\\bUNION\\b/gi, '')\n    .replace(/\\bSELECT\\b/gi, '')\n    .replace(/\\bINSERT\\b/gi, '')\n    .replace(/\\bUPDATE\\b/gi, '')\n    .replace(/\\bDELETE\\b/gi, '')\n    .replace(/\\bDROP\\b/gi, '')\n    .replace(/\\bEXEC\\b/gi, '')\n    .replace(/\\bALTER\\b/gi, '');\n}\n\nconst items = $input.all();\nconst body = items[0].json.body || {};\nconst query = items[0].json.query || {};\nconst action = items[0].json.action || body.action || '';\n\nfunction processObj(obj) {\n  const result = {};\n  for (const [key, val] of Object.entries(obj)) {\n    if (SKIP_FIELDS.includes(key)) { result[key] = val; continue; }\n    const expectedType = FIELD_TYPES[key];\n    if (expectedType && typeof val === 'string' && val.length > 0) {\n      if (expectedType.startsWith('enum:')) {\n        if (!validateEnum(val, expectedType.slice(5))) {\n          throw new Error('INVALID_INPUT: Campo ' + key + ' contem valor nao permitido');\n        }\n        result[key] = val;\n        continue;\n      }\n      const validator = validators[expectedType];\n      if (action !== 'generate_slides' && validator && !validator(val)) {\n        throw new Error('INVALID_INPUT: Campo ' + key + ' tem formato invalido');\n      }\n    }\n    if (typeof val === 'boolean') { result[key] = val; continue; }\n    if (typeof val === 'string' && val.length > 5000) {\n      throw new Error('INVALID_INPUT: Campo ' + key + ' excede tamanho maximo');\n    }\n    if (typeof val === 'string') {\n      result[key] = TEXT_FIELDS.includes(key) ? sanitizeSafe(val) : sanitizeStrict(val);\n    } else {\n      result[key] = val;\n    }\n  }\n  return result;\n}\n\nitems[0].json.body = processObj(body);\nitems[0].json.query = processObj(query);\nreturn items;"
       },
-      "id": "f9aba91b-d3df-4d32-84a2-32f0c5b50103",
+      "id": "066c23ea-ca4c-406e-9a6e-fe6ad085327a",
       "name": "Sanitizar Input",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -80832,
-        87056
+        -82960,
+        86704
       ]
     },
     {
@@ -3859,13 +3859,13 @@
         },
         "options": {}
       },
-      "id": "f8e8df1b-bdb8-488f-9082-6f7b56cd2ca7",
+      "id": "59ad7166-948e-4272-9254-70ea266cf049",
       "name": "Extrair Requisicao1",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -80992,
-        87056
+        -83120,
+        86704
       ]
     },
     {
@@ -3876,13 +3876,13 @@
         "includeOtherFields": true,
         "options": {}
       },
-      "id": "8a6272fa-1f39-4e4c-b488-e5485a206e2a",
+      "id": "fcaa1a5f-6c1f-4465-93e3-9999cd2bb06a",
       "name": "Passar Adiante1",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -81152,
-        87056
+        -83280,
+        86704
       ]
     },
     {
@@ -3916,13 +3916,13 @@
           }
         }
       },
-      "id": "ff71a367-7ba9-4ec9-af92-6af30850f38a",
+      "id": "f10ff713-b02a-4752-898f-6b617c480b3f",
       "name": "Responder CORS1",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -80816,
-        86768
+        -82944,
+        86416
       ]
     },
     {
@@ -3949,13 +3949,13 @@
           }
         }
       },
-      "id": "e04c78d4-39e6-47fa-9e60-7d03b84ea07a",
+      "id": "47bc3d02-38bf-414c-b779-30041ad0c76b",
       "name": "Webhook OPCOES CORS1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -81008,
-        86768
+        -83136,
+        86416
       ],
       "webhookId": "painel-aprovacao-options"
     },
@@ -3983,13 +3983,13 @@
           }
         }
       },
-      "id": "ea18cda9-979e-475b-8852-dbbf00bb2e14",
+      "id": "13da577c-4356-44d0-87be-6b36185baf86",
       "name": "Webhook POST1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -81312,
-        87056
+        -83440,
+        86704
       ],
       "webhookId": "painel-aprovacao-api"
     },
@@ -4006,10 +4006,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78880,
-        88096
+        -81008,
+        87744
       ],
-      "id": "4efb5e1c-8996-4fac-8ca4-9eb7b8dc1cdb",
+      "id": "0d03f35d-1e26-48de-823e-eab927710e41",
       "name": "BigQuery - Alertas",
       "alwaysOutputData": true,
       "credentials": {
@@ -4054,10 +4054,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78672,
-        88096
+        -80800,
+        87744
       ],
-      "id": "db4534be-7c31-481d-99a5-67c98b3b37d6",
+      "id": "3d06168f-5978-47d3-81c9-ea8bc8e7c5c7",
       "name": "Responder Alertas"
     },
     {
@@ -4073,10 +4073,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78880,
-        88256
+        -81008,
+        87904
       ],
-      "id": "bd1e346e-9d45-42fc-967f-aa44a368881a",
+      "id": "e7f32789-cb12-4595-bf8e-22b3961f76fb",
       "name": "BigQuery - Fornecedores",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -4119,10 +4119,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78672,
-        88256
+        -80800,
+        87904
       ],
-      "id": "4cfc3dc9-dfc8-4bc7-80c6-b96454d867d9",
+      "id": "2176a60a-46c7-4eef-98ec-0b4afd53c437",
       "name": "Responder Fornecedores"
     },
     {
@@ -4152,10 +4152,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -78928,
-        88416
+        -81056,
+        88064
       ],
-      "id": "65950a80-2a93-4ef2-8ad7-cf2b749064b8",
+      "id": "dbd1cc1b-f9e7-4354-aeb5-b97e03570360",
       "name": "Board - E Admin"
     },
     {
@@ -4171,10 +4171,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78672,
-        88384
+        -80800,
+        88032
       ],
-      "id": "a40efef3-e80a-4091-ab97-dc5facd36177",
+      "id": "85318189-3846-45c0-8f68-0b1c8bd65895",
       "name": "BigQuery - Board Admin",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -4196,10 +4196,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78672,
-        88544
+        -80800,
+        88192
       ],
-      "id": "190ab55d-8b0b-439f-8443-52b4d80db3ca",
+      "id": "f5f2f464-7447-46c8-99c7-ff2ce8124413",
       "name": "BigQuery - Board Analista",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -4242,10 +4242,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78464,
-        88384
+        -80592,
+        88032
       ],
-      "id": "4f1dab89-9c08-42e1-9a56-4ad7263c629f",
+      "id": "f15773ec-b3df-442c-a727-9a7d80f5800e",
       "name": "Responder Board Admin"
     },
     {
@@ -4282,10 +4282,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78464,
-        88544
+        -80592,
+        88192
       ],
-      "id": "0d18e7e4-a96f-47a9-b0bd-c0d81022f919",
+      "id": "cec6e435-f926-4dd3-93a3-b55ee45c0369",
       "name": "Responder Board Analista"
     },
     {
@@ -4301,10 +4301,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78928,
-        88704
+        -81056,
+        88352
       ],
-      "id": "e49013a9-88d6-4bf1-807a-f5be08950f56",
+      "id": "c46e28df-8177-485d-8ba4-981beebb7799",
       "name": "BigQuery - Contexto Copiloto",
       "alwaysOutputData": true,
       "credentials": {
@@ -4326,10 +4326,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1,
       "position": [
-        -78816,
-        88896
+        -80944,
+        88544
       ],
-      "id": "6e3bb877-fd6d-4750-9169-00e970b0d21e",
+      "id": "bab44e34-47cb-4880-9540-bb77b6214208",
       "name": "Copiloto - OpenAI",
       "credentials": {
         "openAiApi": {
@@ -4346,10 +4346,10 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        -78400,
-        88928
+        -80528,
+        88576
       ],
-      "id": "a1135c80-108e-4ecc-bab1-893c4116a8ae",
+      "id": "c9c0a7a2-ec6e-47de-b748-0d289ace1950",
       "name": "Copiloto - Parser"
     },
     {
@@ -4361,10 +4361,10 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.5,
       "position": [
-        -78704,
-        88704
+        -80832,
+        88352
       ],
-      "id": "76eecb2f-ddef-46ae-aa7d-a879b19dd86a",
+      "id": "a6c1674c-d4b2-4511-8bb5-17cd376e46d5",
       "name": "Copiloto - Analise IA",
       "continueOnFail": true,
       "onError": "continueRegularOutput"
@@ -4428,10 +4428,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -78288,
-        88704
+        -80416,
+        88352
       ],
-      "id": "e66d277a-7f74-4ba3-90a4-f7f27c7fc068",
+      "id": "2cb041f6-f6f3-4ebb-b3ac-2535fd477463",
       "name": "Copiloto - Montar Linha"
     },
     {
@@ -4459,10 +4459,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78096,
-        88704
+        -80224,
+        88352
       ],
-      "id": "e736f060-45eb-46b3-a4f5-bf4d373687a7",
+      "id": "48ca6694-9299-4516-a1e3-51a81921ac88",
       "name": "BigQuery - Log Copiloto",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -4506,10 +4506,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77888,
-        88704
+        -80016,
+        88352
       ],
-      "id": "33d8063c-980f-4cd3-8c82-a947a6374ce7",
+      "id": "0b13035e-eb40-43cd-8268-f1d96308f6a4",
       "name": "Responder Copiloto"
     },
     {
@@ -4525,10 +4525,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78928,
-        89072
+        -81056,
+        88720
       ],
-      "id": "9baadf6e-d6ad-4f79-bca2-8aba281ca291",
+      "id": "ca366c4a-80ee-412b-9a08-0d51e8bea8a4",
       "name": "BigQuery - Pasta PI",
       "alwaysOutputData": true,
       "credentials": {
@@ -4592,10 +4592,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -78720,
-        89072
+        -80848,
+        88720
       ],
-      "id": "005d77fa-d86a-4773-a5bc-97522d95bea3",
+      "id": "5a677af7-b9f7-4b99-b0a6-d00c4574e21d",
       "name": "Suplemento - Montar Dados"
     },
     {
@@ -4609,10 +4609,10 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        -78528,
-        89072
+        -80656,
+        88720
       ],
-      "id": "216a3cdb-bdd5-4050-b94a-1dd9c5c4907b",
+      "id": "fcbb0a4a-cc61-492e-b40f-b835ac17a6fb",
       "name": "Suplemento - Base64 p/ Arquivo"
     },
     {
@@ -4633,10 +4633,10 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -78320,
-        89072
+        -80448,
+        88720
       ],
-      "id": "7cf4c17b-9a6c-4c57-8192-9ee1b0f988da",
+      "id": "562c3929-a1de-45e6-bb75-e3694ba9e1a2",
       "name": "Drive - Upload Suplemento",
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -4659,10 +4659,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78128,
-        89072
+        -80256,
+        88720
       ],
-      "id": "4d93f2c8-6455-46f8-b0a9-5700bde5e853",
+      "id": "caabe483-54c9-443a-91a3-d1ad221d5f04",
       "name": "BigQuery - Log Reenvio",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -4706,10 +4706,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77920,
-        89072
+        -80048,
+        88720
       ],
-      "id": "2b9b8c54-7a53-4ad3-9c51-b9243f929eec",
+      "id": "d56eaa36-3766-4295-9176-a49309998293",
       "name": "Responder Suplemento"
     },
     {
@@ -4719,16 +4719,16 @@
           "value": "checking-grupoom",
           "mode": "list"
         },
-        "sqlQuery": "WITH pauta_raw AS (\n  SELECT\n    p.num_pi AS n_pi,\n    p.situacao_pi,\n    CAST(p.cod_cliente AS STRING) AS cod_cliente,\n    p.veiculo,\n    p.periodo,\n    p.liquido,\n    p.campanha,\n    p.produto,\n    p.praca,\n    p.meio,\n    p.liberado_no_publi AS liberado_publi,\n    CASE\n      WHEN p.cod_cliente IN (65612,65613,65614,65767,65768,65769,67747) THEN 'Eudora'\n      WHEN p.cod_cliente IN (66384,65253,66385) THEN 'Unicred'\n      WHEN p.cod_cliente IN (58587,59075) THEN 'Boti Sul'\n      WHEN p.cod_cliente IN (58589,59074) THEN 'Boti SP'\n      WHEN p.cod_cliente IN (63642,63643) THEN 'Boti SP INT'\n      WHEN p.cod_cliente IN (58590,62313) THEN 'Boti NE'\n      WHEN p.cod_cliente IN (58591,59073) THEN 'Boti SE'\n      WHEN p.cod_cliente IN (68294,68293) THEN 'Boti RS'\n      WHEN p.cod_cliente IN (68037) THEN 'AERO'\n      WHEN p.cod_cliente IN (68416) THEN 'BOTI SC'\n      WHEN p.cod_cliente IN (68417) THEN 'BOTI SC FRANQUEADOS'\n      WHEN p.cod_cliente IN (54354) THEN 'UNINTER'\n      WHEN p.cod_cliente IN (69103) THEN 'MAX ATACADISTA'\n      WHEN p.cod_cliente IN (50754) THEN 'FRIMESA'\n      WHEN p.cod_cliente IN (10747,59148) THEN 'VOLVO'\n      WHEN p.cod_cliente IN (4931) THEN 'SHOPPING MULLER'\n      WHEN p.cod_cliente IN (62498) THEN 'SERVOPA'\n      WHEN p.cod_cliente IN (63871) THEN 'FRISIA'\n      WHEN p.cod_cliente IN (59081) THEN 'BOTI BRASIL'\n      WHEN p.cod_cliente IN (64809) THEN 'VULT'\n      ELSE COALESCE(p.cliente, 'Outros')\n    END AS conta,\n    FORMAT_DATETIME('%Y-%m', p.periodo) AS mes_referencia,\n    p.vencimento\n  FROM `checking-grupoom.form_checking.pauta_checking` p\n  WHERE p.situacao_pi != 'Cancelado'\n    AND p.num_pi IS NOT NULL\n    AND p.num_pi != '0'\n    AND p.meio NOT IN ('PN','PW','IB','IS','IV','IA','ID','MS','IN')\n),\npauta AS (\n  -- F4: 1 linha por PI/mes; agrega pracas para nao multiplicar\n  SELECT n_pi, mes_referencia,\n    ANY_VALUE(situacao_pi) AS situacao_pi,\n    ANY_VALUE(cod_cliente) AS cod_cliente,\n    ANY_VALUE(veiculo) AS veiculo,\n    MIN(periodo) AS periodo,\n    SUM(liquido) AS liquido,\n    ANY_VALUE(campanha) AS campanha,\n    ANY_VALUE(produto) AS produto,\n    STRING_AGG(DISTINCT praca, ', ' ORDER BY praca) AS praca,\n    ANY_VALUE(meio) AS meio,\n    ANY_VALUE(liberado_publi) AS liberado_publi,\n    ANY_VALUE(conta) AS conta,\n    MAX(vencimento) AS vencimento,\n    COUNT(*) AS linhas_pauta\n  FROM pauta_raw\n  GROUP BY n_pi, mes_referencia\n),\nresp AS (\n  SELECT * FROM `checking-grupoom.form_checking.pi_responsaveis`\n  QUALIFY ROW_NUMBER() OVER (PARTITION BY n_pi, mes_referencia ORDER BY atribuido_em DESC) = 1\n),\nlogs AS (\n  SELECT * FROM `checking-grupoom.form_checking.checking_logs`\n  WHERE NOT STARTS_WITH(COALESCE(submission_id, ''), 'rej_')\n  QUALIFY ROW_NUMBER() OVER (\n    PARTITION BY COALESCE(NULLIF(TRIM(n_pi), ''), submission_id)\n    ORDER BY COALESCE(is_complement, 0) ASC, ingestion_time DESC, submission_id DESC\n  ) = 1\n)\nSELECT\n  pa.n_pi,\n  pa.situacao_pi,\n  pa.cod_cliente,\n  pa.veiculo,\n  pa.periodo,\n  pa.liquido,\n  pa.campanha,\n  pa.produto,\n  pa.praca,\n  pa.meio,\n  pa.liberado_publi,\n  pa.conta,\n  pa.mes_referencia,\n  pa.linhas_pauta,\n  COALESCE(r.responsavel_nome, '') AS responsavel,\n  r.responsavel AS responsavel_email,\n  CASE\n    WHEN c.submission_id IS NOT NULL THEN 'recebido'\n    ELSE 'aguardando'\n  END AS status_formulario,\n  c.status AS status_checking,\n  c.submission_id,\n  FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', c.ingestion_time) AS ingestion_time,\n  pa.vencimento\nFROM pauta pa\nLEFT JOIN resp r\n  ON pa.n_pi = CAST(r.n_pi AS STRING)\n  AND pa.mes_referencia = r.mes_referencia\nLEFT JOIN logs c\n  ON pa.n_pi = CAST(c.n_pi AS STRING)\nWHERE ('{{ $json.body.mes_referencia || \\\"\\\" }}' = '' OR pa.mes_referencia = '{{ $json.body.mes_referencia }}')\n  AND ('{{ $json.body.conta || \\\"\\\" }}' = '' OR pa.conta = '{{ $json.body.conta }}')\nORDER BY pa.conta, pa.n_pi",
+        "sqlQuery": "WITH pauta_raw AS (\n  SELECT\n    p.num_pi AS n_pi,\n    p.situacao_pi,\n    CAST(p.cod_cliente AS STRING) AS cod_cliente,\n    p.veiculo,\n    p.periodo,\n    p.liquido,\n    p.campanha,\n    p.produto,\n    p.praca,\n    p.meio,\n    p.liberado_no_publi AS liberado_publi,\n    CASE\n      WHEN p.cod_cliente IN (65612,65613,65614,65767,65768,65769,67747) THEN 'Eudora'\n      WHEN p.cod_cliente IN (66384,65253,66385) THEN 'Unicred'\n      WHEN p.cod_cliente IN (58587,59075) THEN 'Boti Sul'\n      WHEN p.cod_cliente IN (58589,59074) THEN 'Boti SP'\n      WHEN p.cod_cliente IN (63642,63643) THEN 'Boti SP INT'\n      WHEN p.cod_cliente IN (58590,62313) THEN 'Boti NE'\n      WHEN p.cod_cliente IN (58591,59073) THEN 'Boti SE'\n      WHEN p.cod_cliente IN (68294,68293) THEN 'Boti RS'\n      WHEN p.cod_cliente IN (68037) THEN 'AERO'\n      WHEN p.cod_cliente IN (68416) THEN 'BOTI SC'\n      WHEN p.cod_cliente IN (68417) THEN 'BOTI SC FRANQUEADOS'\n      WHEN p.cod_cliente IN (54354) THEN 'UNINTER'\n      WHEN p.cod_cliente IN (69103) THEN 'MAX ATACADISTA'\n      WHEN p.cod_cliente IN (50754) THEN 'FRIMESA'\n      WHEN p.cod_cliente IN (10747,59148) THEN 'VOLVO'\n      WHEN p.cod_cliente IN (4931) THEN 'SHOPPING MULLER'\n      WHEN p.cod_cliente IN (62498) THEN 'SERVOPA'\n      WHEN p.cod_cliente IN (63871) THEN 'FRISIA'\n      WHEN p.cod_cliente IN (59081) THEN 'BOTI BRASIL'\n      WHEN p.cod_cliente IN (64809) THEN 'VULT'\n      ELSE COALESCE(p.cliente, 'Outros')\n    END AS conta,\n    FORMAT_DATETIME('%Y-%m', p.periodo) AS mes_referencia,\n    p.vencimento\n  FROM `checking-grupoom.form_checking.pauta_checking` p\n  WHERE p.situacao_pi != 'Cancelado'\n    AND p.num_pi IS NOT NULL\n    AND p.num_pi != '0'\n    AND p.meio NOT IN ('PN','PW','IB','IS','IV','IA','ID','MS','IN')\n),\npauta AS (\n  -- F4: 1 linha por PI/mes; agrega pracas para nao multiplicar\n  SELECT n_pi, mes_referencia,\n    ANY_VALUE(situacao_pi) AS situacao_pi,\n    ANY_VALUE(cod_cliente) AS cod_cliente,\n    ANY_VALUE(veiculo) AS veiculo,\n    MIN(periodo) AS periodo,\n    SUM(liquido) AS liquido,\n    ANY_VALUE(campanha) AS campanha,\n    ANY_VALUE(produto) AS produto,\n    STRING_AGG(DISTINCT praca, ', ' ORDER BY praca) AS praca,\n    ANY_VALUE(meio) AS meio,\n    ANY_VALUE(liberado_publi) AS liberado_publi,\n    ANY_VALUE(conta) AS conta,\n    MAX(vencimento) AS vencimento,\n    COUNT(*) AS linhas_pauta\n  FROM pauta_raw\n  GROUP BY n_pi, mes_referencia\n),\nresp AS (\n  SELECT * FROM `checking-grupoom.form_checking.pi_responsaveis`\n  QUALIFY ROW_NUMBER() OVER (PARTITION BY n_pi, mes_referencia ORDER BY atribuido_em DESC) = 1\n),\nlogs AS (\n  SELECT * FROM `checking-grupoom.form_checking.checking_logs`\n  WHERE NOT STARTS_WITH(COALESCE(submission_id, ''), 'rej_')\n  QUALIFY ROW_NUMBER() OVER (\n    PARTITION BY COALESCE(NULLIF(TRIM(n_pi), ''), submission_id)\n    ORDER BY COALESCE(is_complement, 0) ASC, ingestion_time DESC, submission_id DESC\n  ) = 1\n)\nSELECT\n  pa.n_pi,\n  pa.situacao_pi,\n  pa.cod_cliente,\n  pa.veiculo,\n  pa.periodo,\n  pa.liquido,\n  pa.campanha,\n  pa.produto,\n  pa.praca,\n  pa.meio,\n  pa.liberado_publi,\n  pa.conta,\n  pa.mes_referencia,\n  pa.linhas_pauta,\n  COALESCE(r.responsavel_nome, '') AS responsavel,\n  r.responsavel AS responsavel_email,\n  CASE\n    WHEN c.submission_id IS NOT NULL THEN 'recebido'\n    ELSE 'aguardando'\n  END AS status_formulario,\n  c.status AS status_checking,\n  c.submission_id,\n  FORMAT_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', c.ingestion_time) AS ingestion_time,\n  pa.vencimento\nFROM pauta pa\nLEFT JOIN resp r\n  ON pa.n_pi = CAST(r.n_pi AS STRING)\n  AND pa.mes_referencia = r.mes_referencia\nLEFT JOIN logs c\n  ON pa.n_pi = CAST(c.n_pi AS STRING)\nWHERE ('{{ $json.body.mes_referencia || \"\" }}' = '' OR pa.mes_referencia = '{{ $json.body.mes_referencia }}')\n  AND ('{{ $json.body.conta || \"\" }}' = '' OR pa.conta = '{{ $json.body.conta }}')\nORDER BY pa.conta, pa.n_pi",
         "options": {}
       },
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78880,
-        89232
+        -81008,
+        88880
       ],
-      "id": "b6941392-4e48-4960-83ae-63930ef6eb39",
+      "id": "7a738cda-0676-455f-ba68-7723d0d2f59b",
       "name": "BigQuery - Cruzar Pauta",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -4772,10 +4772,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        -78656,
-        89232
+        -80784,
+        88880
       ],
-      "id": "90f7efe6-64f3-4bd9-a33d-a1da90ae321b",
+      "id": "62f7f3e1-fbf3-4f36-8421-2dd28d7c2f52",
       "name": "Responder Pauta Cruzada"
     },
     {
@@ -4791,10 +4791,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78880,
-        89392
+        -81008,
+        89040
       ],
-      "id": "01c93f4f-e6bc-413b-8410-7f79ab04a07a",
+      "id": "0f45a8ae-2de7-4d17-9108-7cee3e33fa8b",
       "name": "BigQuery - Listar Automacoes",
       "alwaysOutputData": true,
       "credentials": {
@@ -4839,10 +4839,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78672,
-        89392
+        -80800,
+        89040
       ],
-      "id": "72ae2f45-81c7-4f0f-a8c2-c38d2e811771",
+      "id": "36cb3af0-7b02-486c-bd98-e74e08d186f8",
       "name": "Responder Automacoes"
     },
     {
@@ -4858,10 +4858,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -79296,
-        86288
+        -81424,
+        85936
       ],
-      "id": "2b42aa4e-5ec6-4a69-b782-5ba3e267f7d8",
+      "id": "47dbeb32-c328-4320-b752-61151bff83a2",
       "name": "BigQuery - Toggle Automacao",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -4905,10 +4905,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78160,
-        86096
+        -80288,
+        85744
       ],
-      "id": "86a3c792-dc65-4238-ba0d-d5eac167154e",
+      "id": "d77ffaff-fddb-4b10-b36a-2ff7b46bb194",
       "name": "Responder Toggle"
     },
     {
@@ -4920,10 +4920,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -79504,
-        84816
+        -81632,
+        84464
       ],
-      "id": "a7cf7557-1501-4125-9dd2-99e57ff4315d",
+      "id": "a6f3dff0-1b71-4985-bfad-a4843bea5578",
       "name": "Formatar Notificacoes"
     },
     {
@@ -4939,10 +4939,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77552,
-        87248
+        -79680,
+        86896
       ],
-      "id": "2119ee4b-6622-42ba-b787-29b7e6c367b9",
+      "id": "a7805160-c5bf-4340-9dec-1c1a399966e5",
       "name": "BigQuery - Atribuir Responsavel",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -4977,10 +4977,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77328,
-        87248
+        -79456,
+        86896
       ],
-      "id": "0a54d217-3e26-4e0e-b600-d9cad94db8fc",
+      "id": "87a31c7d-d91b-4377-9e67-b01e668896d3",
       "name": "Responder Atribuir Responsavel"
     },
     {
@@ -4990,10 +4990,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -77552,
-        86992
+        -80768,
+        87152
       ],
-      "id": "5fc1633d-858c-4491-8790-6701a8c92a26",
+      "id": "58bd1acd-9614-4c42-82c4-839928af7672",
       "name": "Code - Build Bulk MERGE"
     },
     {
@@ -5009,10 +5009,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77328,
-        86992
+        -80560,
+        87152
       ],
-      "id": "c6323600-88c6-4007-93c2-379824cbbc76",
+      "id": "d73f7d94-6168-4316-9162-e47949210c6a",
       "name": "BigQuery - Bulk Atribuir",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5048,10 +5048,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77104,
-        86992
+        -80272,
+        87152
       ],
-      "id": "a2ca88f4-ed5e-4427-936d-d925bc05ae4c",
+      "id": "50573346-9120-4bd8-908f-17df58235119",
       "name": "Responder Bulk Atribuir"
     },
     {
@@ -5067,10 +5067,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77552,
-        87408
+        -79680,
+        87056
       ],
-      "id": "38f10894-7f1e-455b-a697-7fd8cd7ab26e",
+      "id": "4c5af344-04de-4dfe-b392-34d594be4b52",
       "name": "BigQuery - Listar Responsaveis",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5105,10 +5105,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77328,
-        87408
+        -79456,
+        87056
       ],
-      "id": "07a70344-784b-417d-a3a9-c583a2112336",
+      "id": "04538b12-f865-47d6-9642-e05cc72d17dd",
       "name": "Responder Responsaveis"
     },
     {
@@ -5124,10 +5124,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77552,
-        87568
+        -79680,
+        87216
       ],
-      "id": "7b7cee46-8edb-45b5-b8d7-d6fca94077f8",
+      "id": "4078259b-ad87-4019-8d29-a0ae89c9a2e2",
       "name": "BigQuery - Adicionar Comentario",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5163,10 +5163,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77328,
-        87568
+        -79456,
+        87200
       ],
-      "id": "95da00a7-9c9c-47ef-8f45-7d2052c2427e",
+      "id": "b67f6564-f8f5-4b75-bd39-6fbdb084a09b",
       "name": "Responder Comentario"
     },
     {
@@ -5182,10 +5182,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77552,
-        87728
+        -79680,
+        87376
       ],
-      "id": "313368c7-3686-4ce2-82b0-d1658f2a0fa2",
+      "id": "6a4edfb2-c493-4c40-b0bd-6bb1fc1bd12f",
       "name": "BigQuery - Historico do PI",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5220,10 +5220,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77328,
-        87728
+        -79456,
+        87376
       ],
-      "id": "dabbf05d-0211-4eb1-8300-75f59630fd99",
+      "id": "fb38a840-fbb0-47b2-b5c4-d6bfac9dc2ba",
       "name": "Responder Historico"
     },
     {
@@ -5239,10 +5239,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77552,
-        87888
+        -79680,
+        87536
       ],
-      "id": "c75c072e-2c3b-4f84-9a77-b89e4207be08",
+      "id": "9d46092a-5c8b-49f1-b612-927eda15f1e1",
       "name": "BigQuery - Classificar Fornecedor",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5278,10 +5278,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77328,
-        87888
+        -79456,
+        87536
       ],
-      "id": "7743ac21-7529-4ee8-bef7-c3156c381948",
+      "id": "9f7676d7-c1d8-460d-9871-92bab74e1b2d",
       "name": "Responder Classificacao"
     },
     {
@@ -5297,10 +5297,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77552,
-        88048
+        -79680,
+        87696
       ],
-      "id": "c2bb2649-3b68-4bbc-8111-7863bf48dfc1",
+      "id": "c0c56fa1-050f-4908-93f2-ed51bb77d8ea",
       "name": "BigQuery - Listar Fornecedores",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5322,10 +5322,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77552,
-        88208
+        -79664,
+        87888
       ],
-      "id": "ea761e28-6f8f-41cb-b6f7-904650f0054a",
+      "id": "7e622951-0c62-4034-87a7-457c9104eaa3",
       "name": "BigQuery - Atualizar Status Checking",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5361,10 +5361,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77328,
-        88208
+        -79456,
+        87856
       ],
-      "id": "63ad4f23-b87d-48e2-a377-1c26e4c364d4",
+      "id": "a4be98c8-b012-427c-bd9d-65be0934a11f",
       "name": "Responder Atualizar Status"
     },
     {
@@ -5380,10 +5380,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77552,
-        88368
+        -79680,
+        88064
       ],
-      "id": "8645b3e1-3c1a-4051-b542-928d52df03dc",
+      "id": "fb2649fa-9377-43cc-a4e9-07e1fb44d9b3",
       "name": "BigQuery - Salvar SLA Config",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5419,10 +5419,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77328,
-        88368
+        -79456,
+        88016
       ],
-      "id": "dc69b660-4d3f-405c-a9bf-ee6bd3fc6ff9",
+      "id": "4b3f963a-da4e-4125-b408-31948be8f84e",
       "name": "Responder SLA"
     },
     {
@@ -5438,10 +5438,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77552,
-        88528
+        -79680,
+        88208
       ],
-      "id": "bfed95fd-c701-44fe-ac1a-4eadccd7090d",
+      "id": "a7b112b0-4c66-4af9-9634-5ab41aea917e",
       "name": "BigQuery - Ler SLA Config",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5476,10 +5476,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77328,
-        88528
+        -79456,
+        88176
       ],
-      "id": "b1a2e314-68eb-457b-bba6-5a33557f9b9d",
+      "id": "4868e4b4-93a9-4bbf-a0a1-6b8c24b87a26",
       "name": "Responder Ler SLA"
     },
     {
@@ -5508,22 +5508,22 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -77328,
-        88048
+        -79456,
+        87696
       ],
-      "id": "f4ce17c2-db9b-48d1-84ee-0e14f536ecbb",
+      "id": "17f984e4-e66c-4905-8641-0f1aaca819ca",
       "name": "Responder Fornecedores1"
     },
     {
       "parameters": {
         "jsCode": "const checkingData = $items('BigQuery - Auditoria Aprovacao')[0].json || {};\nconst webhookData = $items('Webhook POST1')[0].json.body || {};\n\nconst emailDestino = (checkingData.email_contato || webhookData.email_contato || '').trim();\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nif (!emailDestino || !emailRegex.test(emailDestino)) {\n  return [{ json: { emailHtml: null, emailInvalido: true, emailDestino: '', motivo: 'email_contato ausente ou invalido' } }];\n}\n\nconst nPi = checkingData.n_pi || webhookData.id || 'N/A';\nconst cliente = checkingData.cliente || webhookData.cliente || '';\nconst veiculo = checkingData.veiculo || webhookData.veiculo || '';\nconst meio = checkingData.meio || webhookData.meio || '';\nconst approvedBy = webhookData.approval_user || 'Sistema';\nconst approvedAt = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });\n\nconst html = `<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"></head>\n<body style=\"font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f7; margin: 0; padding: 32px;\">\n<div style=\"max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);\">\n  <div style=\"background: linear-gradient(135deg, #10b981, #059669); padding: 28px 32px; text-align: center;\">\n    <h1 style=\"color: #fff; margin: 0; font-size: 22px;\">&#10003; Checking Aprovado</h1>\n    <p style=\"color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;\">PI ${nPi} - ${cliente}</p>\n  </div>\n  <div style=\"padding: 28px 32px;\">\n    <p style=\"font-size: 15px; color: #333; margin: 0 0 18px;\">O checking abaixo foi <strong style=\"color: #10b981;\">aprovado</strong> com sucesso.</p>\n    <table style=\"width: 100%; border-collapse: collapse; font-size: 14px;\">\n      <tr><td style=\"padding: 10px 0; border-bottom: 1px solid #eee; color: #666;\">PI</td><td style=\"padding: 10px 0; border-bottom: 1px solid #eee; font-weight: 600;\">${nPi}</td></tr>\n      <tr><td style=\"padding: 10px 0; border-bottom: 1px solid #eee; color: #666;\">Cliente</td><td style=\"padding: 10px 0; border-bottom: 1px solid #eee; font-weight: 600;\">${cliente}</td></tr>\n      <tr><td style=\"padding: 10px 0; border-bottom: 1px solid #eee; color: #666;\">Veiculo</td><td style=\"padding: 10px 0; border-bottom: 1px solid #eee; font-weight: 600;\">${veiculo}</td></tr>\n      <tr><td style=\"padding: 10px 0; border-bottom: 1px solid #eee; color: #666;\">Meio</td><td style=\"padding: 10px 0; border-bottom: 1px solid #eee; font-weight: 600;\">${meio}</td></tr>\n      <tr><td style=\"padding: 10px 0; border-bottom: 1px solid #eee; color: #666;\">Aprovado por</td><td style=\"padding: 10px 0; border-bottom: 1px solid #eee; font-weight: 600;\">${approvedBy}</td></tr>\n      <tr><td style=\"padding: 10px 0; color: #666;\">Data</td><td style=\"padding: 10px 0; font-weight: 600;\">${approvedAt}</td></tr>\n    </table>\n  </div>\n  <div style=\"background: #f9fafb; padding: 16px 32px; text-align: center; font-size: 12px; color: #999;\">\n    Grupo OM - Painel de Checking\n  </div>\n</div>\n</body></html>`;\n\nreturn [{ json: { emailHtml: html, emailDestino, emailInvalido: false, nPi, cliente } }];"
       },
-      "id": "997ed86f-fe9b-459d-9d97-0f340e68892f",
+      "id": "f68a7682-d8db-4d7a-bcc5-cbef9c85511e",
       "name": "Montar HTML Email Aprovacao",
       "type": "n8n-nodes-base.code",
       "position": [
-        -79184,
-        86816
+        -81136,
+        86400
       ],
       "typeVersion": 2
     },
@@ -5551,12 +5551,12 @@
         },
         "options": {}
       },
-      "id": "7391032c-3f27-4101-9f14-23cefce24bbd",
+      "id": "fd8d2b6e-9982-46fe-aa85-d57d3b1a354e",
       "name": "Email Aprovacao Valido?",
       "type": "n8n-nodes-base.if",
       "position": [
-        -78880,
-        86816
+        -80960,
+        86400
       ],
       "typeVersion": 2
     },
@@ -5570,12 +5570,12 @@
           "appendAttribution": false
         }
       },
-      "id": "2cbb864d-00e8-420e-930b-5b80eb6b4046",
+      "id": "88be1fa7-ed6b-4193-b761-829ed98503b3",
       "name": "Email - Notificacao Aprovacao",
       "type": "n8n-nodes-base.emailSend",
       "position": [
-        -78736,
-        86576
+        -80752,
+        86384
       ],
       "typeVersion": 2.1,
       "webhookId": "f4c4e89f-e748-4d13-be61-64d0b2b5fa6f",
@@ -5596,13 +5596,13 @@
         },
         "options": {}
       },
-      "id": "48980012-5b49-4005-a640-84c809adb8f3",
+      "id": "8fd65029-1fd7-4919-93df-0d53f179e6e7",
       "name": "Drive - Download Proxy",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -79728,
-        88544
+        -81856,
+        88192
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -5646,13 +5646,13 @@
           }
         }
       },
-      "id": "fb642ff1-d615-447d-88f7-69afcc1dfd0f",
+      "id": "dea0b180-a59f-4e26-b030-0c64417a8f1f",
       "name": "Responder Proxy File",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        -79520,
-        88544
+        -81648,
+        88192
       ]
     },
     {
@@ -5668,10 +5668,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77184,
-        88384
+        -79312,
+        88032
       ],
-      "id": "9614cae2-d8ae-4a90-bb81-ad51428a80e6",
+      "id": "fc423aec-e09a-4bc0-9d32-e160eb3a9f40",
       "name": "BigQuery - Ler Comentarios Cliente",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5703,10 +5703,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -76960,
-        88384
+        -79088,
+        88032
       ],
-      "id": "549ccf98-d4b3-4af0-a146-628fc7d3b949",
+      "id": "68e3e250-5c37-4984-ab27-3483b08c4648",
       "name": "Responder Comentarios Cliente"
     },
     {
@@ -5722,10 +5722,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -77184,
-        88592
+        -79328,
+        88320
       ],
-      "id": "70d65702-7566-4990-a137-d4afeeb01229",
+      "id": "158c1cbd-6d1a-4d64-8e8b-7e634bdeeb8d",
       "name": "BigQuery - Marcar Comentarios Lidos",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5757,10 +5757,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -76960,
-        88592
+        -79104,
+        88320
       ],
-      "id": "9e80b3fc-6585-4598-844a-de743cd13184",
+      "id": "5ee34f99-c5de-4623-b158-50287d3cb6c6",
       "name": "Responder Marcar Lidos"
     },
     {
@@ -5776,10 +5776,10 @@
       "type": "n8n-nodes-base.googleBigQuery",
       "typeVersion": 2.1,
       "position": [
-        -78864,
-        89600
+        -80992,
+        89248
       ],
-      "id": "27737f48-ff01-481d-8d25-18d635aba1d6",
+      "id": "0d58caa6-9ea7-4d61-a39d-690338a3e297",
       "name": "BigQuery - Atualizar Grupo Usuario",
       "credentials": {
         "googleBigQueryOAuth2Api": {
@@ -5807,10 +5807,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -78640,
-        89600
+        -80768,
+        89248
       ],
-      "id": "fb96fd32-8538-400c-b15d-b276591922db",
+      "id": "d15ed9b9-aede-4ba8-ba8b-b861e0780f8c",
       "name": "Responder Grupo Usuario"
     }
   ],
