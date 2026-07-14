@@ -21,38 +21,34 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const [selectedMember, setSelectedMember] = React.useState(null);
   const changePeriod = (v) => { if (React.startTransition) React.startTransition(() => setPeriod(v)); else setPeriod(v); };
 
-  // ── Lazy load: carregar board de produção do n8n (BigQuery) ──
-  const [boardData, setBoardData] = React.useState(null);
-  const [boardLoading, setBoardLoading] = React.useState(false);
+  // ── BFF: Fonte única de dados via Cruzar Pauta (pauta_checking + checking_logs + pi_responsaveis) ──
+  // Substitui 3 chamadas separadas (boardData, responsaveisData, checkings) por 1 endpoint.
+  // A query já filtra pi_responsaveis por mes_referencia e traz status do formulario.
+  const [pautaUnificada, setPautaUnificada] = React.useState([]);
+  const [pautaLoading, setPautaLoading] = React.useState(true);
+  const [pautaMes, setPautaMes] = React.useState(() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); });
+  const [pautaRefreshKey, setPautaRefreshKey] = React.useState(0);
   React.useEffect(() => {
-    if (boardData) return; // já carregou
-    setBoardLoading(true);
-    window.MOCK?.loadProduction?.()
-      .then(res => { if (res?.board?.length) setBoardData(res.board); })
-      .catch(() => {})
-      .finally(() => setBoardLoading(false));
-  }, []);
-
-  // ── Carregar total de PIs atribuidos por pessoa (pi_responsaveis) ──
-  // A Marlene precisa ver TODOS os PIs da pauta, nao so os recebidos
-  const [responsaveisData, setResponsaveisData] = React.useState([]);
-  React.useEffect(() => {
-    window.PainelAPI?.getResponsaveis('').then(r => {
-      const rows = Array.isArray(r) ? r : (r?.responsaveis || r?.rows || []);
-      setResponsaveisData(rows);
-    }).catch(() => {});
-  }, []);
-  // Totais da pauta por pessoa (nome): { "Rose": 85, "Brenda": 92, ... }
+    setPautaLoading(true);
+    window.PainelAPI?.getPautaCruzada?.(pautaMes)
+      .then(res => {
+        const rows = res?.pauta || (Array.isArray(res) ? res : []);
+        setPautaUnificada(rows);
+      })
+      .catch(() => setPautaUnificada([]))
+      .finally(() => setPautaLoading(false));
+  }, [pautaMes, pautaRefreshKey]);
+  // Totais da pauta por pessoa (nome): derivados da fonte unica
   const pautaTotals = React.useMemo(() => {
     const map = {};
-    responsaveisData.forEach(r => {
-      const nome = r.responsavel_nome || r.responsavel || "";
+    pautaUnificada.forEach(p => {
+      const nome = p.responsavel || '';
       if (!nome) return;
       if (!map[nome]) map[nome] = 0;
       map[nome]++;
     });
     return map;
-  }, [responsaveisData]);
+  }, [pautaUnificada]);
 
   const sinceTs = React.useMemo(() => {
     const now = Date.now();
@@ -150,14 +146,19 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
     return membros.map(u => {
       const uName = u.nome || u.name || "";
       const uEmail = u.email || "";
-      const meus = checkings.filter(c => {
-        const a = c.assigned_to || "";
+      // BFF: derivar stats da fonte unica (pautaUnificada)
+      const meusPauta = pautaUnificada.filter(p => {
+        const resp = p.responsavel || '';
+        return resp && (H.sameUser(resp, uName) || (uEmail && H.sameUser(resp, uEmail)));
+      });
+      const meusChecking = checkings.filter(c => {
+        const a = c.assigned_to || '';
         return a && (H.sameUser(a, uName) || (uEmail && H.sameUser(a, uEmail)));
       });
-      const baixados = meus.filter(c => c.approvedAt || c.rejectedAt).length;
-      // Pauta total: PIs atribuidos em pi_responsaveis (inclui aguardando recebimento)
-      const pt = pautaTotals[uName] || 0;
-      return { ...u, carga: meus.length, baixados, pendentes: meus.filter(c => H.norm(c.status) === "pending").length, pautaTotal: pt };
+      const baixados = meusChecking.filter(c => c.approvedAt || c.rejectedAt).length;
+      const recebidos = meusPauta.filter(p => p.status_formulario === 'recebido').length;
+      const pt = meusPauta.length;
+      return { ...u, carga: meusChecking.length, baixados, recebidos, pendentes: meusChecking.filter(c => H.norm(c.status) === 'pending').length, pautaTotal: pt };
     });
   }, [checkings, currentUser, pautaTotals]);
   const equipePautaTotal = equipe.reduce((s, m) => s + (m.pautaTotal || 0), 0);
@@ -168,16 +169,17 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
   const team = React.useMemo(() => (window.MOCK?.users || []).filter(u => u.role !== "viewer").map(u => u.nome || u.name), []);
   // V1 fix (01/jul): contaAgg e divRows agora nao filtram por conta ativa.
   // A conta aparece como coluna filtravel (ColumnFilter), sem abas no rodape.
+  // BFF: contaAgg e divRows derivados da fonte unica (pautaUnificada)
   const contaAgg = React.useMemo(() => {
     const m = {};
-    // REQ (01/jul 00:22:06 Phillipe): filtros compartilhados entre todos os modos de visualizacao
-    const src = divMonth === "all" ? filteredCheckings : filteredCheckings.filter(c => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === divMonth; });
-    src.forEach(c => {
-      const k = c.conta || "Sem conta";
-      if (!m[k]) m[k] = { conta: k, total: 0, pend: 0, resp: {} };
+    pautaUnificada.forEach(p => {
+      const k = p.conta || 'Sem conta';
+      if (!m[k]) m[k] = { conta: k, total: 0, pend: 0, recebidos: 0, aguardando: 0, resp: {} };
       m[k].total++;
-      if (H.norm(c.status) === "pending") m[k].pend++;
-      if (c.assigned_to) m[k].resp[c.assigned_to] = (m[k].resp[c.assigned_to] || 0) + 1;
+      if (p.status_formulario === 'recebido' && (!p.status_checking || p.status_checking === 'pending')) m[k].pend++;
+      if (p.status_formulario === 'recebido') m[k].recebidos++;
+      else m[k].aguardando++;
+      if (p.responsavel) m[k].resp[p.responsavel] = (m[k].resp[p.responsavel] || 0) + 1;
     });
     var fixas = window.MOCK?.CONTAS_BOTICARIO || [];
     var arr = Object.values(m);
@@ -189,21 +191,32 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
       return ia - ib;
     });
     return arr;
-  }, [filteredCheckings, divMonth]);
+  }, [pautaUnificada]);
   // REQ 5 (01/07): mes fechado como seletor principal. 12 meses.
   const divMonths = React.useMemo(() => H.recentMonths(12), []);
   const divTotalPIs = React.useMemo(() => contaAgg.reduce((s, r) => s + r.total, 0), [contaAgg]);
-  // V1 fix: divRows agora mostra TODOS os PIs (sem filtro por conta ativa),
-  // conta vira coluna filtravel via ColumnFilter.
-  const divRowsPreFilter = React.useMemo(() => {
-    const src = divMonth === "all" ? filteredCheckings : filteredCheckings.filter(c => { const d = new Date(c.submittedAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === divMonth; });
-    return src;
-  }, [filteredCheckings, divMonth]);
+  // BFF: divRows derivados da pautaUnificada (fonte unica)
+  const divRowsPreFilter = React.useMemo(() => pautaUnificada, [pautaUnificada]);
   const divRows = React.useMemo(() => {
-    // REQ 1 (01/07): aplicar filtros por coluna (inclui conta como filtro)
     return window.applyColumnFilters(divRowsPreFilter, colFDiv.filters);
   }, [divRowsPreFilter, colFDiv.filters]);
-  const assignOne = (id, name) => { onAssign && onAssign({ [id]: name }); onToast && onToast({ type: "success", message: `PI atribuído a ${name.split(" ")[0]}` }); };
+  // assignOne: atribui por n_pi (chave natural da pauta), nao por submission_id
+  const assignOne = (nPi, name, submissionId) => {
+    // Update otimista na pautaUnificada local
+    setPautaUnificada(prev => prev.map(p => p.n_pi === nPi ? { ...p, responsavel: name } : p));
+    // Tambem atualiza checkings (pra consistencia com outras telas)
+    if (submissionId) onAssign && onAssign({ [submissionId]: name });
+    // Gravar no backend
+    const mes = pautaMes;
+    const conta = pautaUnificada.find(p => p.n_pi === nPi)?.conta || '';
+    window.PainelAPI?.assignResponsible(nPi, name, mes, conta).then(() => {
+      onToast && onToast({ type: 'success', message: `PI ${nPi} atribuído a ${name.split(' ')[0]}` });
+    }).catch(e => {
+      // Reverter update otimista
+      setPautaRefreshKey(k => k + 1);
+      onToast && onToast({ type: 'error', message: 'Falha ao atribuir: ' + (e.message || '') });
+    });
+  };
   const assignConta = (conta, name) => {
     const map = {}; checkings.forEach(c => { if ((c.conta || "Sem conta") === conta) map[c.submission_id] = name; });
     onAssign && onAssign(map);
@@ -484,37 +497,30 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
               <div className="row gap-3" style={{ alignItems: "center" }}>
                 {/* REQ 4 (01/07): botao de divisao automatica (so admin) */}
                 {isManager && <button className="btn btn-accent sm" onClick={() => {
-                  // UXP: usar SOMENTE membros da equipe do grupo logado (sem fallback que mistura equipes)
+                  // BFF: dividir usando pautaUnificada (todos PIs, inclusive sem formulario)
                   var membros = window.MOCK?.teamMembers?.(currentUser?.grupo || "boticario") || [];
                   var teamNames = membros.map(u => u.nome || u.name);
                   if (teamNames.length < 2) { onToast?.({ type: "info", message: "Precisa de pelo menos 2 responsaveis cadastrados." }); return; }
-                  var src = divMonth === "all" ? checkings : checkings.filter(c => { var d = new Date(c.submittedAt); return (d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")) === divMonth; });
-                  var unassigned = src.filter(c => !c.assigned_to);
+                  var unassigned = pautaUnificada.filter(p => !p.responsavel);
                   if (!unassigned.length) { onToast?.({ type: "info", message: "Todos os PIs deste periodo ja tem responsavel." }); return; }
-                  // REQ EQUIPE: distribuicao respeita REGIAO quando possivel.
-                  // Heuristica: agrupar contas por regiao inferida. Distribuir contas
-                  // inteiras por membro (round-robin de regioes). Depois balancear
-                  // excedente por quantidade, garantindo equilibrio.
                   var inferR = window.MOCK?.inferRegiao || function() { return ""; };
                   var byConta = {};
-                  unassigned.forEach(c => { var k = c.conta || "Sem conta"; if (!byConta[k]) byConta[k] = []; byConta[k].push(c); });
+                  unassigned.forEach(p => { var k = p.conta || "Sem conta"; if (!byConta[k]) byConta[k] = []; byConta[k].push(p); });
                   var map = {}, counts = {}, contaMembro = {};
                   teamNames.forEach(t => { counts[t] = 0; });
-                  // Agrupar contas por regiao
                   var regioes = {};
                   Object.keys(byConta).forEach(conta => {
                     var r = inferR(conta) || "_geral";
                     if (!regioes[r]) regioes[r] = [];
                     regioes[r].push(conta);
                   });
-                  // Distribuir contas inteiras por round-robin dentro de cada regiao
                   var idx = 0;
                   Object.keys(regioes).sort().forEach(regiao => {
                     regioes[regiao].forEach(conta => {
                       var who = teamNames[idx % teamNames.length];
                       contaMembro[conta] = contaMembro[conta] || {};
-                      byConta[conta].forEach(c => {
-                        map[c.submission_id] = who;
+                      byConta[conta].forEach(p => {
+                        map[p.n_pi] = who;
                         counts[who] = (counts[who] || 0) + 1;
                         contaMembro[conta][who] = (contaMembro[conta][who] || 0) + 1;
                       });
@@ -555,7 +561,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                   <ColumnFilter colKey="meio" label="Meio" rows={divRowsPreFilter} selected={colFDiv.filters.meio || []} onSelect={colFDiv.setColumnFilter}>Meio</ColumnFilter>
                   <th>Vencimento</th>
                   <th>Status</th>
-                  <ColumnFilter colKey="assigned_to" label="Responsavel" rows={divRowsPreFilter} selected={colFDiv.filters.assigned_to || []} onSelect={colFDiv.setColumnFilter}>Responsavel</ColumnFilter>
+                  <ColumnFilter colKey="responsavel" label="Responsavel" rows={divRowsPreFilter} selected={colFDiv.filters.responsavel || []} onSelect={colFDiv.setColumnFilter}>Responsavel</ColumnFilter>
                   <th>Comentario</th><th>Arq.</th>
                 </tr></thead>
                 <tbody>
@@ -563,39 +569,42 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                     ? <tr><td colSpan={10}><div style={{ padding: 28 }}><Empty title="Sem PIs com esses filtros" hint="Limpe os filtros ou troque o mes" icon="layers"/></div></td></tr>
                     : divRows.slice(0, divPage).map((c, i) => {
                       const SC = window.CHECK_STATUS || {}; const SCL = window.CHECK_STATUS_LIST || [];
+                      const temFormulario = c.status_formulario === 'recebido';
                       const per = c.periodo_ini && c.periodo_fim ? `${new Date(c.periodo_ini).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}–${new Date(c.periodo_fim).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}` : "";
-                      const tip = [c.campanha, per, c.valor_liquido ? Number(c.valor_liquido || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : null, c.praca].filter(Boolean).join(" · ");
+                      const tip = [c.campanha, per, c.liquido ? Number(c.liquido || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : null, c.praca].filter(Boolean).join(" · ");
                       return (
-                      <tr key={c.submission_id} className={i < 20 ? "row-anim" : ""} style={i < 20 ? { animationDelay: (i * 12) + "ms" } : undefined} title={tip}>
-                        {/* R2 fix (01/jul): clicar no PI abre Review */}
-                        <td className="cell-pi" style={{ cursor: "pointer" }} onClick={() => onOpenReview(c)}>{c.n_pi}</td>
+                      <tr key={c.n_pi + '_' + (c.submission_id || i)} className={i < 20 ? "row-anim" : ""} style={i < 20 ? { animationDelay: (i * 12) + "ms" } : undefined} title={tip}>
+                        {/* BFF: clicar no PI abre Review somente se tem formulario */}
+                        <td className="cell-pi" style={{ cursor: temFormulario ? "pointer" : "default", opacity: temFormulario ? 1 : 0.6 }} onClick={() => { if (temFormulario) onOpenReview(c); }}>{c.n_pi}</td>
                         <td style={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.conta || "Sem conta"}</td>
-                        <td style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cliente}</td>
+                        <td style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cliente || c.veiculo || '-'}</td>
                         <td className="cell-secondary" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.veiculo}</td>
                         <td className="cell-secondary">{c.meio}</td>
                         <td className="cell-secondary" style={{ fontSize: 11.5, whiteSpace: "nowrap" }}>{(() => { if (!c.vencimento) return "-"; const d = new Date(c.vencimento); if (isNaN(d.getTime())) return "-"; const now = new Date(); const diff = (d - now) / 86400000; const color = diff < 0 ? "var(--alert)" : diff < 3 ? "var(--warn)" : undefined; return React.createElement("span", { style: { color, fontWeight: diff < 3 ? 600 : 400 } }, d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })); })()}</td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
-                          <div className="plan-status" style={{ "--sc": SC[c.statusCheck] || "var(--ink-3)" }}>
-                            {/* REQ Marlene (02/jul): Status editavel pra TODOS (nao so admin) */}
-                            <select value={c.statusCheck || ""} onChange={e => { onSetCheckStatus && onSetCheckStatus(c.submission_id, e.target.value); onToast?.({ type: "success", message: `Status: ${e.target.value}` }); }}>
-                              {!c.statusCheck && <option value="">-</option>}
+                          {temFormulario ? (
+                          <div className="plan-status" style={{ "--sc": SC[c.statusCheck || c.status_checking] || "var(--ink-3)" }}>
+                            <select value={c.statusCheck || c.status_checking || ""} onChange={e => { onSetCheckStatus && onSetCheckStatus(c.submission_id, e.target.value); onToast?.({ type: "success", message: `Status: ${e.target.value}` }); }}>
+                              {!(c.statusCheck || c.status_checking) && <option value="">-</option>}
                               {SCL.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                           </div>
+                          ) : <span className="badge badge-muted" style={{ fontSize: 10 }}>Aguardando</span>}
                         </td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
-                          {!isManager ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.assigned_to || "Sem resp."}</span> : (
-                            <select className="plan-select" value={c.assigned_to || ""} onChange={e => { assignOne(c.submission_id, e.target.value); }} style={{ fontSize: 12 }}>
+                          {!isManager ? <span className="cell-secondary" style={{ fontSize: 12 }}>{c.responsavel || "Sem resp."}</span> : (
+                            <select className="plan-select" value={c.responsavel || ""} onChange={e => { assignOne(c.n_pi, e.target.value, c.submission_id); }} style={{ fontSize: 12 }}>
                               <option value="">Sem resp.</option>
                               {equipe.map(m => <option key={m.email || m.nome} value={m.nome || m.name}>{(m.nome || m.name || "").split(" ")[0]}</option>)}
                             </select>
                           )}
                         </td>
                         <td className="plan-edit" onClick={e => e.stopPropagation()}>
-                          {/* REQ Marlene (02/jul): Comentario editavel pra TODOS (nao so admin) */}
-                          <input className="plan-input" defaultValue={c.comentario || ""} placeholder="Comentário…" onBlur={e => { if (e.target.value !== (c.comentario || "")) { onSetComentario && onSetComentario(c.submission_id, e.target.value); onToast?.({ type: "success", message: "Comentário salvo." }); } }} onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}/>
+                          {temFormulario ? (
+                          <input className="plan-input" defaultValue={c.comentario || c.observacoes || ""} placeholder="Comentário…" onBlur={e => { if (e.target.value !== (c.comentario || c.observacoes || "")) { onSetComentario && onSetComentario(c.submission_id, e.target.value); onToast?.({ type: "success", message: "Comentário salvo." }); } }} onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}/>
+                          ) : <span className="cell-secondary" style={{ fontSize: 11 }}>—</span>}
                         </td>
-                        <td className="cell-secondary" style={{ textAlign: "center" }}>{c.total_arquivos || 0}</td>
+                        <td className="cell-secondary" style={{ textAlign: "center" }}>{temFormulario ? (c.total_arquivos || 0) : '—'}</td>
                       </tr>
                     );})
                     }
@@ -610,7 +619,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
           </div>
         )}
 
-        {divOpen && <DividirDemanda checkings={checkings} team={equipe.map(m => m.nome || m.name)} onClose={() => setDivOpen(false)} onAssign={onAssign} onToast={onToast}/>}
+        {divOpen && <DividirDemanda checkings={checkings} team={equipe.map(m => m.nome || m.name)} onClose={() => setDivOpen(false)} onAssign={onAssign} onToast={onToast} onPautaRefresh={() => setPautaRefreshKey(k => k + 1)}/>}
         {/* REQ 4 (01/07): modal de preview da divisao automatica com distribuicao regional */}
         {autoPreview && (<>
           <div className="scrim" onClick={() => setAutoPreview(null)}/>
@@ -649,10 +658,25 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
             </div>
             <div className="row gap-3" style={{ justifyContent: "flex-end" }}>
               <Button variant="ghost" onClick={() => setAutoPreview(null)}>Cancelar</Button>
-              <Button variant="accent" icon="check" onClick={() => {
-                onAssign && onAssign(autoPreview.map);
-                onToast?.({ type: "success", message: autoPreview.total + " PIs divididos entre " + autoPreview.activeTeam.length + " responsaveis." });
+              <Button variant="accent" icon="check" onClick={async () => {
+                // BFF: update otimista na pautaUnificada + bulk save
+                const npiMap = autoPreview.map; // { n_pi: nome }
+                setPautaUnificada(prev => prev.map(p => npiMap[p.n_pi] ? { ...p, responsavel: npiMap[p.n_pi] } : p));
+                onToast?.({ type: "success", message: autoPreview.total + " PIs divididos entre " + autoPreview.activeTeam.length + " responsaveis. Salvando..." });
                 setAutoPreview(null);
+                // Montar batch de assignments
+                const mes = pautaMes;
+                const assignments = Object.entries(npiMap).map(([nPi, nome]) => {
+                  const pi = pautaUnificada.find(p => p.n_pi === nPi);
+                  return { n_pi: nPi, responsavel: nome, mes_referencia: mes, conta: pi?.conta || '' };
+                });
+                try {
+                  await window.PainelAPI?.bulkAssignResponsible(assignments);
+                  onToast?.({ type: "success", message: assignments.length + " PIs salvos com sucesso." });
+                } catch (e) {
+                  onToast?.({ type: "error", message: "Falha ao salvar divisao: " + (e.message || '') + ". Recarregando..." });
+                  setPautaRefreshKey(k => k + 1);
+                }
               }}>Aplicar divisao</Button>
             </div>
           </div></div>
@@ -727,7 +751,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
 
 // Modal de divisão de demanda
 // Modal de divisão de demanda — espelha a planilha do Camilo (abas por conta + responsável mensal)
-function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
+function DividirDemanda({ checkings, team, onClose, onAssign, onToast, onPautaRefresh }) {
   const H = window.H;
   const monthOpts = React.useMemo(() => { const a = []; const now = new Date(); for (let i = 0; i < 3; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); a.push({ v: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) }); } return a; }, []);
   const [mes, setMes] = React.useState(monthOpts[0].v);
@@ -904,6 +928,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast }) {
       onToast?.({ type: "success", message: `${jobs.length} PIs de ${contasAtribuidas} contas atribuidos com sucesso. Recarregando...` });
       window.MOCK?.invalidateProduction?.();
       setRefreshKey(k => k + 1);
+      onPautaRefresh?.();
     } catch (err) {
       setSaving(false);
       console.error('[Divisao] Bulk assign failed:', err);
