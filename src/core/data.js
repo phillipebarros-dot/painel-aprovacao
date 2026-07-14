@@ -45,8 +45,8 @@
     // Anne = gestora. Marlene, Rose, Brenda = analistas. Lista fixa de contas.
     boticario: { label: "Equipe Anne (Boticario)", contas: CONTAS_BOTICARIO },
     // Kauane = gestora. Lista propria de clientes. Sem divisao individual.
-    kauana:    { label: "Equipe Kauane", contas: CONTAS_KAUANA },
-    todos:     { label: "Todos", contas: null }, // admin: sem filtro
+    kauana: { label: "Equipe Kauane", contas: CONTAS_KAUANA },
+    todos: { label: "Todos", contas: null }, // admin: sem filtro
   };
 
   // REQ EQUIPE: heuristica de regiao inferida da sigla da conta.
@@ -168,12 +168,12 @@
 
   // Arquitetura real do pipeline (mostrada em Operações). Descreve o fluxo n8n real.
   const N8N_FLOW = [
-    { id: "form",    label: "Formulário",   sub: "Fornecedor envia",      icon: "inbox",     status: "ok" },
-    { id: "drive",   label: "Google Drive", sub: "Arquivos + histórico",  icon: "folder",    status: "ok" },
-    { id: "bq",      label: "BigQuery",     sub: "checking_logs",         icon: "database",  status: "ok" },
-    { id: "n8n",     label: "n8n",          sub: "Webhook + rotas",       icon: "workflow",  status: "ok" },
-    { id: "painel",  label: "Painel",       sub: "Aprovação + auditoria", icon: "dashboard", status: "ok" },
-    { id: "email",   label: "E-mail SMTP",  sub: "Notifica fornecedor",   icon: "mail",      status: "ok" },
+    { id: "form", label: "Formulário", sub: "Fornecedor envia", icon: "inbox", status: "ok" },
+    { id: "drive", label: "Google Drive", sub: "Arquivos + histórico", icon: "folder", status: "ok" },
+    { id: "bq", label: "BigQuery", sub: "checking_logs", icon: "database", status: "ok" },
+    { id: "n8n", label: "n8n", sub: "Webhook + rotas", icon: "workflow", status: "ok" },
+    { id: "painel", label: "Painel", sub: "Aprovação + auditoria", icon: "dashboard", status: "ok" },
+    { id: "email", label: "E-mail SMTP", sub: "Notifica fornecedor", icon: "mail", status: "ok" },
   ];
   const SECURITY_LAYERS = [
     { num: 1, label: "JWT HS256", desc: "Sessão assinada, 8h" },
@@ -203,9 +203,9 @@
   // FIX (02/jul): Removido localStorage. BigQuery e a unica fonte de verdade.
   function saveGrupo(userId, grupo) {
     // Envia com EMAIL do usuario (mais confiavel que hash ID)
-    return window.PainelAPI?.updateUserGrupo?.(userId, grupo).then(function() {
+    return window.PainelAPI?.updateUserGrupo?.(userId, grupo).then(function () {
       console.info("[saveGrupo OK]", userId, grupo);
-    }).catch(function(e) {
+    }).catch(function (e) {
       console.error("[saveGrupo FALHOU]", userId, grupo, e.message || e);
       throw e;
     });
@@ -435,7 +435,7 @@
           }
           // Último fallback: card vazio com link direto
           if (ck.webViewLink) {
-            return [{ endereco: '', files: [{ id: submissionId, id_imagem: submissionId, detalhe: 'Pasta do Drive', tag: 'DRIVE', isImage: false, isPdf: false, isVideo: false, webViewLink: ck.webViewLink, viewUrl: ck.webViewLink, thumbnailUrl: null }] }];
+            return [{ endereco: '', files: [{ id: '', id_imagem: '', detalhe: 'Pasta do Drive (registro antigo \u2014 arquivos n\u00e3o indexados)', tag: 'DRIVE', isImage: false, isPdf: false, isVideo: false, webViewLink: ck.webViewLink, viewUrl: ck.webViewLink, thumbnailUrl: null }] }];
           }
         }
         return [];
@@ -482,6 +482,9 @@
       return _prodCache || { board: [] };
     }
   };
+
+  // Permite invalidar o cache de produção externamente (ex.: após salvar divisão)
+  MOCK.invalidateProduction = function () { _prodCache = null; _prodTs = 0; };
 
   window.MOCK = MOCK;
 })();

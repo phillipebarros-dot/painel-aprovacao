@@ -97,7 +97,8 @@ function PdfEmbed({ blobUrl: initialUrl, viewUrl, fileId }) {
 }
 
 // LightboxEmbed: exibe PDF/video/imagem/audio inline via proxy blob do n8n.
-// Estrategia: fetchFileBlob (POST n8n, retorna blob: URL local) -> fallback card.
+// Estrategia: fetchFileMeta (POST n8n, retorna blob + mime real) -> fallback card.
+// F1-c: decide renderização pelo mime REAL do conteúdo, não pela flag do n8n.
 // Contorna 401 do Drive e bloqueio de cookies de terceiros.
 function LightboxEmbed({ file }) {
   const id = file.id_imagem || file.id || '';
@@ -106,6 +107,7 @@ function LightboxEmbed({ file }) {
   // Estados: 'loading' | 'ready' | 'error'
   const [status, setStatus] = React.useState('loading');
   const [blobUrl, setBlobUrl] = React.useState(null);
+  const [effectiveType, setEffectiveType] = React.useState(null); // 'pdf' | 'video' | 'audio' | 'image'
   // FIX C: ref para rastrear o blobUrl atual (evita stale closure no cleanup)
   const blobRef = React.useRef(null);
 
@@ -116,14 +118,20 @@ function LightboxEmbed({ file }) {
     (async () => {
       try {
         const API = window.PainelAPI;
-        if (!API || !API.fetchFileBlob) { setStatus('error'); return; }
-        const url = await API.fetchFileBlob(id);
-        if (!cancelled && url) {
-          // NÃO revogar blob anterior — o _blobCache do api.js é o dono.
-          // Revogar aqui matava URLs que o cache ainda referenciava,
-          // causando ERR_FILE_NOT_FOUND ao reabrir o mesmo arquivo.
-          blobRef.current = url;
-          setBlobUrl(url);
+        if (!API || !API.fetchFileMeta) { setStatus('error'); return; }
+        const meta = await API.fetchFileMeta(id);
+        if (!cancelled && meta) {
+          blobRef.current = meta.url;
+          setBlobUrl(meta.url);
+          // F1-c: O conteúdo manda — se o blob é PDF, renderiza como PDF
+          const mime = (meta.mime || '').toLowerCase();
+          setEffectiveType(
+            mime === 'application/pdf' ? 'pdf'
+            : mime.startsWith('video/') ? 'video'
+            : mime.startsWith('audio/') ? 'audio'
+            : mime.startsWith('image/') ? 'image'
+            : (file.isPdf ? 'pdf' : file.isVideo ? 'video' : file.isAudio ? 'audio' : 'image')
+          );
           setStatus('ready');
         }
         else if (!cancelled) { setStatus('error'); }
@@ -162,8 +170,8 @@ function LightboxEmbed({ file }) {
     </div>;
   }
 
-  // Renderizar conforme tipo
-  if (file.isVideo) {
+  // F1-c: Renderizar conforme tipo REAL do blob (effectiveType), não da flag
+  if (effectiveType === 'video') {
     return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
       <video controls style={{ maxWidth: "100%", maxHeight: "85%", borderRadius: 8 }} src={blobUrl}>
         <source src={blobUrl}/>
@@ -172,7 +180,7 @@ function LightboxEmbed({ file }) {
     </div>;
   }
 
-  if (file.isAudio) {
+  if (effectiveType === 'audio') {
     return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
       {/* FIX A3: indigo -> accent */}
       <div style={{ width: 88, height: 88, borderRadius: 20, background: "var(--accent-soft)", display: "grid", placeItems: "center" }}>
@@ -184,7 +192,7 @@ function LightboxEmbed({ file }) {
     </div>;
   }
 
-  if (file.isPdf) {
+  if (effectiveType === 'pdf') {
     return React.createElement(PdfEmbed, { blobUrl, viewUrl, fileId: id });
   }
 
@@ -354,17 +362,42 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
   const setLightbox = (file) => { if (!file) { setLightboxIdx(-1); return; } const idx = allFiles.findIndex(f => f.id_imagem === file.id_imagem); setLightboxIdx(idx >= 0 ? idx : -1); };
   const lbPrev = () => setLightboxIdx(i => i > 0 ? i - 1 : allFiles.length - 1);
   const lbNext = () => setLightboxIdx(i => i < allFiles.length - 1 ? i + 1 : 0);
-  const ckey = "painel_notes_" + checking.submission_id;
-  const [notes, setNotes] = React.useState(() => { try { return JSON.parse(localStorage.getItem(ckey) || "[]"); } catch { return []; } });
+  // F3: Notas carregadas do backend (não mais de localStorage)
+  const [notes, setNotes] = React.useState([]);
+  const [notesLoaded, setNotesLoaded] = React.useState(false);
   const [draft, setDraft] = React.useState("");
   const [tag, setTag] = React.useState("nota");
-  React.useEffect(() => { try { setNotes(JSON.parse(localStorage.getItem(ckey) || "[]")); } catch { setNotes([]); } setDraft(""); }, [checking.submission_id]);
-  const addNote = () => {
+  React.useEffect(() => {
+    let cancel = false;
+    setNotesLoaded(false);
+    setDraft("");
+    window.PainelAPI?.getHistory?.({ submission_id: checking.submission_id })
+      .then(res => { if (!cancel) {
+        setNotes((res?.history || []).map(h => ({
+          id: h.id || Date.now(), text: h.comentario, tag: h.tipo || 'nota',
+          author: h.autor_nome || h.autor || 'Equipe', color: '#0E7490',
+          ts: Date.parse(h.created_at) || Date.now()
+        })));
+        setNotesLoaded(true);
+      }})
+      .catch(() => { if (!cancel) { setNotes([]); setNotesLoaded(true); } });
+    return () => { cancel = true; };
+  }, [checking.submission_id]);
+  const addNote = async () => {
     if (!draft.trim()) return;
-    const n = { id: Date.now(), text: draft.trim(), tag, author: currentUser?.nome || currentUser?.name || "Equipe", color: currentUser?.color || "#0E7490", ts: Date.now() };
-    const next = [n, ...notes]; setNotes(next); localStorage.setItem(ckey, JSON.stringify(next)); setDraft("");
+    const authorName = currentUser?.nome || currentUser?.name || "Equipe";
+    try {
+      await window.PainelAPI.addComment({
+        submission_id: checking.submission_id, n_pi: checking.n_pi,
+        comentario: draft.trim(), tipo: tag, autor: authorName
+      });
+    } catch (e) { console.warn('[addNote] backend failed:', e); }
+    // Otimista: adiciona local imediatamente
+    const n = { id: Date.now(), text: draft.trim(), tag, author: authorName, color: currentUser?.color || "#0E7490", ts: Date.now() };
+    setNotes(p => [n, ...p]); setDraft("");
   };
-  const delNote = (id) => { const next = notes.filter(n => n.id !== id); setNotes(next); localStorage.setItem(ckey, JSON.stringify(next)); };
+  // F3: delete é otimista (apenas local — sem endpoint de delete no backend)
+  const delNote = (id) => { setNotes(p => p.filter(n => n.id !== id)); };
   const rkey = "painel_rating_" + (checking.email_contato || checking.nome_contato || "x");
   const [rating, setRating] = React.useState(() => Number(localStorage.getItem(rkey) || 0));
   React.useEffect(() => { setRating(Number(localStorage.getItem(rkey) || 0)); }, [checking.submission_id]);
@@ -953,7 +986,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
                 <span style={{ color: "#9ca3af", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>{lightboxIdx + 1} de {allFiles.length}</span>
                 <button onClick={(e) => { e.stopPropagation(); lbPrev(); }} style={{ color: "#fff", fontSize: 18, padding: "2px 10px", background: "rgba(255,255,255,0.08)", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }} title="Anterior (←)">‹</button>
                 <button onClick={(e) => { e.stopPropagation(); lbNext(); }} style={{ color: "#fff", fontSize: 18, padding: "2px 10px", background: "rgba(255,255,255,0.08)", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }} title="Proximo (→)">›</button>
-                <a href={lightbox.id_imagem ? `https://drive.google.com/uc?id=${lightbox.id_imagem}&export=download` : '#'} target="_blank" rel="noreferrer" style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)" }} title="Baixar arquivo">Baixar ↓</a>
+                <button onClick={async (e) => { e.stopPropagation(); e.preventDefault(); if (!lightbox.id_imagem) return; try { const meta = await window.PainelAPI.fetchFileMeta(lightbox.id_imagem); if (!meta) { window.open(lightbox.viewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`, '_blank'); return; } const ext = ({ 'application/pdf':'pdf','image/jpeg':'jpg','image/png':'png','video/mp4':'mp4','audio/mpeg':'mp3' })[meta.mime] || 'bin'; const a = document.createElement('a'); a.href = meta.url; a.download = `${(lightbox.detalhe || 'arquivo').replace(/[^\w\-. ]+/g, '_')}.${ext}`; document.body.appendChild(a); a.click(); a.remove(); } catch { window.open(lightbox.viewUrl || '#', '_blank'); } }} style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", cursor: lightbox.id_imagem ? "pointer" : "not-allowed", opacity: lightbox.id_imagem ? 1 : 0.4 }} title="Baixar arquivo">Baixar ↓</button>
                 <a href={lightbox.viewUrl || lightbox.previewUrl || `https://drive.google.com/file/d/${lightbox.id_imagem}/view`} target="_blank" rel="noreferrer" style={{ color: "#6e7681", fontSize: 12, textDecoration: "none", padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)" }}>Abrir no Drive ↗</a>
                 <button onClick={() => setLightbox(null)} style={{ color: "#fff", fontSize: 22, padding: "2px 12px", background: "rgba(255,255,255,0.1)", borderRadius: 8, border: "none", cursor: "pointer" }} title="Fechar (ESC)">✕</button>
               </div>
