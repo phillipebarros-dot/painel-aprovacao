@@ -184,7 +184,7 @@
         const k = localStorage.key(i);
         if (k && k.startsWith("painel_rating_")) ratingCache[k] = Number(localStorage.getItem(k) || 0);
       }
-    } catch (e) {}
+    } catch (e) { }
     checkings.forEach(c => {
       const k = c.veiculo; if (!k) return;
       const s = m[k] || (m[k] = { label: k, total: 0, approved: 0, rejected: 0, rej: 0, manual: 0, manualN: 0 });
