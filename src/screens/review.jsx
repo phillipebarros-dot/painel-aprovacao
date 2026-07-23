@@ -539,6 +539,65 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
     return evs;
   }, [checking]);
 
+  // Reject modal extraído da IIFE para compatibilidade com rolldown/oxc (Vite 8.1).
+  // O parser do rolldown não aceita IIFE retornando JSX inline: {(() => { ... })()}
+  const rejectModal = decision === "reject" ? (() => {
+    // Motivos dinâmicos derivados do meio via RULES_API
+    const RA = window.RULES_API;
+    const meio = (checking.meio || "").trim().toUpperCase();
+    const isOOH = ["OD", "FL", "DO", "BD", "MT", "ME", "MN"].includes(meio) ||
+      (RA && RA.rulesForChecking && (() => {
+        const r = RA.rulesForChecking(checking);
+        return r.codes.some(c => ["OD","FL","DO","BD","MT","ME","MN"].includes(c.code));
+      })());
+    const isDigital = ["IN", "TV", "RD"].includes(meio);
+
+    const chipsGeral = [
+      "Arquivo de complemento", "Baixa resolução", "Data inconsistente",
+      "Sem assinatura", "Período divergente", "Arquivo corrompido/ilegível",
+      "PI não confere", "Falta relatório de veiculação"
+    ];
+    const chipsOOH = [
+      "Falta foto de perto", "Falta foto de longe", "Falta foto noturna",
+      "Cobertura incompleta (pontos faltantes)", "Endereço ilegível na foto"
+    ];
+    const chipsDigital = [
+      "Falta relatório de exibições", "Prints insuficientes",
+      "Sem período de veiculação", "Falta vídeo comprobatório"
+    ];
+
+    const chipSections = [{ label: "Geral", chips: chipsGeral }];
+    if (isOOH) chipSections.push({ label: "OOH / Mídia Exterior", chips: chipsOOH });
+    if (isDigital) chipSections.push({ label: "Digital / Broadcast", chips: chipsDigital });
+
+    return <>
+    <div className="scrim" onClick={() => setDecision(null)}/>
+    <div className="modal content" style={{ width: "min(560px, 92vw)" }}><div className="card-pad">
+      <div className="eyebrow" style={{ marginBottom: 8, color: "var(--alert)" }}>Reprovar checking</div>
+      <h2 className="display-3" style={{ marginBottom: 4 }}>Por que <span style={{ fontFamily: "var(--font-mono)", fontWeight: 500 }}>{checking.n_pi}</span> está sendo reprovado?</h2>
+      <p style={{ color: "var(--ink-2)", fontSize: 13.5, marginBottom: 16 }}>O motivo será enviado ao fornecedor. Selecione um ou mais motivos abaixo, ou descreva livremente.</p>
+      <textarea className="input" rows={4} placeholder="Ex: faltam fotos de perto nos pontos 3 e 7…" value={reason} onChange={(e) => setReason(e.target.value)} autoFocus/>
+      {!reason.trim() && <p style={{ fontSize: 11.5, color: "var(--alert)", margin: "6px 0 0", fontWeight: 500 }}>↑ Selecione pelo menos um motivo ou descreva acima para habilitar o botão.</p>}
+      {chipSections.map(sec => (
+        <div key={sec.label} style={{ marginTop: 10 }}>
+          <div className="eyebrow" style={{ fontSize: 10, marginBottom: 4, color: "var(--ink-3)" }}>{sec.label}</div>
+          <div className="row gap-2" style={{ flexWrap: "wrap" }}>
+            {sec.chips.map(s => <button key={s} className="pill pill-pending" style={{ cursor: "pointer", fontSize: 11.5 }} onClick={() => setReason(reason ? reason + "; " + s : s)}>+ {s}</button>)}
+          </div>
+        </div>
+      ))}
+      {needLate && (
+        <div style={{ marginTop: 16 }}>
+          <div className="row gap-2" style={{ alignItems: "center", marginBottom: 6 }}><Icon name="clock" size={13} style={{ color: "var(--warn-ink)" }}/><span className="eyebrow" style={{ color: "var(--warn-ink)" }}>Justificativa do atraso (obrigatória)</span></div>
+          <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "0 0 8px" }}>Periodo de revisao aberto ha {H.fmtDur(ageH)} (contado a partir do fim da veiculacao). Registre o motivo no historico antes de decidir.</p>
+          <textarea className="input" rows={2} placeholder="Ex: veículo reenviou comprovante 2 vezes; aguardava mapa de mídia." value={lateReason} onChange={e => setLateReason(e.target.value)}/>
+        </div>
+      )}
+      <div className="row gap-3" style={{ justifyContent: "flex-end", marginTop: 20 }}><Button variant="ghost" onClick={() => setDecision(null)}>Cancelar</Button><Button variant="danger" icon="x" loading={submitting} disabled={!reason.trim() || (needLate && !lateReason.trim())} onClick={confirm}>Reprovar</Button></div>
+    </div></div>
+    </>;
+  })() : null;
+
   return (
     <div className="page fade-in">
       <div className="row gap-3" style={{ marginBottom: 18, fontSize: 12.5 }}>
@@ -966,61 +1025,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
         </div></div>
       </>)}
       {/* Reject modal */}
-      {decision === "reject" && (() => {
-        // Motivos dinâmicos derivados do meio via RULES_API
-        const RA = window.RULES_API;
-        const meio = (checking.meio || "").trim().toUpperCase();
-        const isOOH = ["OD", "FL", "DO", "BD", "MT", "ME", "MN"].includes(meio) ||
-          (RA && RA.rulesForChecking && (() => {
-            const r = RA.rulesForChecking(checking);
-            return r.codes.some(c => ["OD","FL","DO","BD","MT","ME","MN"].includes(c.code));
-          })());
-        const isDigital = ["IN", "TV", "RD"].includes(meio);
-
-        const chipsGeral = [
-          "Arquivo de complemento", "Baixa resolução", "Data inconsistente",
-          "Sem assinatura", "Período divergente", "Arquivo corrompido/ilegível",
-          "PI não confere", "Falta relatório de veiculação"
-        ];
-        const chipsOOH = [
-          "Falta foto de perto", "Falta foto de longe", "Falta foto noturna",
-          "Cobertura incompleta (pontos faltantes)", "Endereço ilegível na foto"
-        ];
-        const chipsDigital = [
-          "Falta relatório de exibições", "Prints insuficientes",
-          "Sem período de veiculação", "Falta vídeo comprobatório"
-        ];
-
-        const chipSections = [{ label: "Geral", chips: chipsGeral }];
-        if (isOOH) chipSections.push({ label: "OOH / Mídia Exterior", chips: chipsOOH });
-        if (isDigital) chipSections.push({ label: "Digital / Broadcast", chips: chipsDigital });
-
-        return <>
-        <div className="scrim" onClick={() => setDecision(null)}/>
-        <div className="modal content" style={{ width: "min(560px, 92vw)" }}><div className="card-pad">
-          <div className="eyebrow" style={{ marginBottom: 8, color: "var(--alert)" }}>Reprovar checking</div>
-          <h2 className="display-3" style={{ marginBottom: 4 }}>Por que <span style={{ fontFamily: "var(--font-mono)", fontWeight: 500 }}>{checking.n_pi}</span> está sendo reprovado?</h2>
-          <p style={{ color: "var(--ink-2)", fontSize: 13.5, marginBottom: 16 }}>O motivo será enviado ao fornecedor. Selecione um ou mais motivos abaixo, ou descreva livremente.</p>
-          <textarea className="input" rows={4} placeholder="Ex: faltam fotos de perto nos pontos 3 e 7…" value={reason} onChange={(e) => setReason(e.target.value)} autoFocus/>
-          {!reason.trim() && <p style={{ fontSize: 11.5, color: "var(--alert)", margin: "6px 0 0", fontWeight: 500 }}>↑ Selecione pelo menos um motivo ou descreva acima para habilitar o botão.</p>}
-          {chipSections.map(sec => (
-            <div key={sec.label} style={{ marginTop: 10 }}>
-              <div className="eyebrow" style={{ fontSize: 10, marginBottom: 4, color: "var(--ink-3)" }}>{sec.label}</div>
-              <div className="row gap-2" style={{ flexWrap: "wrap" }}>
-                {sec.chips.map(s => <button key={s} className="pill pill-pending" style={{ cursor: "pointer", fontSize: 11.5 }} onClick={() => setReason(reason ? reason + "; " + s : s)}>+ {s}</button>)}
-              </div>
-            </div>
-          ))}
-          {needLate && (
-            <div style={{ marginTop: 16 }}>
-              <div className="row gap-2" style={{ alignItems: "center", marginBottom: 6 }}><Icon name="clock" size={13} style={{ color: "var(--warn-ink)" }}/><span className="eyebrow" style={{ color: "var(--warn-ink)" }}>Justificativa do atraso (obrigatória)</span></div>
-              <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "0 0 8px" }}>Periodo de revisao aberto ha {H.fmtDur(ageH)} (contado a partir do fim da veiculacao). Registre o motivo no historico antes de decidir.</p>
-              <textarea className="input" rows={2} placeholder="Ex: veículo reenviou comprovante 2 vezes; aguardava mapa de mídia." value={lateReason} onChange={e => setLateReason(e.target.value)}/>
-            </div>
-          )}
-          <div className="row gap-3" style={{ justifyContent: "flex-end", marginTop: 20 }}><Button variant="ghost" onClick={() => setDecision(null)}>Cancelar</Button><Button variant="danger" icon="x" loading={submitting} disabled={!reason.trim() || (needLate && !lateReason.trim())} onClick={confirm}>Reprovar</Button></div>
-        </div></div>
-      </>); })()}
+      {rejectModal}
       {/* Revert modal */}
       {decision === "revert" && (<>
         <div className="scrim" onClick={() => setDecision(null)}/>
