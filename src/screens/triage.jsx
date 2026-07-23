@@ -210,7 +210,7 @@ function ScreenTriage({ queue, currentUser, onDecide, onClose }) {
               <div className="col gap-2">
                 <div className="eyebrow">Nota interna</div>
                 <div className="row gap-2">
-                  <input className="input" style={{ flex: 1, fontSize: 12.5 }} placeholder="Anotar observacao interna..." value={noteDraft} onChange={e => setNoteDraft(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && noteDraft.trim()) { const ckey = 'painel_notes_' + c.submission_id; const existing = JSON.parse(localStorage.getItem(ckey) || '[]'); const note = { id: Date.now(), text: noteDraft.trim(), tag: 'nota', author: currentUser?.nome || 'Equipe', color: currentUser?.color || '#0E7490', ts: Date.now() }; localStorage.setItem(ckey, JSON.stringify([note, ...existing])); window.PainelAPI?.addComment?.(c.submission_id, noteDraft.trim(), currentUser?.nome || 'Equipe').catch(() => {}); setNoteDraft(''); } }}/>
+                  <input className="input" style={{ flex: 1, fontSize: 12.5 }} placeholder="Anotar observacao interna..." value={noteDraft} onChange={e => setNoteDraft(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && noteDraft.trim()) { const ckey = 'painel_notes_' + c.submission_id; const existing = JSON.parse(sessionStorage.getItem(ckey) || '[]'); const note = { id: Date.now(), text: noteDraft.trim(), tag: 'nota', author: currentUser?.nome || 'Equipe', color: currentUser?.color || '#0E7490', ts: Date.now() }; sessionStorage.setItem(ckey, JSON.stringify([note, ...existing])); window.PainelAPI?.addComment?.(c.submission_id, noteDraft.trim(), currentUser?.nome || 'Equipe').catch(() => {}); setNoteDraft(''); } }}/>
                 </div>
               </div>
             </div>

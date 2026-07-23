@@ -207,8 +207,13 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
     // Tambem atualiza checkings (pra consistencia com outras telas)
     if (submissionId) onAssign && onAssign({ [submissionId]: name });
     // Gravar no backend
-    const mes = pautaMes;
-    const conta = pautaUnificada.find(p => p.n_pi === nPi)?.conta || '';
+    // FIX (Marlene "reverte ao recarregar"): a leitura (Cruzar Pauta) faz JOIN em
+    // pi_responsaveis por (n_pi, mes_referencia), onde mes_referencia = mês da
+    // VEICULAÇÃO do PI. Se salvarmos com o mês da TELA, a chave não bate e o
+    // responsável some no reload. Salva com o mes_referencia do próprio PI.
+    const _pi = pautaUnificada.find(p => p.n_pi === nPi);
+    const mes = _pi?.mes_referencia || pautaMes;
+    const conta = _pi?.conta || '';
     window.PainelAPI?.assignResponsible(nPi, name, mes, conta).then(() => {
       onToast && onToast({ type: 'success', message: `PI ${nPi} atribuído a ${name.split(' ')[0]}` });
     }).catch(e => {
@@ -668,7 +673,7 @@ function ScreenProducao({ checkings, currentUser, onOpenReview, onToast, viewMod
                 const mes = pautaMes;
                 const assignments = Object.entries(npiMap).map(([nPi, nome]) => {
                   const pi = pautaUnificada.find(p => p.n_pi === nPi);
-                  return { n_pi: nPi, responsavel: nome, mes_referencia: mes, conta: pi?.conta || '' };
+                  return { n_pi: nPi, responsavel: nome, mes_referencia: pi?.mes_referencia || mes, conta: pi?.conta || '' };
                 });
                 try {
                   await window.PainelAPI?.bulkAssignResponsible(assignments);
@@ -779,12 +784,26 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast, onPautaRe
 
   const poolAll = React.useMemo(() => {
     if (!pautaData.length) return [];
-    if (grupoDiv === "todos") return pautaData;
-    if (grupoDiv === "boticario") {
-      return pautaData.filter(p => { const ct = (p.conta || "").toLowerCase(); return ct && botiSet.has(ct); });
-    }
-    // Kauana: filtra por lista explicita de contas
-    return pautaData.filter(p => { const ct = (p.conta || "").toLowerCase(); return ct && kauanaSet.has(ct); });
+    // FIX (Marlene: "Painel tem +N PIs que o Publi"): o getPautaCruzada faz
+    // LEFT JOIN em checking_logs/pi_responsaveis e pode devolver VÁRIAS linhas
+    // por PI (fan-out). Os stats/contas contavam poolAll.length com duplicatas
+    // → total inflado (ex.: 651 vs 641). Deduplica por n_pi ANTES de tudo,
+    // preferindo a linha que já tem responsável (mesma regra do save, linha ~870).
+    const dedup = (rows) => {
+      const by = new Map();
+      rows.forEach(p => {
+        const k = p.n_pi;
+        if (!k) { by.set(Symbol(), p); return; } // sem n_pi: mantém como único
+        const prev = by.get(k);
+        if (!prev || (!prev.responsavel && p.responsavel)) by.set(k, p);
+      });
+      return Array.from(by.values());
+    };
+    let base;
+    if (grupoDiv === "todos") base = pautaData;
+    else if (grupoDiv === "boticario") base = pautaData.filter(p => { const ct = (p.conta || "").toLowerCase(); return ct && botiSet.has(ct); });
+    else base = pautaData.filter(p => { const ct = (p.conta || "").toLowerCase(); return ct && kauanaSet.has(ct); }); // Kauana
+    return dedup(base);
   }, [pautaData, grupoDiv]);
 
   // ── Stats da pauta cruzada (o que a Marlene pediu) ──
@@ -871,7 +890,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast, onPautaRe
       let idx = 0;
       splits.forEach(s => {
         for (let i = 0; i < s.qty && idx < pisUnicos.length; i++, idx++) {
-          jobs.push({ n_pi: pisUnicos[idx].n_pi, responsavel: s.name, mes_referencia: mes, conta: g.conta, submission_id: pisUnicos[idx].submission_id });
+          jobs.push({ n_pi: pisUnicos[idx].n_pi, responsavel: s.name, mes_referencia: pisUnicos[idx].mes_referencia || mes, conta: g.conta, submission_id: pisUnicos[idx].submission_id });
         }
       });
     });
@@ -894,7 +913,7 @@ function DividirDemanda({ checkings, team, onClose, onAssign, onToast, onPautaRe
         const assignments = batch.map(j => ({
           n_pi: j.n_pi,
           responsavel: j.responsavel,
-          mes_referencia: mes,
+          mes_referencia: j.mes_referencia || mes,
           conta: j.conta
         }));
 
