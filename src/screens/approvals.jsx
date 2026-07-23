@@ -21,6 +21,9 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
   const [picks, setPicks] = React.useState([]);
   const [saved, setSaved] = React.useState(() => { try { return JSON.parse(localStorage.getItem("painel_saved_filters") || "[]"); } catch { return []; } });
   const [planAccount, setPlanAccount] = React.useState("all");
+  // Mini-modal de reprovação (substitui prompt() nativo)
+  const [rejectTarget, setRejectTarget] = React.useState(null); // checking ou 'bulk'
+  const [rejectDraft, setRejectDraft] = React.useState("");
   const perPage = view === "cards" ? 12 : 15;
   // REQ 1 (01/07): filtros estilo Sheets por coluna
   const colF = window.useColumnFilters("approvals");
@@ -101,16 +104,23 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
     if (fail > 0) onToast?.({ type: "error", message: `${fail} falharam ao aprovar.` });
     setSelected(new Set()); onRefresh?.();
   };
-  const bulkReject = async () => {
-    const r = prompt("Motivo da reprovação em lote:"); if (!r) return;
+  const bulkReject = async (reason) => {
+    if (!reason) return;
     const who = currentUser.nome || currentUser.name;
     const ids = [...selected];
-    const results = await Promise.allSettled(ids.map(id => window.PainelAPI?.reject(id, who, r)));
+    const results = await Promise.allSettled(ids.map(id => window.PainelAPI?.reject(id, who, reason)));
     const ok = results.filter(res => res.status === 'fulfilled').length;
     const fail = results.filter(res => res.status === 'rejected').length;
     if (ok > 0) onToast?.({ type: "success", message: `${ok} checkings reprovados.` });
     if (fail > 0) onToast?.({ type: "error", message: `${fail} falharam ao reprovar.` });
     setSelected(new Set()); onRefresh?.();
+  };
+  const openRejectModal = (target) => { setRejectTarget(target); setRejectDraft(""); };
+  const confirmRejectModal = () => {
+    if (!rejectDraft.trim()) return;
+    if (rejectTarget === 'bulk') { bulkReject(rejectDraft.trim()); }
+    else if (rejectTarget) { onDecide(rejectTarget, "reject", rejectDraft.trim()); }
+    setRejectTarget(null); setRejectDraft("");
   };
 
   // Formata data de decisão (aprovação/reprovação) de forma absoluta
@@ -241,7 +251,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
           <span style={{ fontSize: 13 }}><b className="tabular">{selected.size}</b> selecionados</span>
           <div className="divider-v" style={{ background: "rgba(245,244,239,0.2)" }}/>
           <button className="btn btn-accent sm" onClick={bulkApprove}><Icon name="check"/>Aprovar em lote</button>
-          <button className="btn sm" style={{ background: "transparent", color: "#F5F4EF", borderColor: "rgba(245,244,239,0.3)" }} onClick={bulkReject}><Icon name="x"/>Reprovar em lote</button>
+          <button className="btn sm" style={{ background: "transparent", color: "#F5F4EF", borderColor: "rgba(245,244,239,0.3)" }} onClick={() => openRejectModal('bulk')}><Icon name="x"/>Reprovar em lote</button>
           <div className="spacer"/>
           <button className="btn-quiet sm btn" style={{ color: "rgba(245,244,239,0.7)" }} onClick={() => setSelected(new Set())}>Limpar</button>
         </div>
@@ -289,7 +299,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
                       {copilotOn && <td>{c.status === "pending" ? <CopilotBadge checking={c} size="sm"/> : <span className="muted" style={{ fontSize: 12 }}>·</span>}</td>}
                       {(tab === "approved" || tab === "rejected") && <td className="cell-time" style={{ fontSize: 12, whiteSpace: "nowrap" }}>{c.status === "approved" && c.approvedAt ? <span style={{ color: "var(--accent)" }}><Icon name="check" size={11} style={{ verticalAlign: "middle", marginRight: 3 }}/>{new Date(c.approvedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })} {new Date(c.approvedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span> : c.status === "rejected" && c.rejectedAt ? <span style={{ color: "var(--alert)" }}><Icon name="x" size={11} style={{ verticalAlign: "middle", marginRight: 3 }}/>{new Date(c.rejectedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })} {new Date(c.rejectedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span> : <span style={{ color: "var(--ink-4)" }}>—</span>}</td>}
                       <td>{c.approval_user ? <div className="row gap-2"><Avatar user={{ nome: c.approval_user, color: "#0E7490" }} size={22}/><span className="cell-secondary" style={{ fontSize: 12.5 }}>{c.approval_user.split(" ")[0]}</span></div> : <span className="row gap-2" style={{ fontSize: 12, color: "var(--ink-4)" }}><span style={{ width: 6, height: 6, borderRadius: 99, background: "var(--warn)", display: "inline-block", opacity: 0.6 }}/>Pendente</span>}</td>
-                      {!isViewer && !compareMode && <td onClick={(e) => e.stopPropagation()}>{c.status === "pending" ? <div className="row gap-2 inline-act"><button className="btn btn-accent sm" title="Aprovar" onClick={() => onDecide(c, "approve")}><Icon name="check"/></button><button className="btn btn-ghost sm" title="Reprovar" onClick={() => { const r = prompt("Motivo da reprovação:"); if (r) onDecide(c, "reject", r); }}><Icon name="x"/></button></div> : null}</td>}
+                      {!isViewer && !compareMode && <td onClick={(e) => e.stopPropagation()}>{c.status === "pending" ? <div className="row gap-2 inline-act"><button className="btn btn-accent sm" title="Aprovar" onClick={() => onDecide(c, "approve")}><Icon name="check"/></button><button className="btn btn-ghost sm" title="Reprovar" onClick={() => openRejectModal(c)}><Icon name="x"/></button></div> : null}</td>}
                       <td><span className="row-arrow"><Icon name={compareMode ? "plus" : "arrow_right"}/></span></td>
                     </tr>
                   );
@@ -333,7 +343,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
                   {!isViewer && !compareMode && c.status === "pending" && (
                     <div className="check-actions" onClick={(e) => e.stopPropagation()}>
                       <button className="btn btn-accent sm" style={{ flex: 1 }} onClick={() => onDecide(c, "approve")}><Icon name="check"/>Aprovar</button>
-                      <button className="btn btn-ghost sm" onClick={() => { const r = prompt("Motivo da reprovação:"); if (r) onDecide(c, "reject", r); }}><Icon name="x"/>Reprovar</button>
+                      <button className="btn btn-ghost sm" onClick={() => openRejectModal(c)}><Icon name="x"/>Reprovar</button>
                     </div>
                   )}
                 </div>
@@ -356,7 +366,7 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
                 const id = e.dataTransfer.getData("text/plain"); const c = checkings.find(x => x.submission_id === id);
                 /* FIX A7.2: kanban onDrop usa H.norm em vez de status cru */
                 if (!c || isViewer || H.norm(c.status) === st) return;
-                if (st === "rejected") { const rr = prompt("Motivo da reprovação:"); if (rr) onDecide(c, "reject", rr); }
+                if (st === "rejected") { openRejectModal(c); return; }
                 else if (st === "approved") onDecide(c, "approve");
                 else onDecide(c, "revert");
               }}>
@@ -393,6 +403,33 @@ function ScreenApprovals({ currentUser, checkings, stats, onOpenReview, onRefres
 
       {/* Compare overlay */}
       {compareMode && picks.length === 2 && <CompareView a={picks[0]} b={picks[1]} onClose={() => setPicks([])} onOpenReview={onOpenReview}/>}
+
+      {/* Mini-modal de reprovação (substitui prompt nativo) */}
+      {rejectTarget && (<>
+        <div className="scrim" onClick={() => setRejectTarget(null)}/>
+        <div className="modal content" style={{ width: "min(480px, 90vw)", zIndex: 130 }}><div className="card-pad">
+          <div className="eyebrow" style={{ marginBottom: 8, color: "var(--alert)" }}>
+            {rejectTarget === 'bulk' ? `Reprovar ${selected.size} checkings em lote` : 'Reprovar checking'}
+          </div>
+          <h2 className="display-3" style={{ marginBottom: 4 }}>
+            {rejectTarget === 'bulk'
+              ? 'Motivo da reprovação em lote'
+              : <>Por que <span style={{ fontFamily: "var(--font-mono)", fontWeight: 500 }}>{rejectTarget.n_pi}</span>?</>}
+          </h2>
+          <p style={{ color: "var(--ink-2)", fontSize: 13, marginBottom: 12 }}>O motivo será enviado ao fornecedor.</p>
+          <textarea className="input" rows={3} placeholder="Ex: faltam fotos de perto nos pontos 3 e 7…" value={rejectDraft} onChange={e => setRejectDraft(e.target.value)} autoFocus onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && rejectDraft.trim()) { e.preventDefault(); confirmRejectModal(); } }}/>
+          {!rejectDraft.trim() && <p style={{ fontSize: 11, color: "var(--alert)", margin: "4px 0 0", fontWeight: 500 }}>Preencha o motivo para habilitar o botão.</p>}
+          <div className="row gap-2" style={{ marginTop: 8, flexWrap: "wrap" }}>
+            {["Arquivo de complemento", "Baixa resolução", "Data inconsistente", "Sem assinatura", "Período divergente", "Falta relatório"].map(s => (
+              <button key={s} className="pill pill-pending" style={{ cursor: "pointer", fontSize: 11 }} onClick={() => setRejectDraft(rejectDraft ? rejectDraft + "; " + s : s)}>+ {s}</button>
+            ))}
+          </div>
+          <div className="row gap-3" style={{ justifyContent: "flex-end", marginTop: 16 }}>
+            <Button variant="ghost" onClick={() => setRejectTarget(null)}>Cancelar</Button>
+            <Button variant="danger" icon="x" disabled={!rejectDraft.trim()} onClick={confirmRejectModal}>Reprovar</Button>
+          </div>
+        </div></div>
+      </>)}
     </div>
   );
 }

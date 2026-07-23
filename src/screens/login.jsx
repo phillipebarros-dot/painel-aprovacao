@@ -1,7 +1,7 @@
 // screen-login.jsx — Split-screen login: mural de operação ao vivo + form funcional
 function ScreenLogin({ onLogin }) {
   const H = window.H;
-  const [email, setEmail] = React.useState(() => localStorage.getItem("painel_last_email") || "");
+  const [email, setEmail] = React.useState(() => { try { const raw = localStorage.getItem("painel_last_email"); return raw ? atob(raw) : ""; } catch { return ""; } });
   const [password, setPassword] = React.useState("");
   const [showPw, setShowPw] = React.useState(false);
   const [remember, setRemember] = React.useState(() => localStorage.getItem("painel_remember") !== "off");
@@ -42,7 +42,7 @@ function ScreenLogin({ onLogin }) {
   }, []);
 
   const persist = (em) => {
-    if (remember && em) {localStorage.setItem("painel_last_email", em);localStorage.setItem("painel_remember", "on");} else
+    if (remember && em) {localStorage.setItem("painel_last_email", btoa(em));localStorage.setItem("painel_remember", "on");} else
     {localStorage.removeItem("painel_last_email");localStorage.setItem("painel_remember", "off");}
   };
   const googleLogin = () => {

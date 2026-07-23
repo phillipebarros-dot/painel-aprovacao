@@ -433,9 +433,22 @@
               return [{ endereco: '', files: built }];
             }
           }
-          // Último fallback: card vazio com link direto
+          // FIX B4: Fallback melhorado para PIs antigos
+          // Mensagem clara explicando que os arquivos existem no Drive mas não foram indexados
           if (ck.webViewLink) {
-            return [{ endereco: '', files: [{ id: '', id_imagem: '', detalhe: 'Pasta do Drive (registro antigo \u2014 arquivos n\u00e3o indexados)', tag: 'DRIVE', isImage: false, isPdf: false, isVideo: false, webViewLink: ck.webViewLink, viewUrl: ck.webViewLink, thumbnailUrl: null }] }];
+            return [{
+              endereco: '',
+              _isLegacyFallback: true,
+              _legacyMessage: 'Este PI foi recebido antes do sistema de indexação automática. Os comprovantes estão na pasta do Drive, mas não aparecem como miniaturas aqui.',
+              files: [{
+                id: '_legacy_drive_link', id_imagem: '', tag: 'DRIVE',
+                detalhe: 'Abrir pasta no Drive para verificar comprovantes',
+                isImage: false, isPdf: false, isVideo: false, isLegacyLink: true,
+                webViewLink: ck.webViewLink,
+                viewUrl: ck.webViewLink,
+                thumbnailUrl: null
+              }]
+            }];
           }
         }
         return [];

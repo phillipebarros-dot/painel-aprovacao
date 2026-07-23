@@ -100,6 +100,7 @@ function PdfEmbed({ blobUrl: initialUrl, viewUrl, fileId }) {
 // Estrategia: fetchFileMeta (POST n8n, retorna blob + mime real) -> fallback card.
 // F1-c: decide renderização pelo mime REAL do conteúdo, não pela flag do n8n.
 // Contorna 401 do Drive e bloqueio de cookies de terceiros.
+// FIX B5: retry automático com invalidação de cache (igual PdfEmbed).
 function LightboxEmbed({ file }) {
   const id = file.id_imagem || file.id || '';
   const viewUrl = file.viewUrl || `https://drive.google.com/file/d/${id}/view`;
@@ -110,42 +111,56 @@ function LightboxEmbed({ file }) {
   const [effectiveType, setEffectiveType] = React.useState(null); // 'pdf' | 'video' | 'audio' | 'image'
   // FIX C: ref para rastrear o blobUrl atual (evita stale closure no cleanup)
   const blobRef = React.useRef(null);
+  // FIX B5: retry counter
+  const [retries, setRetries] = React.useState(0);
+  const MAX_RETRIES = 2;
+
+  const doFetch = React.useCallback(async (attempt) => {
+    if (!id) { setStatus('error'); return; }
+    try {
+      const API = window.PainelAPI;
+      if (!API || !API.fetchFileMeta) { setStatus('error'); return; }
+      // Invalidar cache em retries para forçar re-download
+      if (attempt > 0 && API._blobCache) { delete API._blobCache[id]; }
+      const meta = await API.fetchFileMeta(id);
+      if (meta) {
+        blobRef.current = meta.url;
+        setBlobUrl(meta.url);
+        // F1-c: O conteúdo manda — se o blob é PDF, renderiza como PDF
+        const mime = (meta.mime || '').toLowerCase();
+        setEffectiveType(
+          mime === 'application/pdf' ? 'pdf'
+          : mime.startsWith('video/') ? 'video'
+          : mime.startsWith('audio/') ? 'audio'
+          : mime.startsWith('image/') ? 'image'
+          : (file.isPdf ? 'pdf' : file.isVideo ? 'video' : file.isAudio ? 'audio' : 'image')
+        );
+        setStatus('ready');
+      } else { setStatus('error'); }
+    } catch (e) {
+      console.warn('[LightboxEmbed] fetch blob failed (attempt ' + attempt + '):', id, e);
+      if (attempt < MAX_RETRIES) {
+        // Retry automático com delay crescente
+        setTimeout(() => { setRetries(attempt + 1); }, 600 * (attempt + 1));
+      } else {
+        setStatus('error');
+      }
+    }
+  }, [id, file.isPdf, file.isVideo, file.isAudio]);
 
   React.useEffect(() => {
-    if (!id) { setStatus('error'); return; }
     let cancelled = false;
-
-    (async () => {
-      try {
-        const API = window.PainelAPI;
-        if (!API || !API.fetchFileMeta) { setStatus('error'); return; }
-        const meta = await API.fetchFileMeta(id);
-        if (!cancelled && meta) {
-          blobRef.current = meta.url;
-          setBlobUrl(meta.url);
-          // F1-c: O conteúdo manda — se o blob é PDF, renderiza como PDF
-          const mime = (meta.mime || '').toLowerCase();
-          setEffectiveType(
-            mime === 'application/pdf' ? 'pdf'
-            : mime.startsWith('video/') ? 'video'
-            : mime.startsWith('audio/') ? 'audio'
-            : mime.startsWith('image/') ? 'image'
-            : (file.isPdf ? 'pdf' : file.isVideo ? 'video' : file.isAudio ? 'audio' : 'image')
-          );
-          setStatus('ready');
-        }
-        else if (!cancelled) { setStatus('error'); }
-      } catch (e) {
-        console.warn('[LightboxEmbed] fetch blob failed:', id, e);
-        if (!cancelled) setStatus('error');
-      }
-    })();
-
-    // Cleanup: apenas cancelar fetch em voo. NÃO revogar blob —
-    // ele vive no _blobCache e será reutilizado. O browser limpa
-    // todos os blobs automaticamente no page unload.
+    setStatus('loading');
+    doFetch(retries).then(() => { if (cancelled) setStatus('loading'); });
     return () => { cancelled = true; };
-  }, [id]);
+  }, [retries, doFetch]);
+
+  // Manual retry handler
+  const handleManualRetry = () => {
+    setRetries(0);
+    setStatus('loading');
+    setBlobUrl(null);
+  };
 
   // Loading
   if (status === 'loading') {
@@ -153,12 +168,12 @@ function LightboxEmbed({ file }) {
       <div style={{ textAlign: "center" }}>
         {/* FIX A3: indigo -> accent */}
         <div className="spinner" style={{ width: 32, height: 32, border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }}/>
-        Carregando arquivo...
+        {retries > 0 ? `Tentativa ${retries + 1}...` : 'Carregando arquivo...'}
       </div>
     </div>;
   }
 
-  // Error / fallback: card com link para o Drive
+  // Error / fallback: card com link para o Drive + botão retry
   if (status === 'error' || !blobUrl) {
     return <div style={{ textAlign: "center", color: "#b0b5be", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: 32 }}>
       <div style={{ width: 88, height: 88, borderRadius: 20, background: "rgba(255,255,255,0.06)", display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -166,7 +181,10 @@ function LightboxEmbed({ file }) {
       </div>
       <p style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>{file.detalhe || "Arquivo"}</p>
       <p style={{ fontSize: 12, color: "#666", margin: 0 }}>Nao foi possivel carregar a visualizacao</p>
-      <a href={viewUrl} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ fontSize: 14, padding: "10px 24px", textDecoration: "none" }}>Abrir no Google Drive</a>
+      <div className="row gap-3">
+        <button className="btn btn-ghost" style={{ fontSize: 14, padding: "10px 24px" }} onClick={handleManualRetry}>Tentar novamente</button>
+        <a href={viewUrl} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ fontSize: 14, padding: "10px 24px", textDecoration: "none" }}>Abrir no Google Drive</a>
+      </div>
     </div>;
   }
 
@@ -586,6 +604,21 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
             </div>
           )}
           {assets.map((group, gi) => {
+            // FIX B4: Renderizar card especial para PIs antigos não indexados
+            if (group._isLegacyFallback) {
+              const driveFile = group.files[0];
+              return (
+                <div key={gi} className="card card-pad" style={{ background: "var(--warn-soft)", border: "1px solid color-mix(in srgb, var(--warn) 30%, var(--rule))" }}>
+                  <div className="row gap-2" style={{ marginBottom: 8 }}><Icon name="folder" size={16} style={{ color: "var(--warn-ink)" }}/><div className="eyebrow" style={{ color: "var(--warn-ink)" }}>Registro antigo — arquivos não indexados</div></div>
+                  <p style={{ margin: "0 0 12px", fontSize: 13.5, lineHeight: 1.55, color: "var(--warn-ink)" }}>{group._legacyMessage || "Os comprovantes existem no Drive mas não foram indexados automaticamente."}</p>
+                  {driveFile?.webViewLink && (
+                    <a href={driveFile.webViewLink} target="_blank" rel="noreferrer" className="btn btn-accent" style={{ textDecoration: "none", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Icon name="external" size={14}/>Abrir pasta no Drive
+                    </a>
+                  )}
+                </div>
+              );
+            }
             // REGRA FUNDAMENTAL: "foto perto + foto longe POR ENDERECO" e regra UNINTER.
             // Para clientes genericos, a exigencia e um relatorio fotografico consolidado.
             const meio = (checking.meio || "").trim().toUpperCase();
@@ -933,16 +966,51 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
         </div></div>
       </>)}
       {/* Reject modal */}
-      {decision === "reject" && (<>
+      {decision === "reject" && (() => {
+        // Motivos dinâmicos derivados do meio via RULES_API
+        const RA = window.RULES_API;
+        const meio = (checking.meio || "").trim().toUpperCase();
+        const isOOH = ["OD", "FL", "DO", "BD", "MT", "ME", "MN"].includes(meio) ||
+          (RA && RA.rulesForChecking && (() => {
+            const r = RA.rulesForChecking(checking);
+            return r.codes.some(c => ["OD","FL","DO","BD","MT","ME","MN"].includes(c.code));
+          })());
+        const isDigital = ["IN", "TV", "RD"].includes(meio);
+
+        const chipsGeral = [
+          "Arquivo de complemento", "Baixa resolução", "Data inconsistente",
+          "Sem assinatura", "Período divergente", "Arquivo corrompido/ilegível",
+          "PI não confere", "Falta relatório de veiculação"
+        ];
+        const chipsOOH = [
+          "Falta foto de perto", "Falta foto de longe", "Falta foto noturna",
+          "Cobertura incompleta (pontos faltantes)", "Endereço ilegível na foto"
+        ];
+        const chipsDigital = [
+          "Falta relatório de exibições", "Prints insuficientes",
+          "Sem período de veiculação", "Falta vídeo comprobatório"
+        ];
+
+        const chipSections = [{ label: "Geral", chips: chipsGeral }];
+        if (isOOH) chipSections.push({ label: "OOH / Mídia Exterior", chips: chipsOOH });
+        if (isDigital) chipSections.push({ label: "Digital / Broadcast", chips: chipsDigital });
+
+        return <>
         <div className="scrim" onClick={() => setDecision(null)}/>
         <div className="modal content" style={{ width: "min(560px, 92vw)" }}><div className="card-pad">
           <div className="eyebrow" style={{ marginBottom: 8, color: "var(--alert)" }}>Reprovar checking</div>
           <h2 className="display-3" style={{ marginBottom: 4 }}>Por que <span style={{ fontFamily: "var(--font-mono)", fontWeight: 500 }}>{checking.n_pi}</span> está sendo reprovado?</h2>
-          <p style={{ color: "var(--ink-2)", fontSize: 13.5, marginBottom: 16 }}>O motivo será enviado ao fornecedor.</p>
-          <textarea className="input" rows={4} placeholder="Ex: faltam fotos…" value={reason} onChange={(e) => setReason(e.target.value)} autoFocus/>
-          <div className="row gap-2" style={{ marginTop: 10, flexWrap: "wrap" }}>
-            {["Arquivo de complemento", "Baixa resolução", "Data inconsistente", "Sem assinatura"].map(s => <button key={s} className="pill pill-neutral" style={{ cursor: "pointer" }} onClick={() => setReason(reason ? reason + " " + s : s)}>+ {s}</button>)}
-          </div>
+          <p style={{ color: "var(--ink-2)", fontSize: 13.5, marginBottom: 16 }}>O motivo será enviado ao fornecedor. Selecione um ou mais motivos abaixo, ou descreva livremente.</p>
+          <textarea className="input" rows={4} placeholder="Ex: faltam fotos de perto nos pontos 3 e 7…" value={reason} onChange={(e) => setReason(e.target.value)} autoFocus/>
+          {!reason.trim() && <p style={{ fontSize: 11.5, color: "var(--alert)", margin: "6px 0 0", fontWeight: 500 }}>↑ Selecione pelo menos um motivo ou descreva acima para habilitar o botão.</p>}
+          {chipSections.map(sec => (
+            <div key={sec.label} style={{ marginTop: 10 }}>
+              <div className="eyebrow" style={{ fontSize: 10, marginBottom: 4, color: "var(--ink-3)" }}>{sec.label}</div>
+              <div className="row gap-2" style={{ flexWrap: "wrap" }}>
+                {sec.chips.map(s => <button key={s} className="pill pill-pending" style={{ cursor: "pointer", fontSize: 11.5 }} onClick={() => setReason(reason ? reason + "; " + s : s)}>+ {s}</button>)}
+              </div>
+            </div>
+          ))}
           {needLate && (
             <div style={{ marginTop: 16 }}>
               <div className="row gap-2" style={{ alignItems: "center", marginBottom: 6 }}><Icon name="clock" size={13} style={{ color: "var(--warn-ink)" }}/><span className="eyebrow" style={{ color: "var(--warn-ink)" }}>Justificativa do atraso (obrigatória)</span></div>
@@ -952,7 +1020,7 @@ function ScreenReview({ checking, currentUser, onBack, onDecide }) {
           )}
           <div className="row gap-3" style={{ justifyContent: "flex-end", marginTop: 20 }}><Button variant="ghost" onClick={() => setDecision(null)}>Cancelar</Button><Button variant="danger" icon="x" loading={submitting} disabled={!reason.trim() || (needLate && !lateReason.trim())} onClick={confirm}>Reprovar</Button></div>
         </div></div>
-      </>)}
+      </>); })()}
       {/* Revert modal */}
       {decision === "revert" && (<>
         <div className="scrim" onClick={() => setDecision(null)}/>
