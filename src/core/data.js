@@ -104,8 +104,25 @@
   // Corte temporal: 1 de junho de 2026 00:00 UTC-3
   var CORTE_VISIBILIDADE = new Date(2026, 5, 1).getTime(); // meses 0-indexed: 5 = junho
 
+  // Política de visão (decisão de negócio — trocar aqui se mudar):
+  //   ADMIN_VE_TUDO = true  -> admin cruza equipes (vê Boti + Kauana). Mais simples.
+  //   ADMIN_VE_TUDO = false -> admin respeita o próprio grupo; use um papel
+  //                            'superadmin' à parte para visão total.
+  var ADMIN_VE_TUDO = true;
+
   function visibleCheckings(user, checkings) {
     var grupo = user?.grupo || "todos";
+
+    // FIX: admin faz bypass EXPLÍCITO do filtro de grupo (antes dependia de
+    // 'todos' por acaso — admins com grupo 'nao_definido' ficavam CEGOS).
+    if (ADMIN_VE_TUDO && user?.role === "admin") grupo = "todos";
+
+    // FIX: "sem grupo" é fail-closed (não vê os novos), mas agora SINALIZA o
+    // motivo em vez de sumir silenciosamente. A UI pode ler este flag e mostrar
+    // um banner "Você está sem equipe definida — fale com um admin".
+    // (default restrito = seguro; a falha vira visível, não silenciosa.)
+    var grupoIndefinido = (grupo !== "todos" && !GRUPOS[grupo]);
+    try { if (typeof window !== "undefined" && window.MOCK) window.MOCK._grupoIndefinido = grupoIndefinido; } catch (e) {}
 
     // Separar PIs antigos (antes do corte) e novos (a partir do corte)
     var antigos = [];
